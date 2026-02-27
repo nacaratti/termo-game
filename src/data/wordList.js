@@ -1,0 +1,170 @@
+// Palavras candidatas para a solução do dia
+// Todas em maiúsculas, exatamente 5 letras, sem acentos
+export const SOLUTION_WORDS = [
+  // A
+  "ACHAR", "ACASO", "AFETO", "AGORA", "AINDA", "AJUDA", "ALUNO", "AMADO", "AMAGO",
+  "AMIGO", "AMPLO", "ANDAR", "ANTES", "APOIO", "AREIA", "ASSIM", "ASTRO", "ATIVO",
+  "ATRIZ", "ATUAR", "AUDAZ", "AVISO",
+  // B
+  "BAIXO", "BANCO", "BANDA", "BARRO", "BASTA", "BEBER", "BEIJO", "BEIRA", "BICHO",
+  "BLOCO", "BOLSA", "BORDA", "BOSSA", "BRISA", "BREVE", "BRUXA", "BUSCA",
+  // C
+  "CALMA", "CALOR", "CAMPO", "CANTO", "CAPAZ", "CARGO", "CARNE", "CARRO", "CARTA",
+  "CASAL", "CASCA", "CAUSA", "CERTO", "CHAMA", "CHAVE", "CHEIO", "CHUVA", "CICLO",
+  "CINCO", "CIRCO", "CISNE", "CITAR", "CLARA", "CLIMA", "CLUBE", "COBRA", "COISA",
+  "COMUM", "CONTA", "CORDA", "CORPO", "CORTE", "CORVO", "COURO", "CREME", "CRIME",
+  "CRISE", "CRUEL", "CURTO",
+  // D
+  "DANCA", "DARDO", "DELTA", "DESDE", "DEVER", "DIABO", "DIETA", "DIGNO", "DISCO",
+  "DOIDO", "DOMAR", "DUETO",
+  // E
+  "ECOAR", "ELITE", "EMITE", "ENTRE", "ERRAR", "ETICA", "ETNIA", "EXAME", "EXPOR",
+  "EXTRA",
+  // F
+  "FAIXA", "FALAR", "FALHA", "FALTA", "FAZER", "FEBRE", "FEITO", "FELIZ", "FERRO",
+  "FESTA", "FILME", "FIRMA", "FLUXO", "FOLHA", "FORCA", "FORMA", "FORTE", "FRASE",
+  "FREVO", "FUNDO", "FUSAO", "FUZIL",
+  // G
+  "GARFO", "GARRA", "GASTO", "GLOBO", "GOLPE", "GORDO", "GOSTO", "GRACA", "GRAMA",
+  "GRATO", "GRAVE", "GREVE", "GRITO", "GRUPO", "GUIAR",
+  // H
+  "HAVIA", "HAVER", "HEROI", "HONRA", "HUMOR",
+  // I
+  "ICONE", "IDEIA", "IGUAL", "IMUNE", "INATO",
+  // J
+  "JOGAR", "JUNTO", "JUROS", "JUSTO",
+  // L
+  "LAPSO", "LARGO", "LAVAR", "LEBRE", "LEGAL", "LEITE", "LENDA", "LENTO", "LIGAR",
+  "LIVRO", "LONGE", "LUCRO", "LUTAR",
+  // M
+  "MAGIA", "MAIOR", "MALHA", "MANGA", "MANSO", "MARCO", "MATAR", "MEDIA", "MENTE",
+  "METRO", "MEXER", "MILHO", "MOEDA", "MONTE", "MORAR", "MORAL", "MOSCA", "MUITO",
+  "MUNDO",
+  // N
+  "NADAR", "NARIZ", "NAVIO", "NEGRO", "NERVO", "NOBRE", "NOITE", "NORMA", "NOTAR",
+  // O
+  "OBTER", "OCASO", "OLHAR", "ONTEM", "ORDEM", "ORGAO", "OUSAR", "OUTRO",
+  // P
+  "PAGAR", "PALCO", "PALHA", "PAPEL", "PASTA", "PAUSA", "PEDRA", "PEGAR", "PENAS",
+  "PERDA", "PERTO", "PIANO", "PILAR", "PISTA", "PLENA", "PODER", "POEMA", "POLVO",
+  "POMBO", "PONTE", "PORTA", "POSTO", "POUCA", "POUCO", "PRACA", "PRATA", "PRESO",
+  "PRIMA", "PRIMO", "PROVA", "PULSO",
+  // Q
+  "QUASE", "QUEDA", "QUERO",
+  // R
+  "RADAR", "RAIVA", "RAPAZ", "RASGO", "RAZAO", "RENDA", "RITMO", "ROCHA", "ROLHA",
+  "ROSTO", "RUIDO", "RUIVO",
+  // S
+  "SACAR", "SAFRA", "SAGAZ", "SANAR", "SENSO", "SETOR", "SINAL", "SOBRA", "SOLAR",
+  "SONHO", "SORTE", "SUBIR", "SUAVE", "SULCO", "SUMIR", "SURTO", "SUSTO", "SUTIL",
+  // T
+  "TANGO", "TARDE", "TEMPO", "TENSO", "TERNO", "TEXTO", "TIGRE", "TOCAR", "TODOS",
+  "TOMAR", "TOQUE", "TORTA", "TOTAL", "TREVO", "TRIBO", "TROCA", "TURNO",
+  // U
+  "UNIAO",
+  // V
+  "VAGEM", "VALOR", "VAPOR", "VASTO", "VEADO", "VENTO", "VERDE", "VERME", "VERSO",
+  "VIDRO", "VIGOR", "VILAO", "VINHO", "VIOLA", "VOTAR", "VULTO",
+];
+
+// Palavras adicionais aceitas como chutes válidos (menos comuns, conjugações, regionalismos)
+const EXTRA_VALID_WORDS = [
+  // A
+  "ABADE", "ABALO", "ABANO", "ABATE", "ABRIR", "ABUSO", "ACABA", "ACATA", "ACENA",
+  "ACENO", "ACESA", "ACESO", "ACIMA", "ACUSA", "ADAGA", "ADIAR", "ADOBE", "ADOTA",
+  "AFAGA", "AFAGO", "AFIAR", "AFINA", "AFOGA", "AFORA", "AGITA", "AGUDA", "AGUDO",
+  "AGUIA", "ALGUM", "ALGAS", "ALIAR", "ALMAS", "ALTAR", "ALUGA", "AMEBA", "AMENA",
+  "AMENO", "AMIGA", "AMORA", "AMPLA", "ANEIS", "ANELO", "ANIMA", "ANIMO", "ANTRO",
+  "ANUIR", "ANULA", "ANZOL", "AONDE", "APAGA", "APELA", "APELO", "APOIA", "APRAZ",
+  "APURA", "ARDOR", "AROMA", "ARMAS", "ARRAS", "ARTES", "ARROZ", "ASSAR", "ATADA",
+  "ATADO", "ATEAR", "ATIRA", "ATLAS", "ATRAS", "AVARO", "AVEIA", "AVIAO", "AVIDO",
+  "AVISA", "AXILA",
+  // B
+  "BAGRE", "BAIXA", "BALAO", "BALDE", "BALSA", "BAMBU", "BANHO", "BANIR", "BARRA",
+  "BASTE", "BASTO", "BATER", "BAZAR", "BELGA", "BERCO", "BICHA", "BIRRA", "BISPO",
+  "BLUSA", "BOCAL", "BOLBO", "BOLOR", "BOLSO", "BOMBA", "BORDO", "BOTAO", "BRADO",
+  "BRACO", "BRAVA", "BRAVO", "BRASA", "BRIGA", "BROTO", "BURLA", "BURRO", "BUQUE",
+  // C
+  "CABAL", "CACAO", "CACAU", "CACHO", "CACOS", "CALCA", "CALMO", "CALVO", "CANOA",
+  "CAPIM", "CAPUZ", "CARDO", "CARMA", "CASPA", "CATAR", "CAULE", "CAUTO", "CAVAR",
+  "CEIFA", "CENAS", "CERCO", "CERVO", "CETIM", "CHAPA", "CHATO", "CHEFE", "CHOCO",
+  "CHORO", "CISMA", "CLAVE", "COBRO", "COFRE", "COLAR", "COLMO", "COMBO", "COPIA",
+  "CORAL", "CORES", "COROA", "COSER", "COSMO", "COVAS", "CRAVO", "CREPE", "CRIVO",
+  "CROMO", "CUPIM", "CURVA",
+  // D
+  "DEDAL", "DELAS", "DELES", "DENSO", "DEPOR", "DETAS", "DICAS", "DITAR", "DOCES",
+  "DOIDA", "DONAS", "DOTES", "DUELO", "DUPLO", "DUROS",
+  // E
+  "EDUCA", "EMANA", "ENCHE", "ENFIA", "ENTRA", "ERROS", "ESTRO", "ETAPA", "EXATO",
+  // F
+  "FALOU", "FAROL", "FATIA", "FATOR", "FAVOR", "FEDOR", "FERIR", "FEROZ", "FENDA",
+  "FIBRA", "FIGOS", "FINCA", "FOICE", "FOLAR", "FORJA", "FOSSO", "FRIOS", "FROTA",
+  "FRUTO", "FUMAR", "FURTO",
+  // G
+  "GAITA", "GALHO", "GAMBA", "GAROA", "GASES", "GATOS", "GENRO", "GIRAR", "GIROS",
+  "GLOSA", "GOELA", "GORJA", "GRAXA", "GRIFA", "GRIFE", "GRILO", "GRITA", "GROTA",
+  "GRUDE", "GUETO",
+  // H
+  "HIENA",
+  // I
+  "ILESO", "IMAGO", "INIBE",
+  // J
+  "JARRA", "JOGOS", "JUDEU", "JUNCO", "JURAR",
+  // L
+  "LABIO", "LACRE", "LADRA", "LADRO", "LANCE", "LARGA", "LASCA", "LATIR", "LAUDO",
+  "LAUTO", "LEIGO", "LENCO", "LERDO", "LEVAR", "LIDAR", "LIMAO", "LIMPA", "LIMPO",
+  "LIRIO", "LITRO", "LOCAL", "LOBOS", "LOGRO", "LOMBO", "LONGA", "LOUCO", "LOUVA",
+  "LUNAR", "LUSCO", "LUXOS",
+  // M
+  "MACHO", "MAGOA", "MAGRO", "MALHO", "MALVA", "MANCO", "MANIA", "MANTA", "MANTO",
+  "MARES", "MARRA", "MASSA", "MEADA", "MEADO", "MEIGO", "MELAO", "MENOR", "MENUS",
+  "MESES", "MICRO", "MINAR", "MIOLO", "MIRRA", "MISSA", "MIUDO", "MOCHO",
+  "MOGNO", "MOLDE", "MOLHO", "MORSA", "MORTA", "MORTO", "MOSTO", "MUDAS", "MUDOU",
+  "MULTA", "MURRO", "MUSGO", "MUTUO",
+  // N
+  "NAUTA", "NAVAL", "NEGRA", "NICHO", "NIVEL", "NOIVA", "NOIVO", "NOTAS", "NOVAS",
+  "NOVOS", "NUDEZ", "NUTRE", "NUVEM",
+  // O
+  "OBESO", "OFEGA", "OLEAR", "OLEOS", "OMITA", "OPACO", "OPINA", "OPTAR", "ORNAR",
+  "OSSOS", "OTIMO", "OVAIS", "OVULO",
+  // P
+  "PAJEM", "PAIOL", "PANOS", "PARAR", "PARCO", "PARDA", "PARDO", "PARES", "PARTO",
+  "PASMA", "PASMO", "PATIO", "PATOS", "PEDAL", "PELES", "PENSO", "PERCO", "PERSA",
+  "PILAO", "PILHA", "PINGO", "PINTO", "PLANO", "PLENO", "PLUMA", "PODAR", "POLCA",
+  "POMPA", "PONTO", "PORTO", "POSTE", "POTRO", "PRECE", "PRELO", "PUDIM", "PULAR",
+  "PULHA", "PURGA",
+  // Q
+  "QUEPE",
+  // R
+  "RACHA", "RAIAR", "RAIOS", "RAMPA", "RECUO", "REMAR", "REINA", "RENAL", "RENTE",
+  "REPOR", "RESMA", "RETER", "RETRO", "REVER", "RIGOR", "RISOS", "ROBOS", "RODAR",
+  "ROLAR", "ROMBO", "RONDA", "ROQUE", "ROSNA", "ROXAS", "ROXOS", "RUBRO", "RUGIR",
+  "RUMAR", "RUSSO",
+  // S
+  "SABIA", "SABIO", "SACAS", "SACOS", "SADIO", "SALAO", "SALSA", "SALTO", "SALVA",
+  "SALVO", "SAMBA", "SARAR", "SAUDE", "SEARA", "SECAR", "SECAS", "SEIVA", "SELIM",
+  "SELAR", "SELVA", "SELOS", "SENIL", "SERAO", "SERVO", "SESTA", "SEXTO", "SIGLA",
+  "SIGNO", "SIRVO", "SITIO", "SOBRE", "SOCAR", "SOCIO", "SOFAS", "SOFRO", "SOGRA",
+  "SOGRO", "SOLDA", "SOLHA", "SOLTO", "SOMOS", "SOPRO", "SORVO", "SOTAO", "SUCOS",
+  "SURDA", "SURDO", "SURRA",
+  // T
+  "TACHO", "TALHA", "TALHO", "TAPAR", "TAXAR", "TAXAS", "TECLA", "TECTO", "TEIMA",
+  "TELAS", "TEMER", "TEMOR", "TENRO", "TERMO", "TERCO", "TIBIA", "TIMAO", "TOCOU",
+  "TOLDO", "TOUCA", "TRAPO", "TRECO", "TRELA", "TREPA", "TROXA", "TRUTA", "TUFAO",
+  "TULHA", "TURBO", "TURVA", "TURVO",
+  // U
+  "ULTRA", "USADA", "USADO", "USUAL",
+  // V
+  "VAGAS", "VARIA", "VERGA", "VESTE", "VIGAS", "VILAS", "VIRAR", "VISAO", "VIRIL",
+  "VISTA", "VISTO", "VIVOS", "VOGAR", "VOLEI", "VOTOU",
+  // X
+  "XAXIM", "XENON",
+  // Z
+  "ZEROS", "ZUNIR", "ZURRO",
+];
+
+// Set para lookup O(1) na validação do chute
+export const VALID_WORDS_SET = new Set([
+  ...SOLUTION_WORDS,
+  ...EXTRA_VALID_WORDS.filter(w => w.length === 5),
+]);

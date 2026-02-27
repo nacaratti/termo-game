@@ -1,0 +1,170 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--background: 220 20% 5%; /* Deepest Black-Green */
+		--foreground: 140 60% 90%; /* Light Green */
+
+		--card: 200 15% 12%; /* Dark Green-Black for cards */
+		--card-foreground: 140 60% 90%;
+
+		--popover: 200 15% 12%;
+		--popover-foreground: 140 60% 90%;
+
+		--primary: 140 70% 45%; /* Vibrant Green */
+		--primary-foreground: 220 20% 5%; /* Deepest Black-Green for text on primary */
+
+		--secondary: 160 50% 30%; /* Muted Green */
+		--secondary-foreground: 140 60% 90%; /* Light Green for text on secondary */
+
+		--muted: 180 10% 25%; /* Dark Desaturated Green-Gray */
+		--muted-foreground: 180 10% 60%; /* Lighter Desaturated Green-Gray */
+
+		--accent: 140 60% 55%; /* Accent Green */
+		--accent-foreground: 220 20% 5%;
+
+		--destructive: 0 72.2% 50.6%; /* Red for errors */
+		--destructive-foreground: 0 0% 98%;
+
+		--border: 160 30% 20%; /* Dark Green Border */
+		--input: 180 15% 18%; /* Dark Green Input Background */
+		--ring: 140 70% 45%; /* Vibrant Green for focus rings */
+
+		--radius: 0.5rem;
+	}
+
+	.dark {
+		--background: 220 20% 5%; 
+		--foreground: 140 60% 90%;
+
+		--card: 200 15% 12%;
+		--card-foreground: 140 60% 90%;
+
+		--popover: 200 15% 12%;
+		--popover-foreground: 140 60% 90%;
+
+		--primary: 140 70% 45%;
+		--primary-foreground: 220 20% 5%;
+
+		--secondary: 160 50% 30%;
+		--secondary-foreground: 140 60% 90%;
+
+		--muted: 180 10% 25%;
+		--muted-foreground: 180 10% 60%;
+
+		--accent: 140 60% 55%;
+		--accent-foreground: 220 20% 5%;
+
+		--destructive: 0 62.8% 30.6%;
+		--destructive-foreground: 0 0% 98%;
+
+		--border: 160 30% 20%;
+		--input: 180 15% 18%;
+		--ring: 140 70% 45%;
+	}
+}
+
+@layer base {
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+	}
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold;
+  }
+  #root {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+}
+
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-500 to-teal-400;
+}
+
+.tile {
+  @apply w-14 h-14 md:w-16 md:h-16 border-2 rounded flex items-center justify-center text-2xl md:text-3xl font-bold uppercase transition-all duration-300;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary;
+}
+
+
+.tile-empty {
+  @apply bg-slate-800 border-slate-700;
+}
+
+.tile-filled {
+  @apply bg-slate-700 border-slate-600;
+}
+
+.tile-correct {
+  @apply bg-green-600 border-green-500 text-white transform scale-105;
+  animation: flip 0.5s ease, pulseCorrect 0.3s ease-out 0.5s;
+}
+
+.tile-present {
+  @apply bg-yellow-500 border-yellow-400 text-white;
+  animation: flip 0.5s ease, pulsePresent 0.3s ease-out 0.5s;
+}
+
+.tile-absent {
+  @apply bg-slate-500 border-slate-400 text-white opacity-75;
+  animation: flip 0.5s ease;
+}
+
+@keyframes flip {
+  0% {
+    transform: perspective(400px) rotateX(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: perspective(400px) rotateX(90deg);
+    opacity: 0.5;
+  }
+  100% {
+    transform: perspective(400px) rotateX(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseCorrect {
+  0%, 100% { transform: scale(1.05); }
+  50% { transform: scale(1.15); }
+}
+
+@keyframes pulsePresent {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.keyboard-key {
+  @apply font-bold h-12 transition-colors duration-200 flex items-center justify-center rounded;
+}
+
+.keyboard-key.key-correct {
+  @apply bg-green-600 hover:bg-green-700 text-white;
+}
+.keyboard-key.key-present {
+  @apply bg-yellow-500 hover:bg-yellow-600 text-white;
+}
+.keyboard-key.key-absent {
+  @apply bg-slate-800 text-slate-600 opacity-50 cursor-not-allowed;
+}
+.keyboard-key.key-default {
+  @apply bg-slate-400 hover:bg-slate-500 text-slate-900;
+}
