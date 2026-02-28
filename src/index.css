@@ -1,170 +1,120 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-	:root {
-		--background: 220 20% 5%; /* Deepest Black-Green */
-		--foreground: 140 60% 90%; /* Light Green */
+  :root {
+    --background:         0 0% 4%;
+    --foreground:         0 0% 93%;
 
-		--card: 200 15% 12%; /* Dark Green-Black for cards */
-		--card-foreground: 140 60% 90%;
+    --card:               0 0% 8%;
+    --card-foreground:    0 0% 93%;
 
-		--popover: 200 15% 12%;
-		--popover-foreground: 140 60% 90%;
+    --popover:            0 0% 8%;
+    --popover-foreground: 0 0% 93%;
 
-		--primary: 140 70% 45%; /* Vibrant Green */
-		--primary-foreground: 220 20% 5%; /* Deepest Black-Green for text on primary */
+    --primary:            0 0% 92%;
+    --primary-foreground: 0 0% 5%;
 
-		--secondary: 160 50% 30%; /* Muted Green */
-		--secondary-foreground: 140 60% 90%; /* Light Green for text on secondary */
+    --secondary:          0 0% 13%;
+    --secondary-foreground: 0 0% 65%;
 
-		--muted: 180 10% 25%; /* Dark Desaturated Green-Gray */
-		--muted-foreground: 180 10% 60%; /* Lighter Desaturated Green-Gray */
+    --muted:              0 0% 13%;
+    --muted-foreground:   0 0% 45%;
 
-		--accent: 140 60% 55%; /* Accent Green */
-		--accent-foreground: 220 20% 5%;
+    --accent:             0 0% 17%;
+    --accent-foreground:  0 0% 92%;
 
-		--destructive: 0 72.2% 50.6%; /* Red for errors */
-		--destructive-foreground: 0 0% 98%;
+    --destructive:        0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
 
-		--border: 160 30% 20%; /* Dark Green Border */
-		--input: 180 15% 18%; /* Dark Green Input Background */
-		--ring: 140 70% 45%; /* Vibrant Green for focus rings */
+    --border:             0 0% 15%;
+    --input:              0 0% 10%;
+    --ring:               0 0% 55%;
 
-		--radius: 0.5rem;
-	}
-
-	.dark {
-		--background: 220 20% 5%; 
-		--foreground: 140 60% 90%;
-
-		--card: 200 15% 12%;
-		--card-foreground: 140 60% 90%;
-
-		--popover: 200 15% 12%;
-		--popover-foreground: 140 60% 90%;
-
-		--primary: 140 70% 45%;
-		--primary-foreground: 220 20% 5%;
-
-		--secondary: 160 50% 30%;
-		--secondary-foreground: 140 60% 90%;
-
-		--muted: 180 10% 25%;
-		--muted-foreground: 180 10% 60%;
-
-		--accent: 140 60% 55%;
-		--accent-foreground: 220 20% 5%;
-
-		--destructive: 0 62.8% 30.6%;
-		--destructive-foreground: 0 0% 98%;
-
-		--border: 160 30% 20%;
-		--input: 180 15% 18%;
-		--ring: 140 70% 45%;
-	}
+    --radius: 0.25rem;
+  }
 }
 
 @layer base {
-	* {
-		@apply border-border;
-	}
-	body {
-		@apply bg-background text-foreground;
+  * {
+    @apply border-border box-border;
+  }
+  body {
+    @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
-    min-height: 100vh;
+    min-height: 100dvh;
     overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-	}
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-bold;
+    -webkit-tap-highlight-color: transparent;
   }
   #root {
-    width: 100%;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    flex-grow: 1;
   }
 }
 
-.gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-500 to-teal-400;
-}
-
+/* ─── Tiles ─────────────────────────────────────────────────────────────────── */
 .tile {
-  @apply w-14 h-14 md:w-16 md:h-16 border-2 rounded flex items-center justify-center text-2xl md:text-3xl font-bold uppercase transition-all duration-300;
-  @apply focus:outline-none focus:ring-2 focus:ring-primary;
+  width: min(14vw, 60px);
+  height: min(14vw, 60px);
+  @apply border-2 flex items-center justify-center font-bold uppercase select-none cursor-default;
+  font-size: clamp(1.1rem, 4vw, 1.5rem);
+  border-radius: 3px;
+  letter-spacing: 0.02em;
+  transition: border-color 0.1s ease;
 }
 
-
-.tile-empty {
-  @apply bg-slate-800 border-slate-700;
-}
-
-.tile-filled {
-  @apply bg-slate-700 border-slate-600;
-}
+.tile-empty  { background: transparent;  border-color: #2a2a2a; color: transparent; }
+.tile-filled { background: #1a1a1a;      border-color: #555555; color: #f0f0f0; }
+.tile-active { background: transparent;  border-color: #888888; color: #f0f0f0; }
 
 .tile-correct {
-  @apply bg-green-600 border-green-500 text-white transform scale-105;
-  animation: flip 0.5s ease, pulseCorrect 0.3s ease-out 0.5s;
+  background: #538d4e;
+  border-color: #538d4e;
+  color: #fff;
+  animation: tileReveal 0.5s ease forwards;
 }
-
 .tile-present {
-  @apply bg-yellow-500 border-yellow-400 text-white;
-  animation: flip 0.5s ease, pulsePresent 0.3s ease-out 0.5s;
+  background: #b59f3b;
+  border-color: #b59f3b;
+  color: #fff;
+  animation: tileReveal 0.5s ease forwards;
 }
-
 .tile-absent {
-  @apply bg-slate-500 border-slate-400 text-white opacity-75;
-  animation: flip 0.5s ease;
+  background: #3a3a3a;
+  border-color: #3a3a3a;
+  color: #888;
+  animation: tileReveal 0.5s ease forwards;
 }
 
-@keyframes flip {
-  0% {
-    transform: perspective(400px) rotateX(0deg);
-    opacity: 1;
-  }
-  50% {
-    transform: perspective(400px) rotateX(90deg);
-    opacity: 0.5;
-  }
-  100% {
-    transform: perspective(400px) rotateX(0deg);
-    opacity: 1;
-  }
+@keyframes tileReveal {
+  0%   { transform: scaleY(1);   }
+  45%  { transform: scaleY(0);   }
+  55%  { transform: scaleY(0);   }
+  100% { transform: scaleY(1);   }
 }
 
-@keyframes pulseCorrect {
-  0%, 100% { transform: scale(1.05); }
-  50% { transform: scale(1.15); }
-}
-
-@keyframes pulsePresent {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
-}
-
+/* ─── Keyboard ──────────────────────────────────────────────────────────────── */
 .keyboard-key {
-  @apply font-bold h-12 transition-colors duration-200 flex items-center justify-center rounded;
+  @apply flex items-center justify-center font-semibold select-none cursor-pointer;
+  height: 56px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  border: none;
+  outline: none;
 }
 
-.keyboard-key.key-correct {
-  @apply bg-green-600 hover:bg-green-700 text-white;
+.keyboard-key:active:not(:disabled) {
+  opacity: 0.75;
+  transform: scale(0.96);
 }
-.keyboard-key.key-present {
-  @apply bg-yellow-500 hover:bg-yellow-600 text-white;
-}
-.keyboard-key.key-absent {
-  @apply bg-slate-800 text-slate-600 opacity-50 cursor-not-allowed;
-}
-.keyboard-key.key-default {
-  @apply bg-slate-400 hover:bg-slate-500 text-slate-900;
-}
+
+.key-default { background: #818384; color: #fff; }
+.key-correct { background: #538d4e; color: #fff; }
+.key-present { background: #b59f3b; color: #fff; }
+.key-absent  { background: #3a3a3a; color: #555; cursor: not-allowed; opacity: 0.7; }

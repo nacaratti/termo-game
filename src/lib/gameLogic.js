@@ -14,12 +14,13 @@ export const getWordOfTheDay = (wordList) => {
   return wordList[diffDays % wordList.length].toUpperCase();
 };
 
-export const getTileStyling = (status, hasFocus) => {
-  if (status === 'correct') return 'tile-correct bg-green-500 border-green-400 text-white';
-  if (status === 'present') return 'tile-present bg-yellow-500 border-yellow-400 text-white';
-  if (status === 'absent') return 'tile-absent bg-slate-500 border-slate-400 text-white opacity-80';
-  
-  return hasFocus ? 'tile-active bg-slate-600 border-primary' : 'tile-empty bg-slate-700 border-slate-600';
+export const getTileStyling = (status, hasFocus, hasLetter) => {
+  if (status === 'correct') return 'tile-correct';
+  if (status === 'present') return 'tile-present';
+  if (status === 'absent')  return 'tile-absent';
+  if (hasFocus)   return 'tile-active';
+  if (hasLetter)  return 'tile-filled';
+  return 'tile-empty';
 };
 
 

@@ -1,10 +1,9 @@
-
 import React from 'react';
 
 const GameFooter = () => (
-  <footer className="mt-8 sm:mt-12 text-center">
-    <p className="text-xs sm:text-sm text-slate-500">
-      &copy; {new Date().getFullYear()} Inspirado no jogo Termo.
+  <footer className="py-4 text-center">
+    <p className="text-xs text-zinc-700 tracking-wide">
+      &copy; {new Date().getFullYear()} Penta
     </p>
   </footer>
 );

@@ -1,40 +1,23 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { WORD_LENGTH, MAX_GUESSES } from '@/config/constants';
 import { getTileStyling } from '@/lib/gameLogic';
 
 const Tile = React.forwardRef(({ letter, status, hasFocus, isSubmitted, delay, onClick }, ref) => {
-  const tileStyling = getTileStyling(status, hasFocus);
-
-  const animation = isSubmitted
-    ? { scale: [1, 1.05, 1], opacity: 1 }
-    : { scale: hasFocus ? 1.03 : 1, opacity: 1 };
-  const transition = isSubmitted
-    ? { duration: 0.4, delay: delay, ease: "easeInOut" }
-    : { type: 'spring', stiffness: 400, damping: 25 };
+  const tileStyling = getTileStyling(status, hasFocus, !!letter);
 
   return (
-    <motion.div
+    <div
       ref={ref}
-      className={`relative flex items-center justify-center tile ${tileStyling}`}
-      initial={{ scale: 0.9, opacity: 0.7 }}
-      animate={animation}
-      transition={transition}
+      className={`tile ${tileStyling}`}
+      style={isSubmitted ? { animationDelay: `${delay}s` } : undefined}
       tabIndex={0}
       onClick={onClick}
       onFocus={onClick}
       role="gridcell"
+      aria-label={letter || 'vazio'}
     >
       {letter}
-      {hasFocus && !isSubmitted && (
-        <motion.div
-          className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-          layoutId="underline"
-          initial={false}
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-        />
-      )}
-    </motion.div>
+    </div>
   );
 });
 

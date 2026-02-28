@@ -28,8 +28,8 @@ const LoginScreen = ({ onLogin }) => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-black to-emerald-900 p-4">
       <div className="w-full max-w-xs bg-slate-900 border border-primary/30 rounded-xl p-8 shadow-2xl">
-        <h1 className="text-2xl font-extrabold text-primary mb-1 text-center">Painel Admin</h1>
-        <p className="text-slate-500 text-sm text-center mb-6">Acesso restrito</p>
+        <h1 className="text-2xl font-black tracking-[0.25em] text-white mb-1 text-center uppercase">Penta</h1>
+        <p className="text-slate-500 text-sm text-center mb-6">Painel administrativo</p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
             type="password"
@@ -61,8 +61,12 @@ const WordOfDayPanel = () => {
   const [currentWord, setCurrentWord] = useState(() => getWordOfDay());
   const [newWord, setNewWord] = useState('');
   const [feedback, setFeedback] = useState(null);
+  const [todayResults, setTodayResults] = useState([]);
 
-  const todayResults = getDailyResults(today);
+  useEffect(() => {
+    getDailyResults(today).then(setTodayResults);
+  }, [today]);
+
   const wins = todayResults.filter(r => r.won).length;
   const losses = todayResults.filter(r => !r.won).length;
 
@@ -438,8 +442,8 @@ const Dashboard = ({ onLogout }) => {
       <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div>
-            <h1 className="font-extrabold text-primary text-lg leading-none">Painel Admin</h1>
-            <p className="text-slate-500 text-xs">Qual é a Palavra?</p>
+            <h1 className="font-extrabold text-white text-lg leading-none tracking-widest">PENTA</h1>
+            <p className="text-slate-500 text-xs">Painel Admin</p>
           </div>
           <div className="flex items-center gap-3">
             <a href="/" className="text-xs text-slate-400 hover:text-white transition-colors">

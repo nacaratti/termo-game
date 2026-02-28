@@ -1,3 +1,5 @@
+import { supabase } from '@/lib/supabase';
+
 const STATS_KEY = 'termo_stats';
 const DAILY_KEY = 'termo_daily_results';
 
@@ -37,24 +39,49 @@ export const resetStats = () => {
   localStorage.removeItem(STATS_KEY);
 };
 
-// ─── Per-day results ──────────────────────────────────────────────────────────
+// ─── Per-day results (global via Supabase, local como fallback) ───────────────
 
-/** Returns array of { won, attempts } for a given date string (YYYY-MM-DD). */
-export const getDailyResults = (dateStr) => {
-  try {
-    const all = JSON.parse(localStorage.getItem(DAILY_KEY) || '{}');
-    return all[dateStr] || [];
-  } catch {
-    return [];
-  }
-};
-
-/** Appends a result { won, attempts } for the given date. */
-export const saveDailyResult = (dateStr, won, attempts) => {
+/**
+ * Salva o resultado no Supabase (compartilhado entre todos os dispositivos)
+ * e também no localStorage como cache offline.
+ */
+export const saveDailyResult = async (dateStr, won, attempts) => {
+  // Salva localmente (cache / fallback offline)
   try {
     const all = JSON.parse(localStorage.getItem(DAILY_KEY) || '{}');
     if (!all[dateStr]) all[dateStr] = [];
     all[dateStr].push({ won, attempts });
     localStorage.setItem(DAILY_KEY, JSON.stringify(all));
   } catch { /* ignore */ }
+
+  // Salva no Supabase para ranking global
+  if (supabase) {
+    try {
+      await supabase.from('daily_results').insert({ date: dateStr, won, attempts });
+    } catch { /* ignora erros de rede silenciosamente */ }
+  }
+};
+
+/**
+ * Busca os resultados do dia no Supabase.
+ * Se Supabase não estiver configurado ou falhar, usa localStorage como fallback.
+ */
+export const getDailyResults = async (dateStr) => {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('daily_results')
+        .select('won, attempts')
+        .eq('date', dateStr);
+      if (!error && data) return data;
+    } catch { /* cai no fallback */ }
+  }
+
+  // Fallback: dados locais
+  try {
+    const all = JSON.parse(localStorage.getItem(DAILY_KEY) || '{}');
+    return all[dateStr] || [];
+  } catch {
+    return [];
+  }
 };
