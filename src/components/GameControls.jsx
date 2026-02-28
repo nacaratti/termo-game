@@ -54,6 +54,7 @@ const InstructionsModal = ({ onClose }) => (
         <li>Adivinhe a palavra oculta em <span className="text-primary font-semibold">6 tentativas</span>.</li>
         <li>A palavra tem exatamente <span className="text-primary font-semibold">5 letras</span>.</li>
         <li>Cada chute deve ser uma palavra válida do dicionário.</li>
+        <li>Pressione <span className="text-primary font-semibold">ENTER</span> (direita) para confirmar e <span className="text-primary font-semibold">⌫</span> (esquerda) para apagar.</li>
         <li>Após enviar, as cores revelam o quanto você se aproximou.</li>
       </ul>
 
@@ -99,7 +100,7 @@ const InstructionsModal = ({ onClose }) => (
 
       <hr className="border-slate-700 my-4" />
       <p className="text-xs text-slate-500 text-center">
-        Uma nova palavra está disponível a cada dia. Use <span className="text-primary">Nova Palavra</span> para praticar a qualquer hora.
+        Uma nova palavra está disponível a cada dia. Você tem <span className="text-primary font-semibold">uma tentativa por dia</span> — use bem!
       </p>
     </motion.div>
   </motion.div>
