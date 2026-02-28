@@ -14,13 +14,6 @@ export const getWordOfTheDay = (wordList) => {
   return wordList[diffDays % wordList.length].toUpperCase();
 };
 
-export const getTileStatus = (letter, index, solution) => {
-  if (solution[index] === letter) return 'correct';
-  if (solution.includes(letter)) return 'present';
-  return 'absent';
-};
-
-
 export const getTileStyling = (status, hasFocus) => {
   if (status === 'correct') return 'tile-correct bg-green-500 border-green-400 text-white';
   if (status === 'present') return 'tile-present bg-yellow-500 border-yellow-400 text-white';
@@ -39,26 +32,47 @@ export const getKeyboardKeyColor = (key, usedLetters) => {
 
 export const checkGuess = (guess, solution, currentUsedLetters) => {
   const newUsedLetters = { ...currentUsedLetters };
-  let isCorrect = true;
-  const guessEvaluation = Array(WORD_LENGTH).fill(null);
+  const guessArr = guess.split('');
+  const statuses = Array(WORD_LENGTH).fill('absent');
 
-  guess.split('').forEach((letter, index) => {
-    const status = getTileStatus(letter, index, solution);
-    guessEvaluation[index] = { letter, status };
+  // Contagem de letras disponíveis na solução para o passo 2
+  const available = {};
+  for (const letter of solution) {
+    available[letter] = (available[letter] || 0) + 1;
+  }
 
+  // Passagem 1: marcar corretos (verde) e descontar do disponível
+  for (let i = 0; i < WORD_LENGTH; i++) {
+    if (guessArr[i] === solution[i]) {
+      statuses[i] = 'correct';
+      available[guessArr[i]]--;
+    }
+  }
+
+  // Passagem 2: marcar presentes (amarelo) apenas se ainda houver ocorrências
+  for (let i = 0; i < WORD_LENGTH; i++) {
+    if (statuses[i] === 'correct') continue;
+    if (available[guessArr[i]] > 0) {
+      statuses[i] = 'present';
+      available[guessArr[i]]--;
+    }
+  }
+
+  const guessEvaluation = guessArr.map((letter, i) => ({ letter, status: statuses[i] }));
+  const isCorrect = statuses.every(s => s === 'correct');
+
+  // Atualizar teclado — prioridade: correct > present > absent
+  for (let i = 0; i < WORD_LENGTH; i++) {
+    const letter = guessArr[i];
+    const status = statuses[i];
     if (status === 'correct') {
       newUsedLetters[letter] = 'correct';
-    } else if (status === 'present') {
-      isCorrect = false;
-      if (newUsedLetters[letter] !== 'correct') {
-        newUsedLetters[letter] = 'present';
-      }
-    } else {
-      isCorrect = false;
-      if (!newUsedLetters[letter]) {
-        newUsedLetters[letter] = 'absent';
-      }
+    } else if (status === 'present' && newUsedLetters[letter] !== 'correct') {
+      newUsedLetters[letter] = 'present';
+    } else if (status === 'absent' && !newUsedLetters[letter]) {
+      newUsedLetters[letter] = 'absent';
     }
-  });
+  }
+
   return { newUsedLetters, isCorrect, guessEvaluation };
 };
