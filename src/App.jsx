@@ -86,10 +86,10 @@ const App = () => {
         />
 
         {isGameOver && (
-          <GameStatus 
+          <GameStatus
             isGameWon={isGameWon}
             solution={solution}
-            onPlayAgain={initializeGame}
+            onPlayAgain={resetGame}
           />
         )}
         
@@ -98,7 +98,7 @@ const App = () => {
           usedLetters={usedLetters}
           isGameOver={isGameOver}
         />
-        <GameControls onReset={resetGame} />
+        <GameControls />
       </main>
       
       <GameFooter />

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Info, RefreshCw, X } from 'lucide-react';
+import { Info, X } from 'lucide-react';
 
 const ExampleTile = ({ letter, status }) => {
   const colors = {
@@ -105,20 +105,12 @@ const InstructionsModal = ({ onClose }) => (
   </motion.div>
 );
 
-const GameControls = ({ onReset }) => {
+const GameControls = () => {
   const [showInstructions, setShowInstructions] = useState(false);
 
   return (
     <>
       <div className="flex gap-2 mt-6">
-        <Button
-          onClick={onReset}
-          variant="outline"
-          className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/60 font-semibold"
-          aria-label="Nova palavra"
-        >
-          <RefreshCw className="mr-1.5 sm:mr-2 h-4 w-4" /> Nova Palavra
-        </Button>
         <Button
           onClick={() => setShowInstructions(true)}
           variant="outline"
