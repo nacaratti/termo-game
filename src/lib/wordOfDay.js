@@ -34,6 +34,16 @@ export const setWordOfDay = (word) => {
   localStorage.setItem(WOD_KEY, JSON.stringify({ date: today, word: word.toUpperCase() }));
 };
 
+/** Computes the deterministic word for any given date string (YYYY-MM-DD). */
+export const getWordForDate = (dateStr) => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const start = new Date(2025, 0, 1);
+  const target = new Date(year, month - 1, day);
+  const days = Math.floor((target - start) / (1000 * 60 * 60 * 24));
+  const idx = ((days % SOLUTION_WORDS.length) + SOLUTION_WORDS.length) % SOLUTION_WORDS.length;
+  return SOLUTION_WORDS[idx].toUpperCase();
+};
+
 /** Returns the stored { date, word } object, or null if not set. */
 export const getStoredWordOfDay = () => {
   try {

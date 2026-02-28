@@ -35,7 +35,7 @@ const GameStatus = ({ isGameWon, solution, currentAttempt, submittedGuessesInfo,
   }, [isOpen, today]);
 
   const buildShareText = () => {
-    const attempt = isGameWon ? currentAttempt : MAX_GUESSES;
+    const attempt = isGameWon ? currentAttempt + 1 : MAX_GUESSES;
     const result = isGameWon ? `${attempt}/${MAX_GUESSES}` : `X/${MAX_GUESSES}`;
     const rows = (submittedGuessesInfo || [])
       .filter(Boolean)
@@ -98,7 +98,7 @@ const GameStatus = ({ isGameWon, solution, currentAttempt, submittedGuessesInfo,
                   <p className="text-4xl mb-1">🎉</p>
                   <h2 className="text-xl font-bold text-white">Você acertou!</h2>
                   <p className="text-zinc-500 text-sm mt-1">
-                    em <span className="text-white font-semibold">{currentAttempt}/{MAX_GUESSES}</span> tentativa{currentAttempt !== 1 ? 's' : ''}
+                    em <span className="text-white font-semibold">{currentAttempt + 1}/{MAX_GUESSES}</span> tentativa{currentAttempt + 1 !== 1 ? 's' : ''}
                   </p>
                 </>
               ) : (
@@ -136,7 +136,7 @@ const GameStatus = ({ isGameWon, solution, currentAttempt, submittedGuessesInfo,
                   {[1, 2, 3, 4, 5, 6].map(n => {
                     const count = distribution[n] || 0;
                     const pct = Math.round((count / maxVal) * 100);
-                    const isMine = isGameWon && currentAttempt === n;
+                    const isMine = isGameWon && currentAttempt + 1 === n;
                     return (
                       <div key={n} className="flex items-center gap-2 text-xs">
                         <span className="text-zinc-600 w-4 text-right shrink-0">{n}</span>

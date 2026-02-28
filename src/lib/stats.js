@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { getWordForDate } from '@/lib/wordOfDay';
 
 const STATS_KEY = 'termo_stats';
 const DAILY_KEY = 'termo_daily_results';
@@ -59,6 +60,96 @@ export const saveDailyResult = async (dateStr, won, attempts) => {
     try {
       await supabase.from('daily_results').insert({ date: dateStr, won, attempts });
     } catch { /* ignora erros de rede silenciosamente */ }
+  }
+};
+
+/**
+ * Retorna estatísticas globais de todos os jogos agregando registros do Supabase.
+ * Fallback para localStorage se Supabase não estiver disponível.
+ */
+export const getGlobalStats = async () => {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('daily_results')
+        .select('won, attempts');
+      if (!error && data) {
+        const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+        let totalAttempts = 0;
+        let wins = 0;
+        for (const r of data) {
+          totalAttempts += r.attempts;
+          if (r.won) {
+            wins++;
+            if (r.attempts >= 1 && r.attempts <= 6) distribution[r.attempts]++;
+          }
+        }
+        return {
+          totalGames: data.length,
+          wins,
+          losses: data.length - wins,
+          totalAttempts,
+          distribution,
+        };
+      }
+    } catch { /* fallback */ }
+  }
+  return getStats();
+};
+
+/**
+ * Salva a palavra do dia na tabela daily_words (upsert).
+ * Chamado pelo painel admin ao alterar a palavra.
+ */
+export const saveDailyWord = async (dateStr, word) => {
+  if (!supabase) return;
+  try {
+    await supabase.from('daily_words').upsert({ date: dateStr, word: word.toUpperCase() });
+  } catch { /* ignore */ }
+};
+
+/**
+ * Retorna o histórico de todos os dias com dados, ordenado do mais recente.
+ * Agrega daily_results por data e cruza com daily_words para obter a palavra.
+ * Fallback: computa a palavra pelo algoritmo padrão.
+ */
+export const getHistoricalData = async () => {
+  if (!supabase) return [];
+  try {
+    const [resultsRes, wordsRes] = await Promise.all([
+      supabase.from('daily_results').select('date, won, attempts'),
+      supabase.from('daily_words').select('date, word'),
+    ]);
+
+    const results = resultsRes.data || [];
+    const wordMap = {};
+    for (const w of (wordsRes.data || [])) wordMap[w.date] = w.word.toUpperCase();
+
+    const byDate = {};
+    for (const r of results) {
+      if (!byDate[r.date]) byDate[r.date] = [];
+      byDate[r.date].push(r);
+    }
+
+    return Object.entries(byDate)
+      .map(([date, rows]) => {
+        const wins = rows.filter(r => r.won).length;
+        const dist = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+        for (const r of rows) {
+          if (r.won && r.attempts >= 1 && r.attempts <= 6) dist[r.attempts]++;
+        }
+        return {
+          date,
+          word: wordMap[date] || getWordForDate(date),
+          totalGames: rows.length,
+          wins,
+          losses: rows.length - wins,
+          distribution: dist,
+        };
+      })
+      .sort((a, b) => b.date.localeCompare(a.date));
+  } catch {
+    return [];
   }
 };
 

@@ -39,8 +39,9 @@ export const useGameLogic = () => {
   const initializeGame = useCallback(() => {
     const today = getTodayDateStr();
     const saved = getCompletedGame(today);
+    const currentWord = getWordOfDay();
 
-    if (saved) {
+    if (saved && saved.solution === currentWord) {
       // Jogador já terminou o jogo hoje — restaura e bloqueia nova tentativa
       setSolution(saved.solution);
       setGuesses(saved.guesses);
@@ -67,7 +68,7 @@ export const useGameLogic = () => {
       }
       setUsedLetters(rebuilt);
     } else {
-      applyNewSolution(getWordOfDay());
+      applyNewSolution(currentWord);
     }
   }, [applyNewSolution]);
 
