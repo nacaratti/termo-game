@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import GameBoard from '@/components/GameBoard';
 import Keyboard from '@/components/Keyboard';
@@ -18,17 +18,27 @@ const App = () => {
     activeInputCol,
     isGameOver,
     isGameWon,
+    isRestored,
     usedLetters,
     submittedGuessesInfo,
-    initializeGame,
-    resetGame,
     handleTileFocus,
     processGuess,
     handleKeyboardPress,
-    setActiveInputCol
+    setActiveInputCol,
   } = useGameLogic();
   
   const mainContainerRef = useRef(null);
+  const [showResult, setShowResult] = useState(false);
+
+  // Abre o popup após o fim do jogo.
+  // Jogo novo: delay de 1.6s para esperar a animação dos tiles.
+  // Jogo restaurado (já jogou hoje): delay curto de 400ms.
+  useEffect(() => {
+    if (!isGameOver) return;
+    const delay = isRestored ? 400 : 1600;
+    const timer = setTimeout(() => setShowResult(true), delay);
+    return () => clearTimeout(timer);
+  }, [isGameOver]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     mainContainerRef.current?.focus();
@@ -89,15 +99,35 @@ const App = () => {
           <GameStatus
             isGameWon={isGameWon}
             solution={solution}
-            onPlayAgain={resetGame}
+            currentAttempt={currentAttempt}
+            submittedGuessesInfo={submittedGuessesInfo}
+            isOpen={showResult}
+            onClose={() => setShowResult(false)}
           />
         )}
         
-        <Keyboard 
+        <Keyboard
           onKeyPress={handleKeyboardPress}
           usedLetters={usedLetters}
           isGameOver={isGameOver}
         />
+
+        {isGameOver && !showResult && (
+          <div className="mt-3 flex flex-col items-center gap-2">
+            {isRestored && (
+              <p className="text-slate-500 text-xs text-center">
+                Você já jogou hoje. Volte amanhã para uma nova palavra.
+              </p>
+            )}
+            <button
+              onClick={() => setShowResult(true)}
+              className="text-sm text-slate-400 hover:text-primary border border-slate-700 hover:border-primary px-4 py-1.5 rounded-lg transition-colors"
+            >
+              Ver resultado
+            </button>
+          </div>
+        )}
+
         <GameControls />
       </main>
       

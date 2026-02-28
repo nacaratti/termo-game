@@ -48,7 +48,7 @@ export const SOLUTION_WORDS = [
   "PAGAR", "PALCO", "PALHA", "PAPEL", "PASTA", "PAUSA", "PEDRA", "PEGAR", "PENAS",
   "PERDA", "PERTO", "PIANO", "PILAR", "PISTA", "PLENA", "PODER", "POEMA", "POLVO",
   "POMBO", "PONTE", "PORTA", "POSTO", "POUCA", "POUCO", "PRACA", "PRATA", "PRESO",
-  "PRIMA", "PRIMO", "PROVA", "PULSO",
+  "PRIMA", "PRIMO", "PROVA", "PULSO", "PINTO",
   // Q
   "QUASE", "QUEDA", "QUERO",
   // R

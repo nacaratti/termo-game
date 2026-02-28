@@ -1,8 +1,12 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { WORD_LENGTH, MAX_GUESSES, wordList, VALID_WORDS_SET } from '@/config/constants';
-import { getWordOfTheDay as fetchWordOfTheDay, getRandomWord, checkGuess as evaluateGuess } from '@/lib/gameLogic';
+import { WORD_LENGTH, MAX_GUESSES } from '@/config/constants';
+import { checkGuess as evaluateGuess } from '@/lib/gameLogic';
+import { getWordOfDay, getTodayDateStr } from '@/lib/wordOfDay';
+import { saveGameResult, saveDailyResult } from '@/lib/stats';
+import { saveCompletedGame, getCompletedGame } from '@/lib/gameState';
+import { isValidGuess } from '@/lib/customWords';
 
 export const useGameLogic = () => {
   const [solution, setSolution] = useState('');
@@ -14,6 +18,8 @@ export const useGameLogic = () => {
   const [isGameWon, setIsGameWon] = useState(false);
   const [usedLetters, setUsedLetters] = useState({});
   const [submittedGuessesInfo, setSubmittedGuessesInfo] = useState(Array(MAX_GUESSES).fill(null));
+  // True quando o jogo é restaurado de uma sessão anterior (já jogou hoje)
+  const [isRestored, setIsRestored] = useState(false);
 
   const { toast } = useToast();
 
@@ -27,26 +33,47 @@ export const useGameLogic = () => {
     setIsGameWon(false);
     setUsedLetters({});
     setSubmittedGuessesInfo(Array(MAX_GUESSES).fill(null));
+    setIsRestored(false);
   }, []);
 
   const initializeGame = useCallback(() => {
-    applyNewSolution(fetchWordOfTheDay(wordList));
-  }, [applyNewSolution]);
+    const today = getTodayDateStr();
+    const saved = getCompletedGame(today);
 
-  const resetGame = useCallback(() => {
-    applyNewSolution(getRandomWord(wordList, solution));
-  }, [applyNewSolution, solution]);
+    if (saved) {
+      // Jogador já terminou o jogo hoje — restaura e bloqueia nova tentativa
+      setSolution(saved.solution);
+      setGuesses(saved.guesses);
+      setCurrentGuess(Array(WORD_LENGTH).fill(''));
+      setCurrentAttempt(saved.currentAttempt);
+      setActiveInputCol(0);
+      setIsGameOver(true);
+      setIsGameWon(saved.isGameWon);
+      setSubmittedGuessesInfo(saved.submittedGuessesInfo);
+      setIsRestored(true);
+
+      // Reconstrói as cores do teclado a partir das tentativas salvas
+      const rebuilt = {};
+      for (const row of (saved.submittedGuessesInfo || []).filter(Boolean)) {
+        for (const { letter, status } of row) {
+          if (status === 'correct') {
+            rebuilt[letter] = 'correct';
+          } else if (status === 'present' && rebuilt[letter] !== 'correct') {
+            rebuilt[letter] = 'present';
+          } else if (status === 'absent' && !rebuilt[letter]) {
+            rebuilt[letter] = 'absent';
+          }
+        }
+      }
+      setUsedLetters(rebuilt);
+    } else {
+      applyNewSolution(getWordOfDay());
+    }
+  }, [applyNewSolution]);
 
   useEffect(() => {
     initializeGame();
   }, [initializeGame]);
-
-  const handleTileChange = (index, value) => {
-    if (isGameOver || currentAttempt >= MAX_GUESSES) return;
-    const newGuess = [...currentGuess];
-    newGuess[index] = value.toUpperCase();
-    setCurrentGuess(newGuess);
-  };
 
   const handleTileFocus = (index) => {
     if (isGameOver || currentAttempt >= MAX_GUESSES) return;
@@ -65,7 +92,7 @@ export const useGameLogic = () => {
       return;
     }
 
-    if (!VALID_WORDS_SET.has(finalCurrentGuess)) {
+    if (!isValidGuess(finalCurrentGuess)) {
       toast({
         title: "Palavra inválida",
         description: "Esta palavra não está no dicionário.",
@@ -76,7 +103,7 @@ export const useGameLogic = () => {
     }
 
     const { newUsedLetters, isCorrect, guessEvaluation } = evaluateGuess(finalCurrentGuess, solution, usedLetters);
-    
+
     const newGuesses = [...guesses];
     newGuesses[currentAttempt] = finalCurrentGuess;
     setGuesses(newGuesses);
@@ -84,13 +111,24 @@ export const useGameLogic = () => {
     const newSubmittedInfo = [...submittedGuessesInfo];
     newSubmittedInfo[currentAttempt] = guessEvaluation;
     setSubmittedGuessesInfo(newSubmittedInfo);
-    
+
     setUsedLetters(newUsedLetters);
 
+    const today = getTodayDateStr();
 
     if (isCorrect) {
       setIsGameOver(true);
       setIsGameWon(true);
+      saveGameResult(true, currentAttempt + 1);
+      saveDailyResult(today, true, currentAttempt + 1);
+      saveCompletedGame({
+        dateStr: today,
+        solution,
+        guesses: newGuesses,
+        submittedGuessesInfo: newSubmittedInfo,
+        isGameWon: true,
+        currentAttempt,
+      });
       toast({
         title: "Parabéns!",
         description: "Você acertou a palavra!",
@@ -99,6 +137,16 @@ export const useGameLogic = () => {
       });
     } else if (currentAttempt + 1 >= MAX_GUESSES) {
       setIsGameOver(true);
+      saveGameResult(false, MAX_GUESSES);
+      saveDailyResult(today, false, MAX_GUESSES);
+      saveCompletedGame({
+        dateStr: today,
+        solution,
+        guesses: newGuesses,
+        submittedGuessesInfo: newSubmittedInfo,
+        isGameWon: false,
+        currentAttempt,
+      });
       toast({
         title: "Fim de jogo!",
         description: `A palavra era: ${solution}`,
@@ -138,7 +186,7 @@ export const useGameLogic = () => {
       }
     }
   };
-  
+
   return {
     solution,
     guesses,
@@ -147,13 +195,13 @@ export const useGameLogic = () => {
     activeInputCol,
     isGameOver,
     isGameWon,
+    isRestored,
     usedLetters,
     submittedGuessesInfo,
     initializeGame,
-    resetGame,
     handleTileFocus,
     processGuess,
     handleKeyboardPress,
-    setActiveInputCol
+    setActiveInputCol,
   };
 };
