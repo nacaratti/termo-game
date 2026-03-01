@@ -116,14 +116,16 @@ export const saveDailyWord = async (dateStr, word) => {
 export const getHistoricalData = async () => {
   if (!supabase) return [];
   try {
-    const [resultsRes, wordsRes] = await Promise.all([
-      supabase.from('daily_results').select('date, won, attempts'),
-      supabase.from('daily_words').select('date, word'),
-    ]);
-
+    const resultsRes = await supabase.from('daily_results').select('date, won, attempts');
     const results = resultsRes.data || [];
+    if (results.length === 0) return [];
+
+    // daily_words é opcional — se a tabela não existir ainda, usa palavra calculada
     const wordMap = {};
-    for (const w of (wordsRes.data || [])) wordMap[w.date] = w.word.toUpperCase();
+    try {
+      const wordsRes = await supabase.from('daily_words').select('date, word');
+      for (const w of (wordsRes.data || [])) wordMap[w.date] = w.word.toUpperCase();
+    } catch { /* tabela ainda não criada */ }
 
     const byDate = {};
     for (const r of results) {
