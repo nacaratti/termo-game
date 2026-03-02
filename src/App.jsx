@@ -60,8 +60,8 @@ const App = () => {
   return (
     <div
       ref={mainRef}
-      className="flex flex-col bg-black"
-      style={{ minHeight: '100dvh' }}
+      className="flex flex-col"
+      style={{ minHeight: '100dvh', backgroundColor: '#16181d' }}
       onClick={() => mainRef.current?.focus()}
     >
       <Toaster />

@@ -4,9 +4,9 @@ import { HelpCircle, X } from 'lucide-react';
 
 const ExampleTile = ({ letter, status }) => {
   const cls = {
-    correct: 'bg-[#538d4e] border-[#538d4e] text-white',
-    present: 'bg-[#b59f3b] border-[#b59f3b] text-white',
-    absent:  'bg-[#3a3a3a] border-[#3a3a3a] text-zinc-400',
+    correct: 'bg-[#6aaa64] border-[#6aaa64] text-white',
+    present: 'bg-[#c9a84c] border-[#c9a84c] text-white',
+    absent:  'bg-[#383b4a] border-[#383b4a] text-[#676a7a]',
   }[status];
   return (
     <span className={`inline-flex items-center justify-center w-9 h-9 border-2 font-bold text-sm ${cls}`}
@@ -58,7 +58,7 @@ const InstructionsModal = ({ onClose }) => (
               <ExampleTile letter="P" status="absent" />
               <ExampleTile letter="O" status="absent" />
             </div>
-            <p className="text-zinc-400"><span className="text-[#538d4e] font-semibold">T</span> está na posição correta.</p>
+            <p className="text-zinc-400"><span className="text-[#6aaa64] font-semibold">T</span> está na posição correta.</p>
           </div>
           <div>
             <div className="flex gap-1.5 mb-1.5">
@@ -68,7 +68,7 @@ const InstructionsModal = ({ onClose }) => (
               <ExampleTile letter="D" status="absent" />
               <ExampleTile letter="E" status="absent" />
             </div>
-            <p className="text-zinc-400"><span className="text-[#b59f3b] font-semibold">E</span> está na palavra, mas em outra posição.</p>
+            <p className="text-zinc-400"><span className="text-[#c9a84c] font-semibold">E</span> está na palavra, mas em outra posição.</p>
           </div>
           <div>
             <div className="flex gap-1.5 mb-1.5">
@@ -97,8 +97,8 @@ const GameHeader = () => {
     <>
       <header className="w-full flex items-center justify-between px-4 py-3 border-b border-zinc-800/60">
         <div className="w-9" />
-        <h1 className="text-xl font-black tracking-[0.3em] text-white uppercase select-none">
-          Penta
+        <h1 className="text-4xl font-black tracking-[0.3em] text-white uppercase select-none">
+          Pentada
         </h1>
         <button
           onClick={() => setShowInfo(true)}

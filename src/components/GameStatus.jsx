@@ -43,7 +43,7 @@ const GameStatus = ({ isGameWon, solution, currentAttempt, submittedGuessesInfo,
         status === 'correct' ? '🟩' : status === 'present' ? '🟨' : '⬛'
       ).join(''))
       .join('\n');
-    return `Penta ${today} ${result}\n\n${rows}`;
+    return `Pentada ${today} ${result}\n\n${rows}`;
   };
 
   const handleShare = () => {
@@ -143,7 +143,7 @@ const GameStatus = ({ isGameWon, solution, currentAttempt, submittedGuessesInfo,
                         <div className="flex-1 bg-zinc-800 rounded-sm h-5 overflow-hidden">
                           <div
                             className={`h-5 rounded-sm flex items-center justify-end pr-2 transition-all duration-500 ${
-                              isMine ? 'bg-white' : 'bg-[#538d4e]'
+                              isMine ? 'bg-white' : 'bg-[#6aaa64]'
                             }`}
                             style={{ width: `${Math.max(pct, count > 0 ? 10 : 0)}%` }}
                           >

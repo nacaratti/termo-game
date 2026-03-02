@@ -6,32 +6,32 @@
 
 @layer base {
   :root {
-    --background:         0 0% 4%;
+    --background:         222 14% 10%;
     --foreground:         0 0% 93%;
 
-    --card:               0 0% 8%;
+    --card:               222 12% 13%;
     --card-foreground:    0 0% 93%;
 
-    --popover:            0 0% 8%;
+    --popover:            222 12% 13%;
     --popover-foreground: 0 0% 93%;
 
     --primary:            0 0% 92%;
     --primary-foreground: 0 0% 5%;
 
-    --secondary:          0 0% 13%;
+    --secondary:          222 10% 17%;
     --secondary-foreground: 0 0% 65%;
 
-    --muted:              0 0% 13%;
+    --muted:              222 10% 17%;
     --muted-foreground:   0 0% 45%;
 
-    --accent:             0 0% 17%;
+    --accent:             222 10% 21%;
     --accent-foreground:  0 0% 92%;
 
     --destructive:        0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
-    --border:             0 0% 15%;
-    --input:              0 0% 10%;
+    --border:             222 12% 20%;
+    --input:              222 12% 14%;
     --ring:               0 0% 55%;
 
     --radius: 0.25rem;
@@ -58,35 +58,35 @@
 
 /* ─── Tiles ─────────────────────────────────────────────────────────────────── */
 .tile {
-  width: min(14vw, 60px);
-  height: min(14vw, 60px);
+  width: min(14vw, 68px);
+  height: min(14vw, 68px);
   @apply border-2 flex items-center justify-center font-bold uppercase select-none cursor-default;
-  font-size: clamp(1.1rem, 4vw, 1.5rem);
-  border-radius: 3px;
+  font-size: clamp(1.1rem, 4vw, 1.6rem);
+  border-radius: 4px;
   letter-spacing: 0.02em;
   transition: border-color 0.1s ease;
 }
 
-.tile-empty  { background: transparent;  border-color: #2a2a2a; color: transparent; }
-.tile-filled { background: #1a1a1a;      border-color: #555555; color: #f0f0f0; }
-.tile-active { background: transparent;  border-color: #888888; color: #f0f0f0; }
+.tile-empty  { background: transparent;  border-color: #2c2f3a; color: transparent; }
+.tile-filled { background: #22252f;      border-color: #4c4f5e; color: #f0f0f0; }
+.tile-active { background: transparent;  border-color: #7a7d8e; color: #f0f0f0; }
 
 .tile-correct {
-  background: #538d4e;
-  border-color: #538d4e;
+  background: #6aaa64;
+  border-color: #6aaa64;
   color: #fff;
   animation: tileReveal 0.5s ease forwards;
 }
 .tile-present {
-  background: #b59f3b;
-  border-color: #b59f3b;
+  background: #c9a84c;
+  border-color: #c9a84c;
   color: #fff;
   animation: tileReveal 0.5s ease forwards;
 }
 .tile-absent {
-  background: #3a3a3a;
-  border-color: #3a3a3a;
-  color: #888;
+  background: #383b4a;
+  border-color: #383b4a;
+  color: #676a7a;
   animation: tileReveal 0.5s ease forwards;
 }
 
@@ -114,7 +114,7 @@
   transform: scale(0.96);
 }
 
-.key-default { background: #818384; color: #fff; }
-.key-correct { background: #538d4e; color: #fff; }
-.key-present { background: #b59f3b; color: #fff; }
-.key-absent  { background: #3a3a3a; color: #555; cursor: not-allowed; opacity: 0.7; }
+.key-default { background: #5a5d70; color: #e8e9ee; }
+.key-correct { background: #6aaa64; color: #fff; }
+.key-present { background: #c9a84c; color: #fff; }
+.key-absent  { background: #2a2d39; color: #484b5a; cursor: not-allowed; opacity: 0.8; }
