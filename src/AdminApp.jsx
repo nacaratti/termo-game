@@ -97,6 +97,8 @@ const LoginScreen = ({ onLogin }) => {
         <Card>
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <Input
+              id="admin-email"
+              name="email"
               type="email"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setError(''); }}
@@ -106,6 +108,8 @@ const LoginScreen = ({ onLogin }) => {
               className="w-full"
             />
             <Input
+              id="admin-password"
+              name="password"
               type="password"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError(''); }}
