@@ -15,7 +15,7 @@ const Keyboard = ({ onKeyPress, usedLetters, isGameOver }) => (
             <button
               key={key}
               onClick={() => onKeyPress(key)}
-              disabled={isGameOver || usedLetters[key] === 'absent'}
+              disabled={isGameOver}
               aria-label={key === 'BACKSPACE' ? 'Apagar' : key === 'ENTER' ? 'Enviar' : `Tecla ${key}`}
               className={`keyboard-key ${colorClass} ${
                 isSpecial
