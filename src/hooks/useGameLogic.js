@@ -5,7 +5,7 @@ import { WORD_LENGTH, MAX_GUESSES } from '@/config/constants';
 import { checkGuess as evaluateGuess } from '@/lib/gameLogic';
 import { initWordOfDay, getTodayDateStr } from '@/lib/wordOfDay';
 import { saveGameResult, saveDailyResult } from '@/lib/stats';
-import { saveCompletedGame, getCompletedGame } from '@/lib/gameState';
+import { saveGameProgress, saveCompletedGame, getSavedGame } from '@/lib/gameState';
 import { isValidGuess } from '@/lib/customWords';
 
 export const useGameLogic = () => {
@@ -40,21 +40,10 @@ export const useGameLogic = () => {
   const initializeGame = useCallback(async () => {
     setIsLoading(true);
     const today = getTodayDateStr();
-    const saved = getCompletedGame(today);
     const currentWord = await initWordOfDay();
+    const saved = getSavedGame(today, currentWord);
 
-    if (saved && saved.solution === currentWord) {
-      // Jogador já terminou o jogo hoje — restaura e bloqueia nova tentativa
-      setSolution(saved.solution);
-      setGuesses(saved.guesses);
-      setCurrentGuess(Array(WORD_LENGTH).fill(''));
-      setCurrentAttempt(saved.currentAttempt);
-      setActiveInputCol(0);
-      setIsGameOver(true);
-      setIsGameWon(saved.isGameWon);
-      setSubmittedGuessesInfo(saved.submittedGuessesInfo);
-      setIsRestored(true);
-
+    if (saved) {
       // Reconstrói as cores do teclado a partir das tentativas salvas
       const rebuilt = {};
       for (const row of (saved.submittedGuessesInfo || []).filter(Boolean)) {
@@ -68,7 +57,27 @@ export const useGameLogic = () => {
           }
         }
       }
+
+      setSolution(saved.solution);
+      setGuesses(saved.guesses);
+      setCurrentGuess(Array(WORD_LENGTH).fill(''));
+      setSubmittedGuessesInfo(saved.submittedGuessesInfo);
       setUsedLetters(rebuilt);
+      setActiveInputCol(0);
+
+      if (saved.isGameOver) {
+        // Jogo terminado — restaura e bloqueia
+        setCurrentAttempt(saved.currentAttempt);
+        setIsGameOver(true);
+        setIsGameWon(saved.isGameWon);
+        setIsRestored(true);
+      } else {
+        // Jogo em andamento — restaura tentativas mas permite continuar
+        setCurrentAttempt(saved.currentAttempt + 1);
+        setIsGameOver(false);
+        setIsGameWon(false);
+        setIsRestored(false);
+      }
     } else {
       applyNewSolution(currentWord);
     }
@@ -158,6 +167,14 @@ export const useGameLogic = () => {
         duration: 4000,
       });
     } else {
+      // Salva progresso para restaurar ao recarregar a página
+      saveGameProgress({
+        dateStr: today,
+        solution,
+        guesses: newGuesses,
+        submittedGuessesInfo: newSubmittedInfo,
+        currentAttempt,
+      });
       setCurrentAttempt(currentAttempt + 1);
       setCurrentGuess(Array(WORD_LENGTH).fill(''));
       setActiveInputCol(0);
