@@ -1,4 +1,5 @@
 import { VALID_WORDS_SET } from '@/config/constants';
+import { normalizeWord } from '@/lib/normalize';
 
 const CUSTOM_KEY = 'termo_custom_words';
 
@@ -27,5 +28,7 @@ export const removeCustomWord = (word) => {
 };
 
 export const isValidGuess = (word) => {
-  return VALID_WORDS_SET.has(word) || getCustomWords().includes(word);
+  // Aceita tanto a forma digitada (GRACA) quanto a canônica (GRAÇA),
+  // pois VALID_WORDS_SET contém formas normalizadas.
+  return VALID_WORDS_SET.has(normalizeWord(word)) || getCustomWords().includes(word);
 };

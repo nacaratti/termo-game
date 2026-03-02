@@ -124,7 +124,7 @@ export const useGameLogic = () => {
       setIsGameOver(true);
       setIsGameWon(true);
       saveGameResult(true, currentAttempt + 1);
-      saveDailyResult(today, true, currentAttempt + 1);
+      saveDailyResult(today, solution, true, currentAttempt + 1);
       saveCompletedGame({
         dateStr: today,
         solution,
@@ -142,7 +142,7 @@ export const useGameLogic = () => {
     } else if (currentAttempt + 1 >= MAX_GUESSES) {
       setIsGameOver(true);
       saveGameResult(false, MAX_GUESSES);
-      saveDailyResult(today, false, MAX_GUESSES);
+      saveDailyResult(today, solution, false, MAX_GUESSES);
       saveCompletedGame({
         dateStr: today,
         solution,

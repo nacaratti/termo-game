@@ -17,7 +17,7 @@ const BDR2 = '#363a47';
 // ─── Primitivos de UI ─────────────────────────────────────────────────────────
 const Card = ({ children, className = '' }) => (
   <div
-    className={`rounded-xl p-5 border ${className}`}
+    className={`rounded-xl p-4 sm:p-5 border ${className}`}
     style={{ backgroundColor: CARD, borderColor: BDR }}
   >
     {children}
@@ -131,6 +131,26 @@ const LoginScreen = ({ onLogin }) => {
   );
 };
 
+// Célula de estatística — fundo colorido no mobile, sem fundo no desktop
+const StatCell = ({ value, label, color }) => {
+  const [isMobile, setIsMobile] = React.useState(() => window.innerWidth < 640);
+  React.useEffect(() => {
+    const mq = window.matchMedia('(min-width: 640px)');
+    const handler = (e) => setIsMobile(!e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return (
+    <div
+      className="rounded-lg p-2 sm:p-0 text-center"
+      style={{ backgroundColor: isMobile ? SURF : 'transparent' }}
+    >
+      <p className={`text-lg sm:text-2xl font-black ${color}`}>{value}</p>
+      <p className="text-zinc-500 text-xs">{label}</p>
+    </div>
+  );
+};
+
 // ─── Barra de distribuição ────────────────────────────────────────────────────
 const DistBar = ({ label, count, maxVal, highlight = false, danger = false }) => {
   const pct = Math.round((count / Math.max(maxVal, 1)) * 100);
@@ -165,8 +185,8 @@ const WordOfDayPanel = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getDailyResults(today).then(data => { setResults(data); setLoading(false); });
-  }, [today]);
+    getDailyResults(today, currentWord).then(data => { setResults(data); setLoading(false); });
+  }, [today, currentWord]);
 
   const wins = results.filter(r => r.won).length;
   const losses = results.filter(r => !r.won).length;
@@ -177,34 +197,42 @@ const WordOfDayPanel = () => {
   }
   const maxDist = Math.max(...Object.values(dist), 1);
 
+  const applyWord = async (word) => {
+    setWordOfDay(word);
+    setCurrentWord(word);
+    setNewWord('');
+    try {
+      await saveDailyWord(today, word);
+      setFeedback({ type: 'ok', msg: `Palavra "${word}" salva com sucesso. Recarregue o jogo para aplicar.` });
+    } catch {
+      setFeedback({ type: 'error', msg: `Palavra "${word}" salva localmente, mas falhou ao sincronizar. Verifique o Supabase.` });
+    }
+    setTimeout(() => setFeedback(null), 6000);
+  };
+
   const handleChange = async (e) => {
     e.preventDefault();
     const upper = newWord.toUpperCase().trim();
     if (upper.length !== 5) return setFeedback({ type: 'error', msg: 'A palavra deve ter exatamente 5 letras.' });
-    if (!/^[A-Z]+$/.test(upper)) return setFeedback({ type: 'error', msg: 'Use apenas letras sem acentos.' });
-    setWordOfDay(upper);
-    setCurrentWord(upper);
-    setNewWord('');
-    try {
-      await saveDailyWord(today, upper);
-      setFeedback({ type: 'ok', msg: `Palavra "${upper}" salva com sucesso. Recarregue o jogo para aplicar.` });
-    } catch {
-      setFeedback({ type: 'error', msg: `Palavra "${upper}" salva localmente, mas falhou ao sincronizar com o banco. Verifique a conexão com o Supabase.` });
-    }
-    setTimeout(() => setFeedback(null), 6000);
+    await applyWord(upper);
+  };
+
+  const handleSortear = async () => {
+    const word = SOLUTION_WORDS[Math.floor(Math.random() * SOLUTION_WORDS.length)];
+    await applyWord(word);
   };
 
   return (
     <div className="space-y-4">
       <Card>
         <SectionTitle>Palavra do dia — {today}</SectionTitle>
-        <p className="font-mono text-5xl font-black text-white tracking-[0.35em] mb-5">
+        <p className="font-mono text-4xl sm:text-5xl font-black text-white tracking-[0.3em] sm:tracking-[0.35em] mb-5">
           {currentWord}
         </p>
         <form onSubmit={handleChange} className="flex gap-2">
           <Input
             value={newWord}
-            onChange={(e) => setNewWord(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))}
+            onChange={(e) => setNewWord(e.target.value.toUpperCase().replace(/[^A-ZÁÂÃÀÉÊÍÓÔÕÚÜÇ]/g, ''))}
             maxLength={5}
             placeholder="Nova palavra"
             className="flex-1 font-mono text-lg tracking-widest uppercase"
@@ -213,6 +241,13 @@ const WordOfDayPanel = () => {
             Alterar
           </BtnPrimary>
         </form>
+        <button
+          onClick={handleSortear}
+          className="w-full mt-2 py-2.5 rounded-lg text-sm font-semibold border transition-colors text-zinc-300 hover:text-white"
+          style={{ borderColor: BDR, backgroundColor: SURF }}
+        >
+          🎲 Sortear palavra do novo banco
+        </button>
         {feedback && (
           <p className={`mt-3 text-sm ${feedback.type === 'ok' ? 'text-[#6aaa64]' : 'text-red-400'}`}>
             {feedback.msg}
@@ -462,28 +497,20 @@ const HistoryPanel = () => {
         const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
         return (
           <Card key={date}>
-            <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
               <div>
                 <p className="text-zinc-500 text-xs mb-0.5">{date}</p>
-                <p className="font-mono text-3xl font-black text-white tracking-[0.3em]">{word}</p>
+                <p className="font-mono text-2xl sm:text-3xl font-black text-white tracking-[0.3em]">{word}</p>
               </div>
-              <div className="flex gap-4 text-center shrink-0">
-                <div>
-                  <p className="text-2xl font-black text-white">{totalGames}</p>
-                  <p className="text-zinc-500 text-xs">jogos</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-black text-[#6aaa64]">{wins}</p>
-                  <p className="text-zinc-500 text-xs">acertos</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-black text-zinc-400">{losses}</p>
-                  <p className="text-zinc-500 text-xs">erros</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-black text-[#c9a84c]">{winRate}%</p>
-                  <p className="text-zinc-500 text-xs">taxa</p>
-                </div>
+              <div className="grid grid-cols-4 sm:flex sm:gap-4 gap-2 text-center">
+                {[
+                  { value: totalGames,    label: 'jogos',   color: 'text-white'     },
+                  { value: wins,          label: 'acertos', color: 'text-[#6aaa64]' },
+                  { value: losses,        label: 'erros',   color: 'text-zinc-400'  },
+                  { value: `${winRate}%`, label: 'taxa',    color: 'text-[#c9a84c]' },
+                ].map(({ value, label, color }) => (
+                  <StatCell key={label} value={value} label={label} color={color} />
+                ))}
               </div>
             </div>
 
@@ -504,10 +531,10 @@ const HistoryPanel = () => {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 const tabs = [
-  { id: 'wod',     label: 'Palavra do Dia' },
-  { id: 'stats',   label: 'Estatísticas'   },
-  { id: 'history', label: 'Histórico'      },
-  { id: 'words',   label: 'Palavras'       },
+  { id: 'wod',     label: 'Palavra do Dia', short: 'Hoje'      },
+  { id: 'stats',   label: 'Estatísticas',   short: 'Stats'     },
+  { id: 'history', label: 'Histórico',      short: 'Histórico' },
+  { id: 'words',   label: 'Palavras',       short: 'Palavras'  },
 ];
 
 const Dashboard = ({ onLogout }) => {
@@ -531,9 +558,10 @@ const Dashboard = ({ onLogout }) => {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto w-full px-4 py-6 flex-1">
+      <main className="max-w-3xl mx-auto w-full px-4 py-6 flex-1 pb-24 sm:pb-6">
+        {/* Tabs — visíveis apenas em telas maiores */}
         <div
-          className="flex gap-1 mb-6 rounded-xl p-1 w-fit border"
+          className="hidden sm:flex gap-1 mb-6 rounded-xl p-1 w-fit border"
           style={{ backgroundColor: CARD, borderColor: BDR }}
         >
           {tabs.map(tab => (
@@ -554,6 +582,26 @@ const Dashboard = ({ onLogout }) => {
         {activeTab === 'history' && <HistoryPanel />}
         {activeTab === 'words'   && <WordsPanel />}
       </main>
+
+      {/* Navegação inferior — apenas mobile */}
+      <nav
+        className="sm:hidden fixed bottom-0 inset-x-0 border-t z-20 flex"
+        style={{ backgroundColor: CARD, borderColor: BDR, paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex-1 py-3 text-xs font-semibold transition-colors border-t-2 ${
+              activeTab === tab.id
+                ? 'text-white border-white'
+                : 'text-zinc-500 border-transparent'
+            }`}
+          >
+            {tab.short}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 };

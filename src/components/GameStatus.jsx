@@ -31,7 +31,7 @@ const GameStatus = ({ isGameWon, solution, currentAttempt, submittedGuessesInfo,
 
   useEffect(() => {
     if (!isOpen) return;
-    getDailyResults(today).then(setTodayResults);
+    getDailyResults(today, solution).then(setTodayResults);
   }, [isOpen, today]);
 
   const buildShareText = () => {

@@ -1,5 +1,6 @@
 
 import { WORD_LENGTH } from '@/config/constants';
+import { normalizeLetter } from '@/lib/normalize';
 
 export const getRandomWord = (words, exclude = '') => {
   const pool = exclude ? words.filter(w => w !== exclude) : words;
@@ -34,44 +35,55 @@ export const getKeyboardKeyColor = (key, usedLetters) => {
 export const checkGuess = (guess, solution, currentUsedLetters) => {
   const newUsedLetters = { ...currentUsedLetters };
   const guessArr = guess.split('');
+  const solutionArr = solution.split('');
   const statuses = Array(WORD_LENGTH).fill('absent');
 
-  // Contagem de letras disponíveis na solução para o passo 2
+  // Comparações sempre usam letras normalizadas (sem acento/ç)
+  // para que GRACA bata com GRAÇA, ACAO bata com AÇÃO, etc.
+  const normGuess    = guessArr.map(normalizeLetter);
+  const normSolution = solutionArr.map(normalizeLetter);
+
+  // Contagem de letras disponíveis na solução (formas normalizadas)
   const available = {};
-  for (const letter of solution) {
-    available[letter] = (available[letter] || 0) + 1;
+  for (const nl of normSolution) {
+    available[nl] = (available[nl] || 0) + 1;
   }
 
-  // Passagem 1: marcar corretos (verde) e descontar do disponível
+  // Passagem 1: corretos (posição + letra batem)
   for (let i = 0; i < WORD_LENGTH; i++) {
-    if (guessArr[i] === solution[i]) {
+    if (normGuess[i] === normSolution[i]) {
       statuses[i] = 'correct';
-      available[guessArr[i]]--;
+      available[normGuess[i]]--;
     }
   }
 
-  // Passagem 2: marcar presentes (amarelo) apenas se ainda houver ocorrências
+  // Passagem 2: presentes (letra existe mas em posição errada)
   for (let i = 0; i < WORD_LENGTH; i++) {
     if (statuses[i] === 'correct') continue;
-    if (available[guessArr[i]] > 0) {
+    if (available[normGuess[i]] > 0) {
       statuses[i] = 'present';
-      available[guessArr[i]]--;
+      available[normGuess[i]]--;
     }
   }
 
-  const guessEvaluation = guessArr.map((letter, i) => ({ letter, status: statuses[i] }));
+  // Para tiles corretos (verde), exibe a letra canônica da solução (ex: Ç em vez de C).
+  // Para tiles presentes/ausentes, mantém a letra digitada.
+  const guessEvaluation = guessArr.map((letter, i) => ({
+    letter: statuses[i] === 'correct' ? solutionArr[i] : letter,
+    status: statuses[i],
+  }));
   const isCorrect = statuses.every(s => s === 'correct');
 
-  // Atualizar teclado — prioridade: correct > present > absent
+  // Teclado usa a letra normalizada (A-Z) — prioridade: correct > present > absent
   for (let i = 0; i < WORD_LENGTH; i++) {
-    const letter = guessArr[i];
+    const key    = normGuess[i]; // letra do teclado (A-Z)
     const status = statuses[i];
     if (status === 'correct') {
-      newUsedLetters[letter] = 'correct';
-    } else if (status === 'present' && newUsedLetters[letter] !== 'correct') {
-      newUsedLetters[letter] = 'present';
-    } else if (status === 'absent' && !newUsedLetters[letter]) {
-      newUsedLetters[letter] = 'absent';
+      newUsedLetters[key] = 'correct';
+    } else if (status === 'present' && newUsedLetters[key] !== 'correct') {
+      newUsedLetters[key] = 'present';
+    } else if (status === 'absent' && !newUsedLetters[key]) {
+      newUsedLetters[key] = 'absent';
     }
   }
 

@@ -40,32 +40,34 @@ export const resetStats = () => {
   localStorage.removeItem(STATS_KEY);
 };
 
-// ─── Per-day results (global via Supabase, local como fallback) ───────────────
+// ─── Per-word results (global via Supabase, local como fallback) ──────────────
 
 /**
- * Salva o resultado no Supabase (compartilhado entre todos os dispositivos)
- * e também no localStorage como cache offline.
+ * Salva o resultado associado à palavra específica — não apenas à data.
+ * Se admin trocar a palavra no mesmo dia, cada palavra acumula seus próprios resultados.
  */
-export const saveDailyResult = async (dateStr, won, attempts) => {
-  // Salva localmente (cache / fallback offline)
+export const saveDailyResult = async (dateStr, word, won, attempts) => {
+  const upperWord = word.toUpperCase();
+
+  // Salva localmente com chave (date|word) para separar palavras do mesmo dia
   try {
     const all = JSON.parse(localStorage.getItem(DAILY_KEY) || '{}');
-    if (!all[dateStr]) all[dateStr] = [];
-    all[dateStr].push({ won, attempts });
+    const key = `${dateStr}|${upperWord}`;
+    if (!all[key]) all[key] = [];
+    all[key].push({ won, attempts });
     localStorage.setItem(DAILY_KEY, JSON.stringify(all));
   } catch { /* ignore */ }
 
-  // Salva no Supabase para ranking global
+  // Salva no Supabase com a coluna word
   if (supabase) {
     try {
-      await supabase.from('daily_results').insert({ date: dateStr, won, attempts });
+      await supabase.from('daily_results').insert({ date: dateStr, word: upperWord, won, attempts });
     } catch { /* ignora erros de rede silenciosamente */ }
   }
 };
 
 /**
- * Retorna estatísticas globais de todos os jogos agregando registros do Supabase.
- * Fallback para localStorage se Supabase não estiver disponível.
+ * Retorna estatísticas globais de todos os jogos.
  */
 export const getGlobalStats = async () => {
   if (supabase) {
@@ -99,8 +101,6 @@ export const getGlobalStats = async () => {
 
 /**
  * Salva a palavra do dia na tabela daily_words (upsert).
- * Chamado pelo painel admin ao alterar a palavra.
- * Lança erro para que o chamador possa exibir feedback adequado.
  */
 export const saveDailyWord = async (dateStr, word) => {
   if (!supabase) return;
@@ -114,32 +114,31 @@ export const saveDailyWord = async (dateStr, word) => {
 };
 
 /**
- * Retorna o histórico de todos os dias com dados, ordenado do mais recente.
- * Agrega daily_results por data e cruza com daily_words para obter a palavra.
- * Fallback: computa a palavra pelo algoritmo padrão.
+ * Retorna o histórico agrupado por (date, word).
+ * Se a palavra mudar no mesmo dia, aparecem como entradas separadas no histórico.
  */
 export const getHistoricalData = async () => {
   if (!supabase) return [];
   try {
-    const resultsRes = await supabase.from('daily_results').select('date, won, attempts');
+    const resultsRes = await supabase.from('daily_results').select('date, word, won, attempts');
     const results = resultsRes.data || [];
     if (results.length === 0) return [];
 
-    // daily_words é opcional — se a tabela não existir ainda, usa palavra calculada
-    const wordMap = {};
-    try {
-      const wordsRes = await supabase.from('daily_words').select('date, word');
-      for (const w of (wordsRes.data || [])) wordMap[w.date] = w.word.toUpperCase();
-    } catch { /* tabela ainda não criada */ }
-
-    const byDate = {};
+    // Agrupa por (date, word) — palavras diferentes no mesmo dia ficam separadas.
+    // Registros sem word (pré-migração) usam o cálculo determinístico — nunca a
+    // palavra atual de daily_words, pois ela já pode ter sido trocada pelo admin.
+    const byKey = {};
     for (const r of results) {
-      if (!byDate[r.date]) byDate[r.date] = [];
-      byDate[r.date].push(r);
+      const word = r.word
+        ? r.word.toUpperCase()
+        : getWordForDate(r.date);
+      const key = `${r.date}|${word}`;
+      if (!byKey[key]) byKey[key] = { date: r.date, word, rows: [] };
+      byKey[key].rows.push(r);
     }
 
-    return Object.entries(byDate)
-      .map(([date, rows]) => {
+    return Object.values(byKey)
+      .map(({ date, word, rows }) => {
         const wins = rows.filter(r => r.won).length;
         const dist = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
         for (const r of rows) {
@@ -147,38 +146,42 @@ export const getHistoricalData = async () => {
         }
         return {
           date,
-          word: wordMap[date] || getWordForDate(date),
+          word,
           totalGames: rows.length,
           wins,
           losses: rows.length - wins,
           distribution: dist,
         };
       })
-      .sort((a, b) => b.date.localeCompare(a.date));
+      .sort((a, b) => b.date.localeCompare(a.date) || b.word.localeCompare(a.word));
   } catch {
     return [];
   }
 };
 
 /**
- * Busca os resultados do dia no Supabase.
- * Usa localStorage como fallback quando Supabase não está disponível,
- * falha ou retorna lista vazia (ex: RLS bloqueando sem lançar exceção).
+ * Busca os resultados de uma palavra específica.
+ * Filtra por (date, word) para não misturar resultados de palavras diferentes do mesmo dia.
  */
-export const getDailyResults = async (dateStr) => {
-  // Sempre carrega o cache local (garante dados do dispositivo atual)
+export const getDailyResults = async (dateStr, word) => {
+  const upperWord = word?.toUpperCase();
+
+  // Cache local
   let localResults = [];
   try {
     const all = JSON.parse(localStorage.getItem(DAILY_KEY) || '{}');
-    localResults = all[dateStr] || [];
+    // Tenta chave nova (date|word), fallback para chave antiga (date) para compatibilidade
+    localResults = (upperWord && all[`${dateStr}|${upperWord}`]) || all[dateStr] || [];
   } catch { /* ignore */ }
 
   if (supabase) {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('daily_results')
         .select('won, attempts')
         .eq('date', dateStr);
+      if (upperWord) query = query.eq('word', upperWord);
+      const { data, error } = await query;
       if (!error && data && data.length > 0) return data;
     } catch (err) {
       if (import.meta.env.DEV) console.error('[Supabase] getDailyResults:', err);
