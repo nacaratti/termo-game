@@ -43,7 +43,7 @@ const GameStatus = ({ isGameWon, solution, currentAttempt, submittedGuessesInfo,
         status === 'correct' ? '🟩' : status === 'present' ? '🟨' : '⬛'
       ).join(''))
       .join('\n');
-    return `Pentada ${today} ${result}\n\n${rows}`;
+    return `Kinto ${today} ${result}\n\n${rows}`;
   };
 
   const handleShare = () => {

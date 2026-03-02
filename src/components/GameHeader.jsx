@@ -98,7 +98,7 @@ const GameHeader = () => {
       <header className="w-full flex items-center justify-between px-4 py-3 border-b border-zinc-800/60">
         <div className="w-9" />
         <h1 className="text-4xl font-black tracking-[0.3em] text-white uppercase select-none">
-          Pentada
+          Kinto
         </h1>
         <button
           onClick={() => setShowInfo(true)}

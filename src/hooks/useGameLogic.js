@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { WORD_LENGTH, MAX_GUESSES } from '@/config/constants';
 import { checkGuess as evaluateGuess } from '@/lib/gameLogic';
-import { getWordOfDay, getTodayDateStr } from '@/lib/wordOfDay';
+import { initWordOfDay, getTodayDateStr } from '@/lib/wordOfDay';
 import { saveGameResult, saveDailyResult } from '@/lib/stats';
 import { saveCompletedGame, getCompletedGame } from '@/lib/gameState';
 import { isValidGuess } from '@/lib/customWords';
@@ -20,6 +20,7 @@ export const useGameLogic = () => {
   const [submittedGuessesInfo, setSubmittedGuessesInfo] = useState(Array(MAX_GUESSES).fill(null));
   // True quando o jogo é restaurado de uma sessão anterior (já jogou hoje)
   const [isRestored, setIsRestored] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const { toast } = useToast();
 
@@ -36,10 +37,11 @@ export const useGameLogic = () => {
     setIsRestored(false);
   }, []);
 
-  const initializeGame = useCallback(() => {
+  const initializeGame = useCallback(async () => {
+    setIsLoading(true);
     const today = getTodayDateStr();
     const saved = getCompletedGame(today);
-    const currentWord = getWordOfDay();
+    const currentWord = await initWordOfDay();
 
     if (saved && saved.solution === currentWord) {
       // Jogador já terminou o jogo hoje — restaura e bloqueia nova tentativa
@@ -70,6 +72,7 @@ export const useGameLogic = () => {
     } else {
       applyNewSolution(currentWord);
     }
+    setIsLoading(false);
   }, [applyNewSolution]);
 
   useEffect(() => {
@@ -197,6 +200,7 @@ export const useGameLogic = () => {
     isGameOver,
     isGameWon,
     isRestored,
+    isLoading,
     usedLetters,
     submittedGuessesInfo,
     initializeGame,

@@ -3,9 +3,8 @@ import { SOLUTION_WORDS, VALID_WORDS_SET } from '@/data/wordList';
 import { getGlobalStats, getDailyResults, saveDailyWord, getHistoricalData } from '@/lib/stats';
 import { getCustomWords, addCustomWord, removeCustomWord } from '@/lib/customWords';
 import { getWordOfDay, setWordOfDay, getTodayDateStr } from '@/lib/wordOfDay';
+import { supabase } from '@/lib/supabase';
 
-const ADMIN_PASSWORD = 'termo@admin';
-const AUTH_KEY = 'termo_admin_auth';
 const PAGE_SIZE = 50;
 
 // Paleta do admin — espelha o jogo
@@ -62,17 +61,29 @@ const BtnGhost = ({ children, className = '', ...props }) => (
 
 // ─── Login ────────────────────────────────────────────────────────────────────
 const LoginScreen = ({ onLogin }) => {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      sessionStorage.setItem(AUTH_KEY, '1');
-      onLogin();
-    } else {
-      setError('Senha incorreta.');
+    if (!supabase) {
+      setError('Supabase não configurado.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    setLoading(false);
+    if (authError) {
+      setError('Email ou senha incorretos.');
       setPassword('');
+    } else {
+      onLogin();
     }
   };
 
@@ -80,21 +91,32 @@ const LoginScreen = ({ onLogin }) => {
     <div className="min-h-dvh flex items-center justify-center p-4" style={{ backgroundColor: BG }}>
       <div className="w-full max-w-xs">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-black tracking-[0.3em] text-white uppercase">Pentada</h1>
+          <h1 className="text-2xl font-black tracking-[0.3em] text-white uppercase">Kinto</h1>
           <p className="text-zinc-500 text-sm mt-1">Painel Admin</p>
         </div>
         <Card>
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <Input
+              type="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setError(''); }}
+              placeholder="Email"
+              autoFocus
+              disabled={loading}
+              className="w-full"
+            />
+            <Input
               type="password"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError(''); }}
               placeholder="Senha"
-              autoFocus
+              disabled={loading}
               className="w-full"
             />
             {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-            <BtnPrimary type="submit" className="py-2.5">Entrar</BtnPrimary>
+            <BtnPrimary type="submit" disabled={loading} className="py-2.5">
+              {loading ? 'Entrando…' : 'Entrar'}
+            </BtnPrimary>
           </form>
         </Card>
         <p className="text-zinc-700 text-xs text-center mt-5">
@@ -491,7 +513,7 @@ const Dashboard = ({ onLogout }) => {
     <div className="min-h-dvh text-white flex flex-col" style={{ backgroundColor: BG }}>
       <header className="sticky top-0 z-10 border-b" style={{ backgroundColor: BG, borderColor: BDR }}>
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="font-black tracking-[0.3em] text-white text-lg uppercase">Pentada</h1>
+          <h1 className="font-black tracking-[0.3em] text-white text-lg uppercase">Kinto</h1>
           <div className="flex items-center gap-3">
             <a href="/" className="text-xs text-zinc-500 hover:text-white transition-colors">← Jogo</a>
             <button
@@ -534,14 +556,28 @@ const Dashboard = ({ onLogout }) => {
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 const AdminApp = () => {
-  const [authenticated, setAuthenticated] = useState(
-    () => sessionStorage.getItem(AUTH_KEY) === '1'
-  );
+  // null = checking, false = unauthenticated, true = authenticated
+  const [authenticated, setAuthenticated] = useState(null);
 
-  const handleLogout = () => {
-    sessionStorage.removeItem(AUTH_KEY);
+  useEffect(() => {
+    if (!supabase) { setAuthenticated(false); return; }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthenticated(!!session);
+    });
+  }, []);
+
+  const handleLogout = async () => {
+    if (supabase) await supabase.auth.signOut();
     setAuthenticated(false);
   };
+
+  if (authenticated === null) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center" style={{ backgroundColor: BG }}>
+        <div className="w-8 h-8 rounded-full border-2 border-zinc-600 border-t-white animate-spin" />
+      </div>
+    );
+  }
 
   if (!authenticated) return <LoginScreen onLogin={() => setAuthenticated(true)} />;
   return <Dashboard onLogout={handleLogout} />;

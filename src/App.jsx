@@ -16,6 +16,7 @@ const App = () => {
     isGameOver,
     isGameWon,
     isRestored,
+    isLoading,
     usedLetters,
     submittedGuessesInfo,
     handleTileFocus,
@@ -56,6 +57,14 @@ const App = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isGameOver, processGuess, handleKeyboardPress, activeInputCol, currentGuess.length, setActiveInputCol]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center" style={{ minHeight: '100dvh', backgroundColor: '#16181d' }}>
+        <div className="w-8 h-8 rounded-full border-2 border-zinc-600 border-t-white animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div
