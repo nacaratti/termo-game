@@ -126,6 +126,9 @@ const LoginScreen = ({ onLogin }) => {
         <p className="text-zinc-700 text-xs text-center mt-5">
           <a href="/" className="hover:text-zinc-400 transition-colors">← Voltar ao jogo</a>
         </p>
+        <p className="text-zinc-800 text-xs text-center mt-2">
+          cfg: url={import.meta.env.VITE_SUPABASE_URL ? '✓' : '✗'} key={import.meta.env.VITE_SUPABASE_ANON_KEY ? '✓' : '✗'}
+        </p>
       </div>
     </div>
   );
