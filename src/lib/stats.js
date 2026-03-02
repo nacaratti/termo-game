@@ -100,12 +100,17 @@ export const getGlobalStats = async () => {
 /**
  * Salva a palavra do dia na tabela daily_words (upsert).
  * Chamado pelo painel admin ao alterar a palavra.
+ * Lança erro para que o chamador possa exibir feedback adequado.
  */
 export const saveDailyWord = async (dateStr, word) => {
   if (!supabase) return;
-  try {
-    await supabase.from('daily_words').upsert({ date: dateStr, word: word.toUpperCase() });
-  } catch { /* ignore */ }
+  const { error } = await supabase
+    .from('daily_words')
+    .upsert({ date: dateStr, word: word.toUpperCase() });
+  if (error) {
+    if (import.meta.env.DEV) console.error('[Supabase] saveDailyWord:', error);
+    throw error;
+  }
 };
 
 /**
@@ -157,24 +162,28 @@ export const getHistoricalData = async () => {
 
 /**
  * Busca os resultados do dia no Supabase.
- * Se Supabase não estiver configurado ou falhar, usa localStorage como fallback.
+ * Usa localStorage como fallback quando Supabase não está disponível,
+ * falha ou retorna lista vazia (ex: RLS bloqueando sem lançar exceção).
  */
 export const getDailyResults = async (dateStr) => {
+  // Sempre carrega o cache local (garante dados do dispositivo atual)
+  let localResults = [];
+  try {
+    const all = JSON.parse(localStorage.getItem(DAILY_KEY) || '{}');
+    localResults = all[dateStr] || [];
+  } catch { /* ignore */ }
+
   if (supabase) {
     try {
       const { data, error } = await supabase
         .from('daily_results')
         .select('won, attempts')
         .eq('date', dateStr);
-      if (!error && data) return data;
-    } catch { /* cai no fallback */ }
+      if (!error && data && data.length > 0) return data;
+    } catch (err) {
+      if (import.meta.env.DEV) console.error('[Supabase] getDailyResults:', err);
+    }
   }
 
-  // Fallback: dados locais
-  try {
-    const all = JSON.parse(localStorage.getItem(DAILY_KEY) || '{}');
-    return all[dateStr] || [];
-  } catch {
-    return [];
-  }
+  return localResults;
 };

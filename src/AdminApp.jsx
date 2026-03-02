@@ -151,7 +151,7 @@ const WordOfDayPanel = () => {
   }
   const maxDist = Math.max(...Object.values(dist), 1);
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     e.preventDefault();
     const upper = newWord.toUpperCase().trim();
     if (upper.length !== 5) return setFeedback({ type: 'error', msg: 'A palavra deve ter exatamente 5 letras.' });
@@ -159,9 +159,13 @@ const WordOfDayPanel = () => {
     setWordOfDay(upper);
     setCurrentWord(upper);
     setNewWord('');
-    saveDailyWord(today, upper);
-    setFeedback({ type: 'ok', msg: `Palavra alterada para "${upper}". Recarregue o jogo para aplicar.` });
-    setTimeout(() => setFeedback(null), 5000);
+    try {
+      await saveDailyWord(today, upper);
+      setFeedback({ type: 'ok', msg: `Palavra "${upper}" salva com sucesso. Recarregue o jogo para aplicar.` });
+    } catch {
+      setFeedback({ type: 'error', msg: `Palavra "${upper}" salva localmente, mas falhou ao sincronizar com o banco. Verifique a conexão com o Supabase.` });
+    }
+    setTimeout(() => setFeedback(null), 6000);
   };
 
   return (
@@ -237,7 +241,7 @@ const StatsPanel = () => {
   if (!stats) return <p className="text-zinc-600 text-sm text-center py-8">Carregando…</p>;
 
   const avgAttempts = stats.wins > 0
-    ? (stats.totalAttempts / stats.totalGames).toFixed(1)
+    ? (stats.totalAttempts / stats.wins).toFixed(1)
     : '–';
   const maxDist = Math.max(...Object.values(stats.distribution), 1);
 
