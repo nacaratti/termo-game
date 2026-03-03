@@ -1,8 +1,8 @@
 import { supabase } from '@/lib/supabase';
-import { getWordForDate } from '@/lib/wordOfDay';
 
-const STATS_KEY = 'termo_stats';
-const DAILY_KEY = 'termo_daily_results';
+// Chaves internas — propositalmente não descritivas
+const STATS_KEY = '_s1z';
+const DAILY_KEY = '_s2z';
 
 const defaultStats = {
   totalGames: 0,
@@ -12,15 +12,24 @@ const defaultStats = {
   distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 },
 };
 
+const _readStats = () => {
+  try { return JSON.parse(atob(localStorage.getItem(STATS_KEY) || '')); } catch { return null; }
+};
+const _writeStats = (data) => {
+  try { localStorage.setItem(STATS_KEY, btoa(JSON.stringify(data))); } catch { /* ignore */ }
+};
+
+const _readDaily = () => {
+  try { return JSON.parse(atob(localStorage.getItem(DAILY_KEY) || '')); } catch { return {}; }
+};
+const _writeDaily = (data) => {
+  try { localStorage.setItem(DAILY_KEY, btoa(JSON.stringify(data))); } catch { /* ignore */ }
+};
+
 export const getStats = () => {
-  try {
-    const stored = localStorage.getItem(STATS_KEY);
-    if (!stored) return { ...defaultStats, distribution: { ...defaultStats.distribution } };
-    const parsed = JSON.parse(stored);
-    return { ...defaultStats, ...parsed, distribution: { ...defaultStats.distribution, ...parsed.distribution } };
-  } catch {
-    return { ...defaultStats, distribution: { ...defaultStats.distribution } };
-  }
+  const parsed = _readStats();
+  if (!parsed) return { ...defaultStats, distribution: { ...defaultStats.distribution } };
+  return { ...defaultStats, ...parsed, distribution: { ...defaultStats.distribution, ...parsed.distribution } };
 };
 
 export const saveGameResult = (won, attempts) => {
@@ -33,12 +42,16 @@ export const saveGameResult = (won, attempts) => {
   } else {
     stats.losses += 1;
   }
-  localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+  _writeStats(stats);
 };
 
 export const resetStats = () => {
   localStorage.removeItem(STATS_KEY);
 };
+
+// Cache em memória para getDailyResults — evita múltiplas queries ao abrir/fechar o popup
+const _resultsCache = new Map(); // key: `${dateStr}|${word}` → { data, ts }
+const _CACHE_TTL = 60_000; // 60 segundos
 
 // ─── Per-word results (global via Supabase, local como fallback) ──────────────
 
@@ -50,13 +63,11 @@ export const saveDailyResult = async (dateStr, word, won, attempts) => {
   const upperWord = word.toUpperCase();
 
   // Salva localmente com chave (date|word) para separar palavras do mesmo dia
-  try {
-    const all = JSON.parse(localStorage.getItem(DAILY_KEY) || '{}');
-    const key = `${dateStr}|${upperWord}`;
-    if (!all[key]) all[key] = [];
-    all[key].push({ won, attempts });
-    localStorage.setItem(DAILY_KEY, JSON.stringify(all));
-  } catch { /* ignore */ }
+  const all = _readDaily();
+  const key = `${dateStr}|${upperWord}`;
+  if (!all[key]) all[key] = [];
+  all[key].push({ won, attempts });
+  _writeDaily(all);
 
   // Salva no Supabase com a coluna word
   if (supabase) {
@@ -129,9 +140,8 @@ export const getHistoricalData = async () => {
     // palavra atual de daily_words, pois ela já pode ter sido trocada pelo admin.
     const byKey = {};
     for (const r of results) {
-      const word = r.word
-        ? r.word.toUpperCase()
-        : getWordForDate(r.date);
+      // Registros anteriores à migração (sem coluna word) são agrupados como desconhecidos
+      const word = r.word ? r.word.toUpperCase() : '?????';
       const key = `${r.date}|${word}`;
       if (!byKey[key]) byKey[key] = { date: r.date, word, rows: [] };
       byKey[key].rows.push(r);
@@ -165,14 +175,15 @@ export const getHistoricalData = async () => {
  */
 export const getDailyResults = async (dateStr, word) => {
   const upperWord = word?.toUpperCase();
+  const cacheKey = `${dateStr}|${upperWord ?? ''}`;
 
-  // Cache local
-  let localResults = [];
-  try {
-    const all = JSON.parse(localStorage.getItem(DAILY_KEY) || '{}');
-    // Tenta chave nova (date|word), fallback para chave antiga (date) para compatibilidade
-    localResults = (upperWord && all[`${dateStr}|${upperWord}`]) || all[dateStr] || [];
-  } catch { /* ignore */ }
+  // Cache em memória (60s) — evita queries repetidas ao abrir/fechar o popup
+  const cached = _resultsCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < _CACHE_TTL) return cached.data;
+
+  // Cache local (localStorage)
+  const all = _readDaily();
+  let localResults = (upperWord && all[`${dateStr}|${upperWord}`]) || all[dateStr] || [];
 
   if (supabase) {
     try {
@@ -182,11 +193,15 @@ export const getDailyResults = async (dateStr, word) => {
         .eq('date', dateStr);
       if (upperWord) query = query.eq('word', upperWord);
       const { data, error } = await query;
-      if (!error && data && data.length > 0) return data;
+      if (!error && data && data.length > 0) {
+        _resultsCache.set(cacheKey, { data, ts: Date.now() });
+        return data;
+      }
     } catch (err) {
       if (import.meta.env.DEV) console.error('[Supabase] getDailyResults:', err);
     }
   }
 
+  _resultsCache.set(cacheKey, { data: localResults, ts: Date.now() });
   return localResults;
 };

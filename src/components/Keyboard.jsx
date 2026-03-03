@@ -9,7 +9,7 @@ const Keyboard = ({ onKeyPress, usedLetters, isGameOver }) => (
         {row.map((key) => {
           const isSpecial = key.length > 1;
           const colorClass = getKeyboardKeyColor(key, usedLetters);
-          const isEnter = key === 'ENTER';
+          const isAction = key === 'ENTER' || key === 'BACKSPACE';
 
           return (
             <button
@@ -21,7 +21,7 @@ const Keyboard = ({ onKeyPress, usedLetters, isGameOver }) => (
                 isSpecial
                   ? 'flex-[1.6] text-xs font-bold'
                   : 'flex-1 text-sm font-semibold'
-              } ${isEnter ? '!bg-white !text-black hover:!opacity-90' : ''}`}
+              } ${isAction ? '!bg-white !text-black hover:!opacity-90' : ''}`}
             >
               {key === 'BACKSPACE' ? '⌫' : key}
             </button>

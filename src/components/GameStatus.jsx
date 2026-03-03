@@ -8,8 +8,8 @@ import { MAX_GUESSES } from '@/config/constants';
 const useCountdown = () => {
   const getSecondsLeft = () => {
     const now = new Date();
-    const midnight = new Date(now);
-    midnight.setHours(24, 0, 0, 0);
+    // Meia-noite UTC — alinhado com getTodayDateStr() que usa UTC
+    const midnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
     return Math.max(0, Math.floor((midnight - now) / 1000));
   };
   const [seconds, setSeconds] = useState(getSecondsLeft);

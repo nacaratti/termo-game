@@ -17,6 +17,7 @@ const App = () => {
     isGameWon,
     isRestored,
     isLoading,
+    isUnavailable,
     usedLetters,
     submittedGuessesInfo,
     handleTileFocus,
@@ -62,6 +63,15 @@ const App = () => {
     return (
       <div className="flex items-center justify-center" style={{ minHeight: '100dvh', backgroundColor: '#16181d' }}>
         <div className="w-8 h-8 rounded-full border-2 border-zinc-600 border-t-white animate-spin" />
+      </div>
+    );
+  }
+
+  if (isUnavailable) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 text-center px-6" style={{ minHeight: '100dvh', backgroundColor: '#16181d' }}>
+        <p className="text-white text-lg font-bold">Palavra não disponível</p>
+        <p className="text-zinc-500 text-sm">O administrador ainda não definiu a palavra de hoje.<br />Volte em breve.</p>
       </div>
     );
   }
