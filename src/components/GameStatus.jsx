@@ -7,10 +7,17 @@ import { MAX_GUESSES } from '@/config/constants';
 
 const useCountdown = () => {
   const getSecondsLeft = () => {
-    const now = new Date();
-    // Meia-noite UTC — alinhado com getTodayDateStr() que usa UTC
-    const midnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-    return Math.max(0, Math.floor((midnight - now) / 1000));
+    const now = Date.now();
+    // Data atual em Brasília (UTC-3)
+    const brasilia = new Date(now - 3 * 60 * 60 * 1000);
+    // Próxima meia-noite de Brasília = próximo 03:00 UTC
+    const nextMidnight = Date.UTC(
+      brasilia.getUTCFullYear(),
+      brasilia.getUTCMonth(),
+      brasilia.getUTCDate() + 1,
+      3, 0, 0  // 03:00 UTC = 00:00 Brasília
+    );
+    return Math.max(0, Math.floor((nextMidnight - now) / 1000));
   };
   const [seconds, setSeconds] = useState(getSecondsLeft);
   useEffect(() => {

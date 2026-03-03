@@ -3,9 +3,12 @@ import { supabase } from '@/lib/supabase';
 // Chave interna — propositalmente não descritiva
 const _K = '_g7x';
 
+// Brasília = UTC-3 (sem horário de verão desde 2019)
+const BRASILIA_OFFSET_MS = -3 * 60 * 60 * 1000;
+
 export const getTodayDateStr = () => {
-  const d = new Date();
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+  const brasilia = new Date(Date.now() + BRASILIA_OFFSET_MS);
+  return `${brasilia.getUTCFullYear()}-${String(brasilia.getUTCMonth() + 1).padStart(2, '0')}-${String(brasilia.getUTCDate()).padStart(2, '0')}`;
 };
 
 const readCache = () => {

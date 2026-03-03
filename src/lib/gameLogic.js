@@ -66,13 +66,15 @@ export const checkGuess = (guess, solution, currentUsedLetters) => {
     }
   }
 
-  // Para tiles corretos (verde), exibe a letra canônica da solução (ex: Ç em vez de C).
-  // Para tiles presentes/ausentes, mantém a letra digitada.
+  const isCorrect = statuses.every(s => s === 'correct');
+
+  // Acentos só são revelados na palavra vencedora (quando toda a palavra está correta).
+  // Em tentativas parciais, exibe a letra exatamente como o usuário digitou,
+  // evitando que letras de palavras sem acento apareçam acentuadas.
   const guessEvaluation = guessArr.map((letter, i) => ({
-    letter: statuses[i] === 'correct' ? solutionArr[i] : letter,
+    letter: isCorrect ? solutionArr[i] : letter,
     status: statuses[i],
   }));
-  const isCorrect = statuses.every(s => s === 'correct');
 
   // Teclado usa a letra normalizada (A-Z) — prioridade: correct > present > absent
   for (let i = 0; i < WORD_LENGTH; i++) {
