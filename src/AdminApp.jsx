@@ -224,11 +224,6 @@ const WordOfDayPanel = () => {
     requestChange(upper);
   };
 
-  const handleSortear = () => {
-    const word = SOLUTION_WORDS[Math.floor(Math.random() * SOLUTION_WORDS.length)];
-    requestChange(word);
-  };
-
   return (
     <div className="space-y-4">
       {/* Modal de confirmação */}
@@ -274,13 +269,7 @@ const WordOfDayPanel = () => {
             Alterar
           </BtnPrimary>
         </form>
-        <button
-          onClick={handleSortear}
-          className="w-full mt-2 py-2.5 rounded-lg text-sm font-semibold border transition-colors text-zinc-300 hover:text-white"
-          style={{ borderColor: BDR, backgroundColor: SURF }}
-        >
-          🎲 Sortear palavra do novo banco
-        </button>
+
         {feedback && (
           <p className={`mt-3 text-sm ${feedback.type === 'ok' ? 'text-[#6aaa64]' : 'text-red-400'}`}>
             {feedback.msg}

@@ -17,7 +17,6 @@ const App = () => {
     isGameWon,
     isRestored,
     isLoading,
-    isUnavailable,
     usedLetters,
     submittedGuessesInfo,
     handleTileFocus,
@@ -67,14 +66,6 @@ const App = () => {
     );
   }
 
-  if (isUnavailable) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-3 text-center px-6" style={{ minHeight: '100dvh', backgroundColor: '#16181d' }}>
-        <p className="text-white text-lg font-bold">Palavra não disponível</p>
-        <p className="text-zinc-500 text-sm">O administrador ainda não definiu a palavra de hoje.<br />Volte em breve.</p>
-      </div>
-    );
-  }
 
   return (
     <div

@@ -21,7 +21,6 @@ export const useGameLogic = () => {
   // True quando o jogo é restaurado de uma sessão anterior (já jogou hoje)
   const [isRestored, setIsRestored] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUnavailable, setIsUnavailable] = useState(false);
 
   const { toast } = useToast();
 
@@ -43,13 +42,6 @@ export const useGameLogic = () => {
     const today = getTodayDateStr();
     const currentWord = await initWordOfDay();
 
-    if (!currentWord) {
-      setIsUnavailable(true);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsUnavailable(false);
     const saved = getSavedGame(today, currentWord);
 
     if (saved) {
@@ -227,7 +219,6 @@ export const useGameLogic = () => {
     isGameWon,
     isRestored,
     isLoading,
-    isUnavailable,
     usedLetters,
     submittedGuessesInfo,
     initializeGame,
