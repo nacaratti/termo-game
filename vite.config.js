@@ -185,6 +185,10 @@ export default defineConfig({
 	base: process.env.VITE_BASE_URL ?? '/',
 	customLogger: logger,
 	plugins: [react(), addTransformIndexHtml],
+	test: {
+		environment: 'jsdom',
+		globals: true,
+	},
 	server: {
 		cors: true,
 		headers: {
