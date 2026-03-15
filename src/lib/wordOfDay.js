@@ -10,6 +10,9 @@ const SOLUTION_WORDS = rawSolucoes
   .map(w => w.trim().toUpperCase())
   .filter(w => w.length === 5);
 
+// Data base para o índice determinístico
+const BASE_DATE_UTC = new Date(Date.UTC(2025, 0, 1)); // 2025-01-01
+
 // Chave interna — propositalmente não descritiva
 const _K = '_g7x';
 
@@ -18,16 +21,20 @@ export const getTodayDateStr = () => {
   return `${brasilia.getUTCFullYear()}-${String(brasilia.getUTCMonth() + 1).padStart(2, '0')}-${String(brasilia.getUTCDate()).padStart(2, '0')}`;
 };
 
-const hashDate = (dateStr) => {
-  let h = 0;
-  for (let i = 0; i < dateStr.length; i++) {
-    h = (Math.imul(31, h) + dateStr.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h);
+export const getDeterministicIndexForDate = (dateStr, listLength) => {
+  if (!listLength) return 0;
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const diffDays = Math.floor((date - BASE_DATE_UTC) / (1000 * 60 * 60 * 24));
+  const index = ((diffDays % listLength) + listLength) % listLength;
+  return index;
 };
 
-const computeDefaultWord = (dateStr) => {
-  return SOLUTION_WORDS[hashDate(dateStr) % SOLUTION_WORDS.length];
+export const computeDefaultWord = (dateStr, solutionWordsOverride = SOLUTION_WORDS) => {
+  const list = solutionWordsOverride;
+  if (!list || list.length === 0) return '';
+  const index = getDeterministicIndexForDate(dateStr, list.length);
+  return list[index];
 };
 
 const readCache = () => {
@@ -46,7 +53,7 @@ export const getWordOfDay = () => {
 
 /**
  * Async init: busca palavra do Supabase; se não existir para hoje, seleciona
- * automaticamente pela hash da data e salva — sem precisar de intervenção do admin.
+ * determinísticamente pela data e salva — sem precisar de intervenção do admin.
  */
 export const initWordOfDay = async () => {
   const today = getTodayDateStr();
@@ -66,7 +73,7 @@ export const initWordOfDay = async () => {
         return word;
       }
 
-      // 2. Não existe — seleciona determinísticamente pela hash da data
+      // 2. Não existe — seleciona determinísticamente pela data
       const autoWord = computeDefaultWord(today);
 
       // 3. Salva no Supabase (race-condition seguro com ignoreDuplicates)

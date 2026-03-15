@@ -109,6 +109,42 @@ pip install wordfreq
 
 Em seguida, execute os scripts na ordem descrita acima. Os arquivos `.txt` gerados são lidos diretamente pelo Vite no próximo build.
 
+## Testes
+
+O projeto usa [Vitest](https://vitest.dev/) com ambiente jsdom.
+
+### Rodar todos os testes
+
+```bash
+npm test
+```
+
+### Rodar em modo watch (re-executa ao salvar)
+
+```bash
+npm run test:watch
+```
+
+### Rodar um arquivo específico
+
+```bash
+VITEST_MAX_FORKS=1 npx vitest run src/lib/wordOfDay.initWord.test.js
+```
+
+### Arquivos de teste
+
+| Arquivo | O que cobre |
+|---|---|
+| `src/lib/wordOfDay.test.js` | `getTodayDateStr`, `getWordOfDay`, `setWordOfDay` — fuso horário e cache |
+| `src/lib/wordOfDay.initWord.test.js` | `initWordOfDay` — seleção aleatória, sem repetição, race condition, fallback offline |
+| `src/lib/gameLogic.test.js` | `checkGuess`, `getTileStyling`, `getKeyboardKeyColor` |
+| `src/lib/gameState.test.js` | `saveGameProgress`, `getSavedGame`, `getCompletedGame` |
+| `src/lib/stats.test.js` | `getStats`, `saveGameResult`, `resetStats` |
+| `src/lib/normalize.test.js` | `normalizeLetter`, `normalizeWord` |
+| `src/lib/customWords.test.js` | `addCustomWord`, `removeCustomWord`, `isValidGuess` |
+
+> **Nota:** o script `npm test` já inclui `VITEST_MAX_FORKS=1`, necessário para rodar corretamente em ambientes Windows com OneDrive.
+
 ## Deploy no GitHub Pages
 
 O projeto está configurado para deploy automático no GitHub Pages via GitHub Actions.
