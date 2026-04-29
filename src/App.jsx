@@ -6,8 +6,9 @@ import GameStatus from '@/components/GameStatus';
 import GameHeader from '@/components/GameHeader';
 import GameFooter from '@/components/GameFooter';
 import { useGameLogic } from '@/hooks/useGameLogic';
+import { WORD_LENGTH, MAX_GUESSES } from '@/config/constants';
 
-const App = () => {
+const App = ({ wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES, showChallenge = true }) => {
   const {
     solution,
     currentGuess,
@@ -23,12 +24,11 @@ const App = () => {
     processGuess,
     handleKeyboardPress,
     setActiveInputCol,
-  } = useGameLogic();
+  } = useGameLogic(wordLength, maxGuesses);
 
   const mainRef = useRef(null);
   const [showResult, setShowResult] = useState(false);
 
-  // Abre o popup após o fim do jogo
   useEffect(() => {
     if (!isGameOver) return;
     const delay = isRestored ? 400 : 1650;
@@ -36,7 +36,6 @@ const App = () => {
     return () => clearTimeout(timer);
   }, [isGameOver]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handler de teclado físico
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -77,7 +76,6 @@ const App = () => {
       <Toaster />
       <GameHeader />
 
-      {/* Área de jogo — cresce para preencher o espaço disponível */}
       <main className="flex flex-col items-center justify-between flex-1 w-full max-w-lg mx-auto px-3 pt-4 pb-2">
         <GameBoard
           currentGuess={currentGuess}
@@ -86,6 +84,8 @@ const App = () => {
           onTileFocus={handleTileFocus}
           submittedGuessesInfo={submittedGuessesInfo}
           isGameOver={isGameOver}
+          wordLength={wordLength}
+          maxGuesses={maxGuesses}
         />
 
         <div className="w-full">
@@ -115,7 +115,6 @@ const App = () => {
 
       <GameFooter />
 
-      {/* Modal de resultado */}
       {isGameOver && (
         <GameStatus
           isGameWon={isGameWon}
@@ -124,6 +123,8 @@ const App = () => {
           submittedGuessesInfo={submittedGuessesInfo}
           isOpen={showResult}
           onClose={() => setShowResult(false)}
+          maxGuesses={maxGuesses}
+          showChallenge={showChallenge}
         />
       )}
     </div>

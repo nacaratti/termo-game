@@ -7,7 +7,9 @@ import '@/index.css';
 // Isso mantém SOLUTION_WORDS (lista de soluções) fora do bundle principal do jogo.
 const AdminApp = lazy(() => import('@/AdminApp'));
 
-const isAdmin = window.location.pathname.replace(/\/$/, '').endsWith('/admin');
+const path = window.location.pathname.replace(/\/$/, '');
+const isAdmin = path.endsWith('/admin');
+const is6Letter = path === '/6';
 
 const AdminFallback = () => (
   <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#16181d' }}>
@@ -20,6 +22,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     {isAdmin
       ? <Suspense fallback={<AdminFallback />}><AdminApp /></Suspense>
-      : <App />}
+      : is6Letter
+        ? <App wordLength={6} maxGuesses={7} showChallenge={false} />
+        : <App />}
   </React.StrictMode>
 );

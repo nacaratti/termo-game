@@ -3,13 +3,14 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { SOLUTION_WORDS } from '@/data/solutionList';
 import { VALID_WORDS_SET } from '@/data/wordList';
 import { getGlobalStats, getDailyResults, saveDailyWord, getHistoricalData } from '@/lib/stats';
+import { getDailyResults6, saveDailyWord6 } from '@/lib/stats6';
 import { getCustomWords, addCustomWord, removeCustomWord } from '@/lib/customWords';
 import { getWordOfDay, setWordOfDay, getTodayDateStr } from '@/lib/wordOfDay';
+import { getWordOfDay6, setWordOfDay6 } from '@/lib/wordOfDay6';
 import { supabase } from '@/lib/supabase';
 
 const PAGE_SIZE = 50;
 
-// Paleta do admin — espelha o jogo
 const BG   = '#16181d';
 const CARD = '#1e2028';
 const SURF = '#22252f';
@@ -70,23 +71,13 @@ const LoginScreen = ({ onLogin }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!supabase) {
-      setError('Supabase não configurado.');
-      return;
-    }
+    if (!supabase) { setError('Supabase não configurado.'); return; }
     setLoading(true);
     setError('');
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (authError) {
-      setError('Email ou senha incorretos.');
-      setPassword('');
-    } else {
-      onLogin();
-    }
+    if (authError) { setError('Email ou senha incorretos.'); setPassword(''); }
+    else onLogin();
   };
 
   return (
@@ -99,25 +90,14 @@ const LoginScreen = ({ onLogin }) => {
         <Card>
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <Input
-              id="admin-email"
-              name="email"
-              type="email"
-              value={email}
+              type="email" value={email}
               onChange={(e) => { setEmail(e.target.value); setError(''); }}
-              placeholder="Email"
-              autoFocus
-              disabled={loading}
-              className="w-full"
+              placeholder="Email" autoFocus disabled={loading} className="w-full"
             />
             <Input
-              id="admin-password"
-              name="password"
-              type="password"
-              value={password}
+              type="password" value={password}
               onChange={(e) => { setPassword(e.target.value); setError(''); }}
-              placeholder="Senha"
-              disabled={loading}
-              className="w-full"
+              placeholder="Senha" disabled={loading} className="w-full"
             />
             {error && <p className="text-red-400 text-sm text-center">{error}</p>}
             <BtnPrimary type="submit" disabled={loading} className="py-2.5">
@@ -133,7 +113,6 @@ const LoginScreen = ({ onLogin }) => {
   );
 };
 
-// Célula de estatística — fundo colorido no mobile, sem fundo no desktop
 const StatCell = ({ value, label, color }) => {
   const isMobile = useIsMobile();
   return (
@@ -158,10 +137,7 @@ const DistBar = ({ label, count, maxVal, highlight = false, danger = false }) =>
       <div className="flex-1 rounded-sm h-5 overflow-hidden" style={{ backgroundColor: SURF }}>
         <div
           className="h-5 rounded-sm flex items-center justify-end pr-2 transition-all duration-500"
-          style={{
-            width: `${Math.max(pct, count > 0 ? 8 : 0)}%`,
-            backgroundColor: barColor,
-          }}
+          style={{ width: `${Math.max(pct, count > 0 ? 8 : 0)}%`, backgroundColor: barColor }}
         >
           {count > 0 && <span className="text-xs font-bold" style={{ color: textColor }}>{count}</span>}
         </div>
@@ -171,23 +147,31 @@ const DistBar = ({ label, count, maxVal, highlight = false, danger = false }) =>
   );
 };
 
-// ─── Palavra do Dia ───────────────────────────────────────────────────────────
-const WordOfDayPanel = () => {
+// ─── Palavra do Dia (parametrizado para 5 e 6 letras) ────────────────────────
+const WordOfDayPanel = ({
+  wordLength,
+  maxAttempts,
+  getInitialWord,
+  setWordFn,
+  saveDailyWordFn,
+  getDailyResultsFn,
+}) => {
   const today = getTodayDateStr();
-  const [currentWord, setCurrentWord] = useState(() => getWordOfDay() || '—');
+  const [currentWord, setCurrentWord] = useState(() => getInitialWord() || '—');
   const [newWord, setNewWord] = useState('');
   const [feedback, setFeedback] = useState(null);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [confirm, setConfirm] = useState(null); // { word } pendente de confirmação
+  const [confirm, setConfirm] = useState(null);
 
   useEffect(() => {
-    getDailyResults(today, currentWord).then(data => { setResults(data); setLoading(false); });
-  }, [today, currentWord]);
+    getDailyResultsFn(today, currentWord).then(data => { setResults(data); setLoading(false); });
+  }, [today, currentWord]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const wins = results.filter(r => r.won).length;
+  const wins   = results.filter(r => r.won).length;
   const losses = results.filter(r => !r.won).length;
-  const dist = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, X: 0 };
+  const dist   = { X: 0 };
+  for (let i = 1; i <= maxAttempts; i++) dist[i] = 0;
   for (const r of results) {
     if (r.won) dist[r.attempts] = (dist[r.attempts] || 0) + 1;
     else dist.X++;
@@ -196,45 +180,50 @@ const WordOfDayPanel = () => {
 
   const applyWord = async (word) => {
     setConfirm(null);
-    setWordOfDay(word);
+    setWordFn(word);
     setCurrentWord(word);
     setNewWord('');
     try {
-      await saveDailyWord(today, word);
+      await saveDailyWordFn(today, word);
       setFeedback({ type: 'ok', msg: `Palavra "${word}" salva. Recarregue o jogo para aplicar.` });
     } catch {
-      setFeedback({ type: 'error', msg: `Salvo localmente, mas falhou ao sincronizar. Verifique o Supabase.` });
+      setFeedback({ type: 'error', msg: 'Salvo localmente, mas falhou ao sincronizar. Verifique o Supabase.' });
     }
     setTimeout(() => setFeedback(null), 6000);
   };
 
   const requestChange = (word) => {
-    // Se já há jogadores com a palavra atual, pede confirmação
-    if (results.length > 0) {
-      setConfirm({ word });
-    } else {
-      applyWord(word);
-    }
+    if (results.length > 0) setConfirm({ word });
+    else applyWord(word);
   };
 
   const handleChange = (e) => {
     e.preventDefault();
     const upper = newWord.toUpperCase().trim();
-    if (upper.length !== 5) return setFeedback({ type: 'error', msg: 'A palavra deve ter exatamente 5 letras.' });
+    if (upper.length !== wordLength) {
+      return setFeedback({ type: 'error', msg: `A palavra deve ter exatamente ${wordLength} letras.` });
+    }
     requestChange(upper);
   };
 
+  const trackingClass = wordLength === 6
+    ? 'tracking-[0.2em] sm:tracking-[0.25em]'
+    : 'tracking-[0.3em] sm:tracking-[0.35em]';
+
   return (
     <div className="space-y-4">
-      {/* Modal de confirmação */}
       {confirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="w-full max-w-sm rounded-2xl p-6 space-y-4 border" style={{ backgroundColor: CARD, borderColor: BDR }}>
             <p className="text-white font-bold text-base">Confirmar troca de palavra?</p>
             <p className="text-zinc-400 text-sm">
-              <span className="text-[#c9a84c] font-semibold">{results.length} jogador{results.length !== 1 ? 'es' : ''}</span> já
-              {results.length !== 1 ? ' jogaram' : ' jogou'} com <span className="font-mono text-white">{currentWord}</span>.
-              Os resultados deles serão mantidos. A nova palavra será <span className="font-mono text-white">{confirm.word}</span>.
+              <span className="text-[#c9a84c] font-semibold">
+                {results.length} jogador{results.length !== 1 ? 'es' : ''}
+              </span>{' '}
+              já {results.length !== 1 ? 'jogaram' : 'jogou'} com{' '}
+              <span className="font-mono text-white">{currentWord}</span>.
+              Os resultados deles serão mantidos. A nova palavra será{' '}
+              <span className="font-mono text-white">{confirm.word}</span>.
             </p>
             <div className="flex gap-2">
               <button
@@ -253,23 +242,22 @@ const WordOfDayPanel = () => {
       )}
 
       <Card>
-        <SectionTitle>Palavra do dia — {today}</SectionTitle>
-        <p className="font-mono text-4xl sm:text-5xl font-black text-white tracking-[0.3em] sm:tracking-[0.35em] mb-5">
+        <SectionTitle>Palavra do dia · {wordLength} letras · {today}</SectionTitle>
+        <p className={`font-mono text-4xl sm:text-5xl font-black text-white ${trackingClass} mb-5`}>
           {currentWord}
         </p>
         <form onSubmit={handleChange} className="flex gap-2">
           <Input
             value={newWord}
             onChange={(e) => setNewWord(e.target.value.toUpperCase().replace(/[^A-ZÁÂÃÀÉÊÍÓÔÕÚÜÇ]/g, ''))}
-            maxLength={5}
-            placeholder="Nova palavra"
+            maxLength={wordLength}
+            placeholder={`${wordLength} letras`}
             className="flex-1 font-mono text-lg tracking-widest uppercase"
           />
-          <BtnPrimary type="submit" disabled={newWord.length !== 5} className="px-5 py-2 whitespace-nowrap">
+          <BtnPrimary type="submit" disabled={newWord.length !== wordLength} className="px-5 py-2 whitespace-nowrap">
             Alterar
           </BtnPrimary>
         </form>
-
         {feedback && (
           <p className={`mt-3 text-sm ${feedback.type === 'ok' ? 'text-[#6aaa64]' : 'text-red-400'}`}>
             {feedback.msg}
@@ -281,7 +269,6 @@ const WordOfDayPanel = () => {
         <SectionTitle>
           Resultados de hoje · {loading ? '…' : `${results.length} ${results.length === 1 ? 'jogo' : 'jogos'}`}
         </SectionTitle>
-
         {loading ? (
           <p className="text-zinc-600 text-sm text-center py-4">Carregando…</p>
         ) : results.length === 0 ? (
@@ -301,7 +288,7 @@ const WordOfDayPanel = () => {
               ))}
             </div>
             <div className="space-y-1.5">
-              {[1, 2, 3, 4, 5, 6].map(n => (
+              {Array.from({ length: maxAttempts }, (_, i) => i + 1).map(n => (
                 <DistBar key={n} label={n} count={dist[n] || 0} maxVal={maxDist} />
               ))}
               {dist.X > 0 && <DistBar label="✗" count={dist.X} maxVal={maxDist} danger />}
@@ -459,7 +446,7 @@ const WordsPanel = () => {
             {paginated.map(({ word, source }) => {
               const { text, cls, bdr } = sourceLabel[source];
               return (
-                <div key={word} className="flex items-center justify-between py-2.5 gap-3" style={{ borderColor: BDR }}>
+                <div key={word} className="flex items-center justify-between py-2.5 gap-3">
                   <span className="font-mono text-white font-semibold tracking-widest text-sm">{word}</span>
                   <div className="flex items-center gap-2">
                     <span
@@ -535,7 +522,6 @@ const HistoryPanel = () => {
                 ))}
               </div>
             </div>
-
             {wins > 0 && (
               <div className="space-y-1.5 pt-3 border-t" style={{ borderColor: BDR }}>
                 <p className="text-xs text-zinc-600 mb-2">Distribuição de tentativas</p>
@@ -553,10 +539,11 @@ const HistoryPanel = () => {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 const tabs = [
-  { id: 'wod',     label: 'Palavra do Dia', short: 'Hoje'      },
-  { id: 'stats',   label: 'Estatísticas',   short: 'Stats'     },
-  { id: 'history', label: 'Histórico',      short: 'Histórico' },
-  { id: 'words',   label: 'Palavras',       short: 'Palavras'  },
+  { id: 'wod',     label: 'Palavra · 5',  short: '5 Letras'  },
+  { id: 'wod6',    label: 'Palavra · 6',  short: '6 Letras'  },
+  { id: 'stats',   label: 'Estatísticas', short: 'Stats'     },
+  { id: 'history', label: 'Histórico',    short: 'Histórico' },
+  { id: 'words',   label: 'Palavras',     short: 'Palavras'  },
 ];
 
 const Dashboard = ({ onLogout }) => {
@@ -581,7 +568,6 @@ const Dashboard = ({ onLogout }) => {
       </header>
 
       <main className="max-w-3xl mx-auto w-full px-4 py-6 flex-1 pb-24 sm:pb-6">
-        {/* Tabs — visíveis apenas em telas maiores */}
         <div
           className="hidden sm:flex gap-1 mb-6 rounded-xl p-1 w-fit border"
           style={{ backgroundColor: CARD, borderColor: BDR }}
@@ -599,7 +585,26 @@ const Dashboard = ({ onLogout }) => {
           ))}
         </div>
 
-        {activeTab === 'wod'     && <WordOfDayPanel />}
+        {activeTab === 'wod' && (
+          <WordOfDayPanel
+            wordLength={5}
+            maxAttempts={6}
+            getInitialWord={() => getWordOfDay() || '—'}
+            setWordFn={setWordOfDay}
+            saveDailyWordFn={saveDailyWord}
+            getDailyResultsFn={getDailyResults}
+          />
+        )}
+        {activeTab === 'wod6' && (
+          <WordOfDayPanel
+            wordLength={6}
+            maxAttempts={7}
+            getInitialWord={() => getWordOfDay6() || '—'}
+            setWordFn={setWordOfDay6}
+            saveDailyWordFn={saveDailyWord6}
+            getDailyResultsFn={getDailyResults6}
+          />
+        )}
         {activeTab === 'stats'   && <StatsPanel />}
         {activeTab === 'history' && <HistoryPanel />}
         {activeTab === 'words'   && <WordsPanel />}
@@ -630,7 +635,6 @@ const Dashboard = ({ onLogout }) => {
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 const AdminApp = () => {
-  // null = checking, false = unauthenticated, true = authenticated
   const [authenticated, setAuthenticated] = useState(null);
 
   useEffect(() => {

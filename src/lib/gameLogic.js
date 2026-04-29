@@ -32,11 +32,11 @@ export const getKeyboardKeyColor = (key, usedLetters) => {
   return 'key-default';
 };
 
-export const checkGuess = (guess, solution, currentUsedLetters) => {
+export const checkGuess = (guess, solution, currentUsedLetters, wordLength = WORD_LENGTH) => {
   const newUsedLetters = { ...currentUsedLetters };
   const guessArr = guess.split('');
   const solutionArr = solution.split('');
-  const statuses = Array(WORD_LENGTH).fill('absent');
+  const statuses = Array(wordLength).fill('absent');
 
   // Comparações sempre usam letras normalizadas (sem acento/ç)
   // para que GRACA bata com GRAÇA, ACAO bata com AÇÃO, etc.
@@ -50,7 +50,7 @@ export const checkGuess = (guess, solution, currentUsedLetters) => {
   }
 
   // Passagem 1: corretos (posição + letra batem)
-  for (let i = 0; i < WORD_LENGTH; i++) {
+  for (let i = 0; i < wordLength; i++) {
     if (normGuess[i] === normSolution[i]) {
       statuses[i] = 'correct';
       available[normGuess[i]]--;
@@ -58,7 +58,7 @@ export const checkGuess = (guess, solution, currentUsedLetters) => {
   }
 
   // Passagem 2: presentes (letra existe mas em posição errada)
-  for (let i = 0; i < WORD_LENGTH; i++) {
+  for (let i = 0; i < wordLength; i++) {
     if (statuses[i] === 'correct') continue;
     if (available[normGuess[i]] > 0) {
       statuses[i] = 'present';
@@ -77,7 +77,7 @@ export const checkGuess = (guess, solution, currentUsedLetters) => {
   }));
 
   // Teclado usa a letra normalizada (A-Z) — prioridade: correct > present > absent
-  for (let i = 0; i < WORD_LENGTH; i++) {
+  for (let i = 0; i < wordLength; i++) {
     const key    = normGuess[i]; // letra do teclado (A-Z)
     const status = statuses[i];
     if (status === 'correct') {

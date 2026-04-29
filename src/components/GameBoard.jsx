@@ -28,13 +28,15 @@ const GameBoardRow = ({
   currentAttempt,
   activeInputCol,
   onTileFocus,
-  isSubmittedRow
+  isSubmittedRow,
+  wordLength,
 }) => {
   const isCurrentActiveRow = rowIndex === currentAttempt;
+  const colClass = wordLength === 6 ? 'grid-cols-6' : 'grid-cols-5';
 
   return (
-    <div className="grid grid-cols-5 gap-1.5" role="row">
-      {Array(WORD_LENGTH)
+    <div className={`grid ${colClass} gap-1.5`} role="row">
+      {Array(wordLength)
         .fill(0)
         .map((_, colIndex) => {
           const hasFocus = isCurrentActiveRow && activeInputCol === colIndex;
@@ -75,14 +77,16 @@ const GameBoard = ({
   onTileFocus,
   submittedGuessesInfo,
   isGameOver,
+  wordLength = WORD_LENGTH,
+  maxGuesses = MAX_GUESSES,
 }) => {
   return (
     <div
-      className="grid gap-1.5 mb-6"
+      className={`grid gap-1.5 mb-6${wordLength === 6 ? ' board-6' : ''}`}
       role="grid"
       aria-label="Tabuleiro do jogo"
     >
-      {Array(MAX_GUESSES).fill(0).map((_, rowIndex) => (
+      {Array(maxGuesses).fill(0).map((_, rowIndex) => (
         <GameBoardRow
           key={rowIndex}
           guessData={submittedGuessesInfo[rowIndex]}
@@ -92,6 +96,7 @@ const GameBoard = ({
           activeInputCol={activeInputCol}
           onTileFocus={onTileFocus}
           isSubmittedRow={rowIndex < currentAttempt || (rowIndex === currentAttempt && isGameOver)}
+          wordLength={wordLength}
         />
       ))}
     </div>

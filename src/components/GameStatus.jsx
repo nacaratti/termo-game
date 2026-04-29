@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Share2, Clock, X } from 'lucide-react';
+import { Share2, Clock, X, ChevronRight } from 'lucide-react';
 import { getDailyResults } from '@/lib/stats';
+import { getDailyResults6 } from '@/lib/stats6';
 import { getTodayDateStr } from '@/lib/wordOfDay';
 import { MAX_GUESSES } from '@/config/constants';
 
 const useCountdown = () => {
   const getSecondsLeft = () => {
     const now = Date.now();
-    // Data atual em Brasília (UTC-3)
     const brasilia = new Date(now - 3 * 60 * 60 * 1000);
-    // Próxima meia-noite de Brasília = próximo 03:00 UTC
     const nextMidnight = Date.UTC(
       brasilia.getUTCFullYear(),
       brasilia.getUTCMonth(),
       brasilia.getUTCDate() + 1,
-      3, 0, 0  // 03:00 UTC = 00:00 Brasília
+      3, 0, 0
     );
     return Math.max(0, Math.floor((nextMidnight - now) / 1000));
   };
@@ -30,7 +29,16 @@ const useCountdown = () => {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 };
 
-const GameStatus = ({ isGameWon, solution, currentAttempt, submittedGuessesInfo, isOpen, onClose }) => {
+const GameStatus = ({
+  isGameWon,
+  solution,
+  currentAttempt,
+  submittedGuessesInfo,
+  isOpen,
+  onClose,
+  maxGuesses = MAX_GUESSES,
+  showChallenge = true,
+}) => {
   const [copied, setCopied] = useState(false);
   const [todayResults, setTodayResults] = useState([]);
   const countdown = useCountdown();
@@ -38,12 +46,13 @@ const GameStatus = ({ isGameWon, solution, currentAttempt, submittedGuessesInfo,
 
   useEffect(() => {
     if (!isOpen) return;
-    getDailyResults(today, solution).then(setTodayResults);
-  }, [isOpen, today]);
+    const fn = showChallenge ? getDailyResults : getDailyResults6;
+    fn(today, solution).then(setTodayResults);
+  }, [isOpen, today]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const buildShareText = () => {
-    const attempt = isGameWon ? currentAttempt + 1 : MAX_GUESSES;
-    const result = isGameWon ? `${attempt}/${MAX_GUESSES}` : `X/${MAX_GUESSES}`;
+    const attempt = isGameWon ? currentAttempt + 1 : maxGuesses;
+    const result = isGameWon ? `${attempt}/${maxGuesses}` : `X/${maxGuesses}`;
     const rows = (submittedGuessesInfo || [])
       .filter(Boolean)
       .map(row => row.map(({ status }) =>
@@ -60,7 +69,9 @@ const GameStatus = ({ isGameWon, solution, currentAttempt, submittedGuessesInfo,
     });
   };
 
-  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, X: 0 };
+  const distribution = {};
+  for (let i = 1; i <= maxGuesses; i++) distribution[i] = 0;
+  distribution.X = 0;
   for (const r of todayResults) {
     if (r.won) distribution[r.attempts] = (distribution[r.attempts] || 0) + 1;
     else distribution.X = (distribution.X || 0) + 1;
@@ -85,7 +96,7 @@ const GameStatus = ({ isGameWon, solution, currentAttempt, submittedGuessesInfo,
             exit={{ opacity: 0, y: 40 }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full sm:max-w-sm bg-zinc-900 border border-zinc-800 rounded-t-2xl sm:rounded-2xl shadow-2xl p-6 pb-8 sm:pb-6 space-y-5"
+            className="relative w-full sm:max-w-sm bg-zinc-900 border border-zinc-800 rounded-t-2xl sm:rounded-2xl shadow-2xl p-6 pb-8 sm:pb-6 space-y-5 max-h-[90dvh] overflow-y-auto"
             role="dialog"
             aria-modal="true"
           >
@@ -105,7 +116,7 @@ const GameStatus = ({ isGameWon, solution, currentAttempt, submittedGuessesInfo,
                   <p className="text-4xl mb-1">🎉</p>
                   <h2 className="text-xl font-bold text-white">Você acertou!</h2>
                   <p className="text-zinc-500 text-sm mt-1">
-                    em <span className="text-white font-semibold">{currentAttempt + 1}/{MAX_GUESSES}</span> tentativa{currentAttempt + 1 !== 1 ? 's' : ''}
+                    em <span className="text-white font-semibold">{currentAttempt + 1}/{maxGuesses}</span> tentativa{currentAttempt + 1 !== 1 ? 's' : ''}
                   </p>
                 </>
               ) : (
@@ -133,6 +144,30 @@ const GameStatus = ({ isGameWon, solution, currentAttempt, submittedGuessesInfo,
               {copied ? 'Copiado!' : 'Compartilhar resultado'}
             </button>
 
+            {/* 6-letter challenge CTA — só aparece no jogo de 5 letras */}
+            {showChallenge && (
+              <a
+                href="/6"
+                className="flex items-center justify-between w-full rounded-xl border border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 transition-colors px-4 py-3.5 group"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-white">Quer um desafio maior?</p>
+                  <p className="text-xs text-zinc-400 mt-0.5">6 letras · 7 tentativas</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-zinc-500 group-hover:text-white transition-colors shrink-0" />
+              </a>
+            )}
+
+            {/* Back to 5 letters — só aparece no jogo de 6 letras */}
+            {!showChallenge && (
+              <a
+                href="/"
+                className="flex items-center justify-center gap-1.5 text-zinc-500 hover:text-zinc-300 text-xs transition-colors"
+              >
+                ← Voltar ao jogo de 5 letras
+              </a>
+            )}
+
             {/* Ranking */}
             {todayResults.length > 0 && (
               <div>
@@ -140,7 +175,7 @@ const GameStatus = ({ isGameWon, solution, currentAttempt, submittedGuessesInfo,
                   Ranking de hoje · {todayResults.length} {todayResults.length === 1 ? 'jogo' : 'jogos'}
                 </p>
                 <div className="space-y-1.5">
-                  {[1, 2, 3, 4, 5, 6].map(n => {
+                  {Array.from({ length: maxGuesses }, (_, i) => i + 1).map(n => {
                     const count = distribution[n] || 0;
                     const pct = Math.round((count / maxVal) * 100);
                     const isMine = isGameWon && currentAttempt + 1 === n;

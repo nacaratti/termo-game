@@ -4,21 +4,31 @@ import { useToast } from '@/components/ui/use-toast';
 import { WORD_LENGTH, MAX_GUESSES } from '@/config/constants';
 import { checkGuess as evaluateGuess } from '@/lib/gameLogic';
 import { initWordOfDay, getTodayDateStr } from '@/lib/wordOfDay';
+import { initWordOfDay6 } from '@/lib/wordOfDay6';
 import { saveGameResult, saveDailyResult } from '@/lib/stats';
+import { saveDailyResult6 } from '@/lib/stats6';
 import { saveGameProgress, saveCompletedGame, getSavedGame } from '@/lib/gameState';
+import { saveGameProgress6, saveCompletedGame6, getSavedGame6 } from '@/lib/gameState6';
 import { isValidGuess } from '@/lib/customWords';
+import { isValidGuess6 } from '@/lib/customWords6';
 
-export const useGameLogic = () => {
+export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES) => {
+  const is6 = wordLength === 6;
+  const getWordFn     = is6 ? initWordOfDay6   : initWordOfDay;
+  const validateFn    = is6 ? isValidGuess6     : isValidGuess;
+  const saveProgressFn  = is6 ? saveGameProgress6  : saveGameProgress;
+  const saveCompletedFn = is6 ? saveCompletedGame6 : saveCompletedGame;
+  const getSavedFn    = is6 ? getSavedGame6    : getSavedGame;
+
   const [solution, setSolution] = useState('');
-  const [guesses, setGuesses] = useState(Array(MAX_GUESSES).fill(null));
-  const [currentGuess, setCurrentGuess] = useState(Array(WORD_LENGTH).fill(''));
+  const [guesses, setGuesses] = useState(Array(maxGuesses).fill(null));
+  const [currentGuess, setCurrentGuess] = useState(Array(wordLength).fill(''));
   const [currentAttempt, setCurrentAttempt] = useState(0);
   const [activeInputCol, setActiveInputCol] = useState(0);
   const [isGameOver, setIsGameOver] = useState(false);
   const [isGameWon, setIsGameWon] = useState(false);
   const [usedLetters, setUsedLetters] = useState({});
-  const [submittedGuessesInfo, setSubmittedGuessesInfo] = useState(Array(MAX_GUESSES).fill(null));
-  // True quando o jogo é restaurado de uma sessão anterior (já jogou hoje)
+  const [submittedGuessesInfo, setSubmittedGuessesInfo] = useState(Array(maxGuesses).fill(null));
   const [isRestored, setIsRestored] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -26,26 +36,25 @@ export const useGameLogic = () => {
 
   const applyNewSolution = useCallback((newSolution) => {
     setSolution(newSolution);
-    setGuesses(Array(MAX_GUESSES).fill(null));
-    setCurrentGuess(Array(WORD_LENGTH).fill(''));
+    setGuesses(Array(maxGuesses).fill(null));
+    setCurrentGuess(Array(wordLength).fill(''));
     setCurrentAttempt(0);
     setActiveInputCol(0);
     setIsGameOver(false);
     setIsGameWon(false);
     setUsedLetters({});
-    setSubmittedGuessesInfo(Array(MAX_GUESSES).fill(null));
+    setSubmittedGuessesInfo(Array(maxGuesses).fill(null));
     setIsRestored(false);
-  }, []);
+  }, [maxGuesses, wordLength]);
 
   const initializeGame = useCallback(async () => {
     setIsLoading(true);
     const today = getTodayDateStr();
-    const currentWord = await initWordOfDay();
+    const currentWord = await getWordFn();
 
-    const saved = getSavedGame(today, currentWord);
+    const saved = getSavedFn(today, currentWord);
 
     if (saved) {
-      // Reconstrói as cores do teclado a partir das tentativas salvas
       const rebuilt = {};
       for (const row of (saved.submittedGuessesInfo || []).filter(Boolean)) {
         for (const { letter, status } of row) {
@@ -61,19 +70,17 @@ export const useGameLogic = () => {
 
       setSolution(saved.solution);
       setGuesses(saved.guesses);
-      setCurrentGuess(Array(WORD_LENGTH).fill(''));
+      setCurrentGuess(Array(wordLength).fill(''));
       setSubmittedGuessesInfo(saved.submittedGuessesInfo);
       setUsedLetters(rebuilt);
       setActiveInputCol(0);
 
       if (saved.isGameOver) {
-        // Jogo terminado — restaura e bloqueia
         setCurrentAttempt(saved.currentAttempt);
         setIsGameOver(true);
         setIsGameWon(saved.isGameWon);
         setIsRestored(true);
       } else {
-        // Jogo em andamento — restaura tentativas mas permite continuar
         setCurrentAttempt(saved.currentAttempt + 1);
         setIsGameOver(false);
         setIsGameWon(false);
@@ -83,30 +90,30 @@ export const useGameLogic = () => {
       applyNewSolution(currentWord);
     }
     setIsLoading(false);
-  }, [applyNewSolution]);
+  }, [applyNewSolution, wordLength]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     initializeGame();
   }, [initializeGame]);
 
   const handleTileFocus = (index) => {
-    if (isGameOver || currentAttempt >= MAX_GUESSES) return;
+    if (isGameOver || currentAttempt >= maxGuesses) return;
     setActiveInputCol(index);
   };
 
   const processGuess = () => {
     const finalCurrentGuess = currentGuess.join('');
-    if (finalCurrentGuess.length !== WORD_LENGTH) {
+    if (finalCurrentGuess.length !== wordLength) {
       toast({
         title: "Palavra incompleta",
-        description: `A palavra deve ter ${WORD_LENGTH} letras.`,
+        description: `A palavra deve ter ${wordLength} letras.`,
         variant: "destructive",
         duration: 2000,
       });
       return;
     }
 
-    if (!isValidGuess(finalCurrentGuess)) {
+    if (!validateFn(finalCurrentGuess)) {
       toast({
         title: "Palavra inválida",
         description: "Esta palavra não está no dicionário.",
@@ -116,7 +123,7 @@ export const useGameLogic = () => {
       return;
     }
 
-    const { newUsedLetters, isCorrect, guessEvaluation } = evaluateGuess(finalCurrentGuess, solution, usedLetters);
+    const { newUsedLetters, isCorrect, guessEvaluation } = evaluateGuess(finalCurrentGuess, solution, usedLetters, wordLength);
 
     const newGuesses = [...guesses];
     newGuesses[currentAttempt] = finalCurrentGuess;
@@ -133,9 +140,13 @@ export const useGameLogic = () => {
     if (isCorrect) {
       setIsGameOver(true);
       setIsGameWon(true);
-      saveGameResult(true, currentAttempt + 1);
-      saveDailyResult(today, solution, true, currentAttempt + 1);
-      saveCompletedGame({
+      if (is6) {
+        saveDailyResult6(today, solution, true, currentAttempt + 1);
+      } else {
+        saveGameResult(true, currentAttempt + 1);
+        saveDailyResult(today, solution, true, currentAttempt + 1);
+      }
+      saveCompletedFn({
         dateStr: today,
         solution,
         guesses: newGuesses,
@@ -149,11 +160,15 @@ export const useGameLogic = () => {
         className: "bg-green-500 border-green-400 text-white",
         duration: 4000,
       });
-    } else if (currentAttempt + 1 >= MAX_GUESSES) {
+    } else if (currentAttempt + 1 >= maxGuesses) {
       setIsGameOver(true);
-      saveGameResult(false, MAX_GUESSES);
-      saveDailyResult(today, solution, false, MAX_GUESSES);
-      saveCompletedGame({
+      if (is6) {
+        saveDailyResult6(today, solution, false, maxGuesses);
+      } else {
+        saveGameResult(false, maxGuesses);
+        saveDailyResult(today, solution, false, maxGuesses);
+      }
+      saveCompletedFn({
         dateStr: today,
         solution,
         guesses: newGuesses,
@@ -168,8 +183,7 @@ export const useGameLogic = () => {
         duration: 4000,
       });
     } else {
-      // Salva progresso para restaurar ao recarregar a página
-      saveGameProgress({
+      saveProgressFn({
         dateStr: today,
         solution,
         guesses: newGuesses,
@@ -177,7 +191,7 @@ export const useGameLogic = () => {
         currentAttempt,
       });
       setCurrentAttempt(currentAttempt + 1);
-      setCurrentGuess(Array(WORD_LENGTH).fill(''));
+      setCurrentGuess(Array(wordLength).fill(''));
       setActiveInputCol(0);
     }
   };
@@ -198,11 +212,11 @@ export const useGameLogic = () => {
         setActiveInputCol(activeInputCol - 1);
       }
     } else if (/^[A-Z]$/.test(key.toUpperCase())) {
-      if (activeInputCol < WORD_LENGTH) {
+      if (activeInputCol < wordLength) {
         const newGuess = [...currentGuess];
         newGuess[activeInputCol] = key.toUpperCase();
         setCurrentGuess(newGuess);
-        if (activeInputCol < WORD_LENGTH - 1) {
+        if (activeInputCol < wordLength - 1) {
           setActiveInputCol(activeInputCol + 1);
         }
       }
