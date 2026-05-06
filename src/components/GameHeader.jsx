@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HelpCircle, X } from 'lucide-react';
-import ModeSelector from '@/components/ModeSelector';
+import { HelpCircle, Settings2, X, Check } from 'lucide-react';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 const ExampleTile = ({ letter, status }) => {
   const cls = {
@@ -93,34 +93,169 @@ const InstructionsModal = ({ onClose, currentMode }) => (
 
 const GameHeader = ({ allModes, currentMode, onModeChange }) => {
   const [showInfo, setShowInfo] = useState(false);
+  const [showModes, setShowModes] = useState(false);
+  const isMobile = useIsMobile();
+  const gearRef = useRef(null);
+  const modeMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!showModes || isMobile) return;
+    const handler = (e) => {
+      if (
+        gearRef.current && !gearRef.current.contains(e.target) &&
+        modeMenuRef.current && !modeMenuRef.current.contains(e.target)
+      ) setShowModes(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showModes, isMobile]);
+
+  useEffect(() => {
+    if (!showModes) return;
+    const handler = (e) => { if (e.key === 'Escape') setShowModes(false); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [showModes]);
+
+  const handleModeSelect = (mode) => {
+    onModeChange(mode);
+    setShowModes(false);
+  };
 
   return (
     <>
       <header className="w-full border-b border-zinc-800/60" style={{ background: 'linear-gradient(to bottom, #1a1d27, #16181d)' }}>
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="w-9" />
+        <div className="flex items-center justify-between max-w-lg mx-auto w-full px-3 py-3">
+
+          {/* Esquerda: ajuda */}
+          <button
+            onClick={() => setShowInfo(true)}
+            className="w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-white transition-colors rounded-lg"
+            aria-label="Como jogar"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </button>
+
+          {/* Centro: título */}
           <h1 className="text-2xl sm:text-3xl font-black tracking-[0.25em] text-white uppercase select-none">
             Kinto
           </h1>
-          <div className="w-9" />
-        </div>
 
-        <div className="flex items-center justify-center gap-2 px-4 py-2">
-          <ModeSelector
-            modes={allModes}
-            activeMode={currentMode}
-            onModeChange={onModeChange}
-          />
-          <button
-            onClick={() => setShowInfo(true)}
-            className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-white transition-colors rounded-full"
-            aria-label="Como jogar"
-          >
-            <HelpCircle className="w-4 h-4" />
-          </button>
+          {/* Direita: configurações de modo */}
+          <div className="relative">
+            <button
+              ref={gearRef}
+              onClick={() => setShowModes((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={showModes}
+              aria-label="Modo de jogo"
+              className="w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-white transition-colors rounded-lg"
+            >
+              <motion.span
+                animate={{ rotate: showModes ? 60 : 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="flex"
+              >
+                <Settings2 className="w-5 h-5" />
+              </motion.span>
+            </button>
+
+            {/* Dropdown — desktop */}
+            <AnimatePresence>
+              {showModes && !isMobile && (
+                <motion.div
+                  ref={modeMenuRef}
+                  role="menu"
+                  className="absolute right-0 top-full mt-2 z-50 min-w-[190px] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden"
+                  initial={{ opacity: 0, scale: 0.95, y: -6 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -6 }}
+                  transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500 px-4 pt-3 pb-1">
+                    Modo de jogo
+                  </p>
+                  {allModes.map((mode) => (
+                    <button
+                      key={mode.id}
+                      role="menuitem"
+                      onClick={() => handleModeSelect(mode)}
+                      className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors last:rounded-b-xl ${
+                        currentMode.id === mode.id
+                          ? 'bg-zinc-800 text-white'
+                          : 'text-zinc-400 hover:bg-zinc-800/70 hover:text-white'
+                      }`}
+                    >
+                      <span className="flex flex-col">
+                        <span className="font-semibold text-sm">{mode.label}</span>
+                        <span className="text-xs text-zinc-500 mt-0.5">{mode.description}</span>
+                      </span>
+                      {currentMode.id === mode.id && (
+                        <Check className="w-4 h-4 text-[#6aaa64] ml-4 flex-shrink-0" />
+                      )}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </header>
 
+      {/* Bottom sheet — mobile */}
+      <AnimatePresence>
+        {showModes && isMobile && (
+          <motion.div
+            className="fixed inset-0 z-50 flex flex-col items-stretch justify-end"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setShowModes(false)}
+          >
+            <div className="absolute inset-0 bg-black/70" />
+            <motion.div
+              role="menu"
+              className="relative bg-zinc-900 border-t border-zinc-700 rounded-t-2xl overflow-hidden"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 360, damping: 32 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full bg-zinc-700" />
+              </div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 text-center pt-2 pb-3">
+                Modo de jogo
+              </p>
+              {allModes.map((mode) => (
+                <button
+                  key={mode.id}
+                  role="menuitem"
+                  onClick={() => handleModeSelect(mode)}
+                  className={`w-full flex items-center justify-between px-6 py-4 text-left border-t border-zinc-800 transition-colors active:bg-zinc-800 ${
+                    currentMode.id === mode.id
+                      ? 'bg-zinc-800/60 text-white'
+                      : 'text-zinc-400'
+                  }`}
+                >
+                  <span className="flex flex-col">
+                    <span className="font-semibold text-base">{mode.label}</span>
+                    <span className="text-sm text-zinc-500 mt-0.5">{mode.description}</span>
+                  </span>
+                  {currentMode.id === mode.id && (
+                    <Check className="w-5 h-5 text-[#6aaa64]" />
+                  )}
+                </button>
+              ))}
+              <div className="pb-8" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de instruções */}
       <AnimatePresence>
         {showInfo && <InstructionsModal onClose={() => setShowInfo(false)} currentMode={currentMode} />}
       </AnimatePresence>
