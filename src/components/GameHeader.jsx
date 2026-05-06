@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HelpCircle, X } from 'lucide-react';
+import ModeSelector from '@/components/ModeSelector';
 
 const ExampleTile = ({ letter, status }) => {
   const cls = {
@@ -16,7 +17,7 @@ const ExampleTile = ({ letter, status }) => {
   );
 };
 
-const InstructionsModal = ({ onClose }) => (
+const InstructionsModal = ({ onClose, currentMode }) => (
   <motion.div
     className="fixed inset-0 z-50 flex items-center justify-center p-4"
     initial={{ opacity: 0 }}
@@ -41,8 +42,8 @@ const InstructionsModal = ({ onClose }) => (
       </div>
 
       <ul className="space-y-2 text-sm mb-5 text-zinc-400 list-disc list-inside leading-relaxed">
-        <li>Adivinhe a palavra oculta em <span className="text-white font-semibold">6 tentativas</span>.</li>
-        <li>A palavra tem exatamente <span className="text-white font-semibold">5 letras</span>.</li>
+        <li>Adivinhe a palavra oculta em <span className="text-white font-semibold">{currentMode.maxGuesses} tentativas</span>.</li>
+        <li>A palavra tem exatamente <span className="text-white font-semibold">{currentMode.wordLength} letras</span>.</li>
         <li>Cada chute deve ser uma palavra válida do dicionário.</li>
         <li>Use <span className="text-white font-semibold">ENTER</span> (direita) para confirmar e <span className="text-white font-semibold">⌫</span> (esquerda) para apagar.</li>
       </ul>
@@ -90,27 +91,35 @@ const InstructionsModal = ({ onClose }) => (
   </motion.div>
 );
 
-const GameHeader = () => {
+const GameHeader = ({ allModes, currentMode, onModeChange }) => {
   const [showInfo, setShowInfo] = useState(false);
 
   return (
     <>
-      <header className="w-full flex items-center justify-between px-4 py-3 border-b border-zinc-800/60">
-        <div className="w-9" />
-        <h1 className="text-4xl font-black tracking-[0.3em] text-white uppercase select-none">
-          Kinto
-        </h1>
-        <button
-          onClick={() => setShowInfo(true)}
-          className="w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-white transition-colors rounded-lg"
-          aria-label="Como jogar"
-        >
-          <HelpCircle className="w-5 h-5" />
-        </button>
+      <header className="w-full border-b border-zinc-800/60" style={{ background: 'linear-gradient(to bottom, #1a1d27, #16181d)' }}>
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="w-9" />
+          <h1 className="text-2xl sm:text-3xl font-black tracking-[0.25em] text-white uppercase select-none">
+            Kinto
+          </h1>
+          <button
+            onClick={() => setShowInfo(true)}
+            className="w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-white transition-colors rounded-lg"
+            aria-label="Como jogar"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </button>
+        </div>
+
+        <ModeSelector
+          modes={allModes}
+          activeMode={currentMode}
+          onModeChange={onModeChange}
+        />
       </header>
 
       <AnimatePresence>
-        {showInfo && <InstructionsModal onClose={() => setShowInfo(false)} />}
+        {showInfo && <InstructionsModal onClose={() => setShowInfo(false)} currentMode={currentMode} />}
       </AnimatePresence>
     </>
   );

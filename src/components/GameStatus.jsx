@@ -4,6 +4,7 @@ import { Share2, Clock, X, ChevronRight } from 'lucide-react';
 import { getDailyResults } from '@/lib/stats';
 import { getDailyResults6 } from '@/lib/stats6';
 import { getTodayDateStr } from '@/lib/wordOfDay';
+import { GAME_MODES } from '@/config/gameModes';
 import { MAX_GUESSES } from '@/config/constants';
 
 const useCountdown = () => {
@@ -37,7 +38,7 @@ const GameStatus = ({
   isOpen,
   onClose,
   maxGuesses = MAX_GUESSES,
-  showChallenge = true,
+  currentMode,
 }) => {
   const [copied, setCopied] = useState(false);
   const [todayResults, setTodayResults] = useState([]);
@@ -46,7 +47,7 @@ const GameStatus = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    const fn = showChallenge ? getDailyResults : getDailyResults6;
+    const fn = currentMode.id === 'classic' ? getDailyResults : getDailyResults6;
     fn(today, solution).then(setTodayResults);
   }, [isOpen, today]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -59,7 +60,8 @@ const GameStatus = ({
         status === 'correct' ? '🟩' : status === 'present' ? '🟨' : '⬛'
       ).join(''))
       .join('\n');
-    return `Kinto ${today} ${result}\n\n${rows}`;
+    const modeLabel = currentMode.id === 'classic' ? '' : ` (${currentMode.label})`;
+    return `Kinto${modeLabel} ${today} ${result}\n\n${rows}`;
   };
 
   const handleShare = () => {
@@ -77,6 +79,8 @@ const GameStatus = ({
     else distribution.X = (distribution.X || 0) + 1;
   }
   const maxVal = Math.max(...Object.values(distribution), 1);
+
+  const otherModes = GAME_MODES.filter((m) => m.id !== currentMode.id);
 
   return (
     <AnimatePresence>
@@ -144,29 +148,20 @@ const GameStatus = ({
               {copied ? 'Copiado!' : 'Compartilhar resultado'}
             </button>
 
-            {/* 6-letter challenge CTA — só aparece no jogo de 5 letras */}
-            {showChallenge && (
+            {/* Other modes */}
+            {otherModes.map((mode) => (
               <a
-                href="/6"
+                key={mode.id}
+                href={mode.path}
                 className="flex items-center justify-between w-full rounded-xl border border-zinc-700 bg-zinc-800/60 hover:bg-zinc-800 transition-colors px-4 py-3.5 group"
               >
                 <div>
-                  <p className="text-sm font-semibold text-white">Quer um desafio maior?</p>
-                  <p className="text-xs text-zinc-400 mt-0.5">6 letras · 7 tentativas</p>
+                  <p className="text-sm font-semibold text-white">Jogar {mode.label}</p>
+                  <p className="text-xs text-zinc-400 mt-0.5">{mode.description}</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-zinc-500 group-hover:text-white transition-colors shrink-0" />
               </a>
-            )}
-
-            {/* Back to 5 letters — só aparece no jogo de 6 letras */}
-            {!showChallenge && (
-              <a
-                href="/"
-                className="flex items-center justify-center gap-1.5 text-zinc-500 hover:text-zinc-300 text-xs transition-colors"
-              >
-                ← Voltar ao jogo de 5 letras
-              </a>
-            )}
+            ))}
 
             {/* Ranking */}
             {todayResults.length > 0 && (

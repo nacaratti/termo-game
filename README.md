@@ -1,6 +1,15 @@
 # Qual é a Palavra?
 
-Clone em português do [Wordle](https://www.nytimes.com/games/wordle/index.html) — adivinhe a palavra de 5 letras em até 6 tentativas.
+Clone em português do [Wordle](https://www.nytimes.com/games/wordle/index.html) — adivinhe a palavra oculta em até 6 ou 7 tentativas, com modos de 5 e 6 letras.
+
+## Modos de jogo
+
+| Modo | Letras | Tentativas | URL |
+|---|---|---|---|
+| **Clássico** | 5 | 6 | `/` |
+| **Desafio** | 6 | 7 | `/6` |
+
+Os modos são selecionáveis pelo seletor no header do jogo, ou acessíveis diretamente pela URL. Cada modo tem sua própria palavra do dia, estatísticas e progresso independentes.
 
 ## Funcionalidades
 
@@ -63,14 +72,30 @@ python palavras/deduplicar.py
 # Atualiza solucoes.txt e validas.txt in-place
 ```
 
+O mesmo pipeline é executado para palavras de 6 letras, gerando `solucoes_6.txt` e `validas_6.txt`.
+
 ### Como os arquivos são usados no jogo
 
 | Arquivo | Módulo JS | Uso |
 |---|---|---|
-| `palavras/solucoes.txt` | `src/data/solutionList.js` | Sorteio da palavra do dia (carregado só no admin) |
+| `palavras/solucoes.txt` | `src/data/solutionList.js` | Sorteio da palavra do dia — 5 letras (carregado só no admin) |
 | `palavras/validas.txt` | `src/data/wordList.js` | `VALID_WORDS_SET` — validação de palpites em O(1) |
+| `palavras/solucoes_6.txt` | `src/data/solutionList6.js` | Sorteio da palavra do dia — 6 letras (carregado só no admin) |
+| `palavras/validas_6.txt` | `src/data/wordList6.js` | `VALID_WORDS_6_SET` — validação de palpites em O(1) |
 
 O `wordList.js` importa `validas.txt` como texto bruto via Vite (`?raw`), converte em `Set` normalizado e é carregado no bundle principal. O `solutionList.js` é carregado de forma lazy apenas pelo painel admin, para não expor a lista de soluções ao jogador.
+
+## Adicionando novos modos
+
+O sistema de modos é extensível via o registro em `src/config/gameModes.js`. Para adicionar um novo modo (ex: 7 letras):
+
+1. Gere as listas de palavras com o pipeline de geração (ajustando o filtro de letras)
+2. Crie os módulos de dados (`wordList7.js`, `solutionList7.js`)
+3. Crie os módulos de lógica (`wordOfDay7.js`, `gameState7.js`, `stats7.js`, `customWords7.js`)
+4. Adicione uma entrada no array `GAME_MODES` em `src/config/gameModes.js`
+5. Adicione o branch `is7` em `useGameLogic.js` para resolver as funções corretas
+
+O seletor de modos, roteamento, tela de fim de jogo e CSS do tabuleiro se adaptam automaticamente.
 
 ## Stack
 
@@ -174,28 +199,39 @@ palavras/
 ├── separar_listas.py       # Separa em solucoes.txt e validas.txt
 ├── deduplicar.py           # Remove duplicatas de normalização
 ├── palavras_5_letras.txt   # Banco bruto (saída do passo 1)
-├── solucoes.txt            # Palavras comuns (saída final)
-└── validas.txt             # Todas as palavras (saída final)
+├── solucoes.txt            # Palavras comuns 5 letras (saída final)
+├── validas.txt             # Todas as palavras 5 letras (saída final)
+├── solucoes_6.txt          # Palavras comuns 6 letras
+└── validas_6.txt           # Todas as palavras 6 letras
 
 src/
 ├── components/
 │   ├── ui/              # Componentes base (Button, Toast…)
 │   ├── GameBoard.jsx    # Tabuleiro e tiles
-│   ├── GameHeader.jsx
+│   ├── GameHeader.jsx   # Header com título e seletor de modo
 │   ├── GameStatus.jsx   # Tela de fim de jogo (resultado, ranking, countdown)
-│   └── Keyboard.jsx     # Teclado virtual
+│   ├── Keyboard.jsx     # Teclado virtual
+│   └── ModeSelector.jsx # Seletor de modo (pills animadas)
 ├── config/
-│   └── constants.js     # Constantes globais (WORD_LENGTH, MAX_GUESSES…)
+│   ├── constants.js     # Constantes globais (WORD_LENGTH, MAX_GUESSES…)
+│   └── gameModes.js     # Registro de modos de jogo
 ├── data/
-│   ├── wordList.js      # VALID_WORDS_SET (validas.txt)
-│   └── solutionList.js  # SOLUTION_WORDS (solucoes.txt) — lazy, só no admin
+│   ├── wordList.js      # VALID_WORDS_SET — 5 letras (validas.txt)
+│   ├── wordList6.js     # VALID_WORDS_6_SET — 6 letras (validas_6.txt)
+│   ├── solutionList.js  # SOLUTION_WORDS — 5 letras (lazy, só no admin)
+│   └── solutionList6.js # SOLUTION_WORDS_6 — 6 letras (lazy, só no admin)
 ├── hooks/
 │   └── useGameLogic.js  # Toda a lógica do jogo
 ├── lib/
 │   ├── gameLogic.js     # Funções puras (checkGuess, getTileStyling…)
-│   ├── wordOfDay.js     # Palavra do dia (localStorage, troca à meia-noite BRT)
-│   ├── customWords.js   # Palavras customizadas (admin)
-│   ├── stats.js         # Estatísticas (diárias e históricas)
+│   ├── wordOfDay.js     # Palavra do dia 5 letras
+│   ├── wordOfDay6.js    # Palavra do dia 6 letras
+│   ├── customWords.js   # Palavras customizadas 5 letras (admin)
+│   ├── customWords6.js  # Palavras customizadas 6 letras (admin)
+│   ├── gameState.js     # Estado do jogo 5 letras (localStorage)
+│   ├── gameState6.js    # Estado do jogo 6 letras (localStorage)
+│   ├── stats.js         # Estatísticas 5 letras
+│   ├── stats6.js        # Estatísticas 6 letras
 │   └── normalize.js     # Remove acentos para comparação
 ├── App.jsx
 ├── index.css
