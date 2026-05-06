@@ -1,14 +1,21 @@
 import { VALID_WORDS_SET } from '@/data/wordList';
 import { normalizeWord } from '@/lib/normalize';
 
-// Chave interna — propositalmente não descritiva
-const _K = '_c4w';
+const _K  = '_c4w';
+const _BK = '_b5w';
 
 const _read = () => {
   try { return JSON.parse(atob(localStorage.getItem(_K) || '')); } catch { return []; }
 };
 const _write = (arr) => {
-  try { localStorage.setItem(_K, btoa(JSON.stringify(arr))); } catch { /* ignore */ }
+  try { localStorage.setItem(_K, btoa(JSON.stringify(arr))); } catch {}
+};
+
+const _readBL = () => {
+  try { return new Set(JSON.parse(atob(localStorage.getItem(_BK) || ''))); } catch { return new Set(); }
+};
+const _writeBL = (set) => {
+  try { localStorage.setItem(_BK, btoa(JSON.stringify([...set]))); } catch {}
 };
 
 export const getCustomWords = () => _read();
@@ -28,6 +35,22 @@ export const removeCustomWord = (word) => {
   _write(_read().filter(w => w !== word));
 };
 
+export const getBlacklist = () => [..._readBL()];
+
+export const addToBlacklist = (word) => {
+  const bl = _readBL();
+  bl.add(normalizeWord(word.toUpperCase()));
+  _writeBL(bl);
+};
+
+export const removeFromBlacklist = (word) => {
+  const bl = _readBL();
+  bl.delete(normalizeWord(word.toUpperCase()));
+  _writeBL(bl);
+};
+
 export const isValidGuess = (word) => {
-  return VALID_WORDS_SET.has(normalizeWord(word)) || _read().includes(word);
+  const norm = normalizeWord(word);
+  if (_readBL().has(norm)) return false;
+  return VALID_WORDS_SET.has(norm) || _read().includes(word.toUpperCase());
 };

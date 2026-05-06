@@ -2,9 +2,18 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { SOLUTION_WORDS } from '@/data/solutionList';
 import { VALID_WORDS_SET } from '@/data/wordList';
+import { SOLUTION_WORDS_6 } from '@/data/solutionList6';
+import { VALID_WORDS_6_SET } from '@/data/wordList6';
 import { getGlobalStats, getDailyResults, saveDailyWord, getHistoricalData } from '@/lib/stats';
-import { getDailyResults6, saveDailyWord6 } from '@/lib/stats6';
-import { getCustomWords, addCustomWord, removeCustomWord } from '@/lib/customWords';
+import { getGlobalStats6, getHistoricalData6, getDailyResults6, saveDailyWord6 } from '@/lib/stats6';
+import {
+  getCustomWords, addCustomWord, removeCustomWord,
+  getBlacklist, addToBlacklist, removeFromBlacklist,
+} from '@/lib/customWords';
+import {
+  getCustomWords6, addCustomWord6, removeCustomWord6,
+  getBlacklist6, addToBlacklist6, removeFromBlacklist6,
+} from '@/lib/customWords6';
 import { getWordOfDay, setWordOfDay, getTodayDateStr } from '@/lib/wordOfDay';
 import { getWordOfDay6, setWordOfDay6 } from '@/lib/wordOfDay6';
 import { supabase } from '@/lib/supabase';
@@ -300,19 +309,14 @@ const WordOfDayPanel = ({
   );
 };
 
-// ─── Estatísticas globais ─────────────────────────────────────────────────────
-const StatsPanel = () => {
-  const [stats, setStats] = useState(null);
-
-  useEffect(() => {
-    getGlobalStats().then(setStats);
-  }, []);
-
-  if (!stats) return <p className="text-zinc-600 text-sm text-center py-8">Carregando…</p>;
-
+// ─── Bloco de estatísticas reutilizável ───────────────────────────────────────
+const StatsBlock = ({ stats, maxAttempts }) => {
   const avgAttempts = stats.wins > 0
     ? (stats.totalAttempts / stats.wins).toFixed(1)
     : '–';
+  const winRate = stats.totalGames > 0
+    ? Math.round((stats.wins / stats.totalGames) * 100)
+    : 0;
   const maxDist = Math.max(...Object.values(stats.distribution), 1);
 
   return (
@@ -321,65 +325,127 @@ const StatsPanel = () => {
         {[
           { label: 'Total de jogos',   value: stats.totalGames, color: 'text-white'     },
           { label: 'Vitórias',         value: stats.wins,       color: 'text-[#6aaa64]' },
-          { label: 'Derrotas',         value: stats.losses,     color: 'text-zinc-400'  },
-          { label: 'Média tentativas', value: avgAttempts,      color: 'text-[#c9a84c]' },
+          { label: 'Taxa de acerto',   value: `${winRate}%`,    color: 'text-[#c9a84c]' },
+          { label: 'Média tentativas', value: avgAttempts,      color: 'text-zinc-300'  },
         ].map(({ label, value, color }) => (
-          <Card key={label} className="text-center !py-4">
-            <p className={`text-3xl font-black ${color}`}>{value}</p>
+          <div key={label} className="rounded-lg p-3 text-center" style={{ backgroundColor: SURF }}>
+            <p className={`text-2xl font-black ${color}`}>{value}</p>
             <p className="text-zinc-500 text-xs mt-1">{label}</p>
-          </Card>
+          </div>
         ))}
       </div>
+      <div className="space-y-1.5">
+        {Array.from({ length: maxAttempts }, (_, i) => i + 1).map(n => (
+          <DistBar key={n} label={n} count={stats.distribution[n] || 0} maxVal={maxDist} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── Estatísticas globais ─────────────────────────────────────────────────────
+const StatsPanel = () => {
+  const [stats5, setStats5] = useState(null);
+  const [stats6, setStats6] = useState(null);
+
+  useEffect(() => {
+    getGlobalStats().then(setStats5);
+    getGlobalStats6().then(setStats6);
+  }, []);
+
+  const loading = !stats5 || !stats6;
+  if (loading) return <p className="text-zinc-600 text-sm text-center py-8">Carregando…</p>;
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <SectionTitle>5 letras · 6 tentativas</SectionTitle>
+        <StatsBlock stats={stats5} maxAttempts={6} />
+      </Card>
 
       <Card>
-        <SectionTitle>Distribuição de tentativas — todos os jogos</SectionTitle>
-        <div className="space-y-1.5">
-          {[1, 2, 3, 4, 5, 6].map(n => (
-            <DistBar key={n} label={n} count={stats.distribution[n] || 0} maxVal={maxDist} />
-          ))}
-        </div>
+        <SectionTitle>6 letras · 7 tentativas</SectionTitle>
+        {stats6.totalGames === 0 ? (
+          <p className="text-zinc-600 text-sm text-center py-4">Nenhum jogo registrado ainda.</p>
+        ) : (
+          <StatsBlock stats={stats6} maxAttempts={7} />
+        )}
       </Card>
     </div>
   );
 };
 
-// ─── Palavras ─────────────────────────────────────────────────────────────────
-const WordsPanel = () => {
-  const [customWords, setCustomWords] = useState(getCustomWords());
-  const [search, setSearch] = useState('');
+// ─── Banco de Palavras (parametrizado para 5 e 6 letras) ─────────────────────
+const WordsPanelBase = ({
+  wordLength,
+  solutionWords,
+  validWordsSet,
+  getCustomWordsFn,
+  addCustomWordFn,
+  removeCustomWordFn,
+  getBlacklistFn,
+  addToBlacklistFn,
+  removeFromBlacklistFn,
+}) => {
+  const [customWords, setCustomWords] = useState(() => getCustomWordsFn());
+  const [blacklist, setBlacklist]     = useState(() => new Set(getBlacklistFn()));
+  const [search, setSearch]   = useState('');
   const [newWord, setNewWord] = useState('');
   const [feedback, setFeedback] = useState(null);
-  const [page, setPage] = useState(0);
+  const [page, setPage]       = useState(0);
   const [showAll, setShowAll] = useState(false);
+  const [showRemoved, setShowRemoved] = useState(false);
 
-  const solSet = useMemo(() => new Set(SOLUTION_WORDS), []);
+  const refresh = () => {
+    setCustomWords(getCustomWordsFn());
+    setBlacklist(new Set(getBlacklistFn()));
+  };
 
+  const solSet = useMemo(() => new Set(solutionWords), [solutionWords]);
+
+  // Palavras ativas (não removidas)
   const allWords = useMemo(() => {
     const words = [];
-    for (const w of SOLUTION_WORDS) words.push({ word: w, source: 'solucao' });
-    for (const w of VALID_WORDS_SET) {
-      if (!solSet.has(w) && !customWords.includes(w)) words.push({ word: w, source: 'extra' });
+    for (const w of solutionWords) {
+      if (!blacklist.has(w) && !blacklist.has(w.replace(/[ÁÂÃÀÉÊÍÓÔÕÚÜÇ]/g, m =>
+        ({ Á:'A',Â:'A',Ã:'A',À:'A',É:'E',Ê:'E',Í:'I',Ó:'O',Ô:'O',Õ:'O',Ú:'U',Ü:'U',Ç:'C' }[m] || m)
+      )))
+        words.push({ word: w, source: 'solucao' });
     }
-    for (const w of customWords) words.push({ word: w, source: 'personalizada' });
+    for (const w of validWordsSet) {
+      if (!solSet.has(w) && !customWords.includes(w) && !blacklist.has(w))
+        words.push({ word: w, source: 'extra' });
+    }
+    for (const w of customWords) {
+      if (!blacklist.has(w)) words.push({ word: w, source: 'personalizada' });
+    }
     return words.sort((a, b) => a.word.localeCompare(b.word));
-  }, [customWords, solSet]);
+  }, [customWords, solSet, blacklist, solutionWords, validWordsSet]);
+
+  // Palavras removidas (blacklist)
+  const removedWords = useMemo(() => {
+    return [...blacklist].sort((a, b) => a.localeCompare(b)).map(w => ({ word: w, source: 'removida' }));
+  }, [blacklist]);
+
+  const activeList = showRemoved ? removedWords : allWords;
 
   const filtered = useMemo(() => {
     const q = search.trim().toUpperCase();
+    if (showRemoved) return q ? activeList.filter(e => e.word.includes(q)) : activeList;
     if (!q && !showAll) return allWords.filter(e => e.source === 'personalizada');
     return q ? allWords.filter(e => e.word.includes(q)) : allWords;
-  }, [allWords, search, showAll]);
+  }, [activeList, allWords, search, showAll, showRemoved]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const paginated  = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  useEffect(() => { setPage(0); }, [search, showAll]);
+  useEffect(() => { setPage(0); }, [search, showAll, showRemoved]);
 
   const handleAdd = (e) => {
     e.preventDefault();
-    const result = addCustomWord(newWord);
+    const result = addCustomWordFn(newWord);
     if (result.ok) {
-      setCustomWords(getCustomWords());
+      refresh();
       setNewWord('');
       setFeedback({ type: 'ok', msg: `"${newWord.toUpperCase()}" adicionada!` });
     } else {
@@ -388,25 +454,48 @@ const WordsPanel = () => {
     setTimeout(() => setFeedback(null), 3000);
   };
 
+  const handleRemove = (word, source) => {
+    if (source === 'personalizada') {
+      removeCustomWordFn(word);
+    } else {
+      addToBlacklistFn(word);
+    }
+    refresh();
+  };
+
+  const handleRestore = (word) => {
+    removeFromBlacklistFn(word);
+    refresh();
+  };
+
   const sourceLabel = {
-    solucao:       { text: 'Solução',       cls: 'text-[#6aaa64]',  bdr: '#6aaa64' },
-    extra:         { text: 'Extra',         cls: 'text-zinc-500',   bdr: BDR2      },
-    personalizada: { text: 'Personalizada', cls: 'text-white',      bdr: '#5a5d70' },
+    solucao:       { text: 'Solução',       cls: 'text-[#6aaa64]', bdr: '#6aaa64' },
+    extra:         { text: 'Extra',         cls: 'text-zinc-500',  bdr: BDR2      },
+    personalizada: { text: 'Personalizada', cls: 'text-white',     bdr: '#5a5d70' },
+    removida:      { text: 'Removida',      cls: 'text-red-400',   bdr: '#f87171' },
+  };
+
+  const countLabel = () => {
+    if (showRemoved) return `${removedWords.length} palavra(s) removida(s)`;
+    if (search || showAll)
+      return `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, filtered.length)} de ${filtered.length}`;
+    return `${customWords.length} palavra(s) personalizada(s)`;
   };
 
   return (
     <div className="space-y-4">
+      {/* Adicionar */}
       <Card>
-        <SectionTitle>Adicionar palavra</SectionTitle>
+        <SectionTitle>Adicionar palavra personalizada</SectionTitle>
         <form onSubmit={handleAdd} className="flex gap-2">
           <Input
             value={newWord}
             onChange={(e) => setNewWord(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))}
-            maxLength={5}
-            placeholder="5 letras"
+            maxLength={wordLength}
+            placeholder={`${wordLength} letras`}
             className="flex-1 font-mono text-lg tracking-widest uppercase"
           />
-          <BtnPrimary type="submit" disabled={newWord.length !== 5} className="px-5 py-2">
+          <BtnPrimary type="submit" disabled={newWord.length !== wordLength} className="px-5 py-2">
             Adicionar
           </BtnPrimary>
         </form>
@@ -417,6 +506,7 @@ const WordsPanel = () => {
         )}
       </Card>
 
+      {/* Lista */}
       <Card>
         <div className="flex flex-col sm:flex-row gap-2 mb-4">
           <Input
@@ -425,22 +515,27 @@ const WordsPanel = () => {
             placeholder="Buscar palavra…"
             className="flex-1"
           />
-          <BtnGhost
-            onClick={() => setShowAll(v => !v)}
-            className="px-4 py-2 whitespace-nowrap"
-          >
-            {showAll ? 'Só personalizadas' : `Ver todas (${allWords.length})`}
-          </BtnGhost>
+          <div className="flex gap-2 shrink-0">
+            {!showRemoved && (
+              <BtnGhost onClick={() => { setShowAll(v => !v); setShowRemoved(false); }} className="px-3 py-2 whitespace-nowrap">
+                {showAll ? 'Só personalizadas' : `Ver todas (${allWords.length})`}
+              </BtnGhost>
+            )}
+            <BtnGhost
+              onClick={() => { setShowRemoved(v => !v); setShowAll(false); setSearch(''); }}
+              className={`px-3 py-2 whitespace-nowrap ${showRemoved ? 'text-red-400' : ''}`}
+            >
+              {showRemoved ? '← Voltar' : `Removidas (${removedWords.length})`}
+            </BtnGhost>
+          </div>
         </div>
 
-        <p className="text-zinc-600 text-xs mb-3">
-          {search || showAll
-            ? `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, filtered.length)} de ${filtered.length}`
-            : `${customWords.length} palavra(s) personalizada(s)`}
-        </p>
+        <p className="text-zinc-600 text-xs mb-3">{countLabel()}</p>
 
         {paginated.length === 0 ? (
-          <p className="text-zinc-600 text-sm text-center py-6">Nenhuma palavra encontrada.</p>
+          <p className="text-zinc-600 text-sm text-center py-6">
+            {showRemoved ? 'Nenhuma palavra removida.' : 'Nenhuma palavra encontrada.'}
+          </p>
         ) : (
           <div className="divide-y" style={{ borderColor: BDR }}>
             {paginated.map(({ word, source }) => {
@@ -449,15 +544,20 @@ const WordsPanel = () => {
                 <div key={word} className="flex items-center justify-between py-2.5 gap-3">
                   <span className="font-mono text-white font-semibold tracking-widest text-sm">{word}</span>
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded border ${cls}`}
-                      style={{ borderColor: bdr + '80' }}
-                    >
+                    <span className={`text-xs px-2 py-0.5 rounded border ${cls}`} style={{ borderColor: bdr + '80' }}>
                       {text}
                     </span>
-                    {source === 'personalizada' && (
+                    {showRemoved ? (
                       <button
-                        onClick={() => { removeCustomWord(word); setCustomWords(getCustomWords()); }}
+                        onClick={() => handleRestore(word)}
+                        className="text-zinc-500 hover:text-[#6aaa64] text-xs border px-2 py-0.5 rounded transition-colors"
+                        style={{ borderColor: BDR }}
+                      >
+                        Restaurar
+                      </button>
+                    ) : (showAll || search || source === 'personalizada') && (
+                      <button
+                        onClick={() => handleRemove(word, source)}
                         className="text-zinc-500 hover:text-red-400 text-xs border px-2 py-0.5 rounded transition-colors"
                         style={{ borderColor: BDR }}
                       >
@@ -487,29 +587,71 @@ const WordsPanel = () => {
   );
 };
 
+const WordsPanel = () => {
+  const [variant, setVariant] = useState('5');
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-1 rounded-xl p-1 w-fit border" style={{ backgroundColor: CARD, borderColor: BDR }}>
+        {[{ id: '5', label: '5 letras' }, { id: '6', label: '6 letras' }].map(v => (
+          <button
+            key={v.id}
+            onClick={() => setVariant(v.id)}
+            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+              variant === v.id ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'
+            }`}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {variant === '5' ? (
+        <WordsPanelBase
+          wordLength={5}
+          solutionWords={SOLUTION_WORDS}
+          validWordsSet={VALID_WORDS_SET}
+          getCustomWordsFn={getCustomWords}
+          addCustomWordFn={addCustomWord}
+          removeCustomWordFn={removeCustomWord}
+          getBlacklistFn={getBlacklist}
+          addToBlacklistFn={addToBlacklist}
+          removeFromBlacklistFn={removeFromBlacklist}
+        />
+      ) : (
+        <WordsPanelBase
+          wordLength={6}
+          solutionWords={SOLUTION_WORDS_6}
+          validWordsSet={VALID_WORDS_6_SET}
+          getCustomWordsFn={getCustomWords6}
+          addCustomWordFn={addCustomWord6}
+          removeCustomWordFn={removeCustomWord6}
+          getBlacklistFn={getBlacklist6}
+          addToBlacklistFn={addToBlacklist6}
+          removeFromBlacklistFn={removeFromBlacklist6}
+        />
+      )}
+    </div>
+  );
+};
+
 // ─── Histórico ────────────────────────────────────────────────────────────────
-const HistoryPanel = () => {
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getHistoricalData().then(data => { setHistory(data); setLoading(false); });
-  }, []);
-
-  if (loading) return <p className="text-zinc-600 text-sm text-center py-8">Carregando…</p>;
-  if (history.length === 0) return <p className="text-zinc-600 text-sm text-center py-8">Nenhum dado histórico disponível.</p>;
-
+const HistoryList = ({ history, maxAttempts }) => {
+  if (history.length === 0) {
+    return <p className="text-zinc-600 text-sm text-center py-8">Nenhum dado histórico disponível.</p>;
+  }
   return (
     <div className="space-y-3">
       {history.map(({ date, word, totalGames, wins, losses, distribution }) => {
         const maxDist = Math.max(...Object.values(distribution), 1);
         const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
+        const trackingClass = word.length === 6 ? 'tracking-[0.2em]' : 'tracking-[0.3em]';
         return (
           <Card key={`${date}|${word}`}>
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
               <div>
                 <p className="text-zinc-500 text-xs mb-0.5">{date}</p>
-                <p className="font-mono text-2xl sm:text-3xl font-black text-white tracking-[0.3em]">{word}</p>
+                <p className={`font-mono text-2xl sm:text-3xl font-black text-white ${trackingClass}`}>{word}</p>
               </div>
               <div className="grid grid-cols-4 sm:flex sm:gap-4 gap-2 text-center">
                 {[
@@ -525,7 +667,7 @@ const HistoryPanel = () => {
             {wins > 0 && (
               <div className="space-y-1.5 pt-3 border-t" style={{ borderColor: BDR }}>
                 <p className="text-xs text-zinc-600 mb-2">Distribuição de tentativas</p>
-                {[1, 2, 3, 4, 5, 6].map(n => (
+                {Array.from({ length: maxAttempts }, (_, i) => i + 1).map(n => (
                   <DistBar key={n} label={n} count={distribution[n] || 0} maxVal={maxDist} />
                 ))}
               </div>
@@ -533,6 +675,51 @@ const HistoryPanel = () => {
           </Card>
         );
       })}
+    </div>
+  );
+};
+
+const HistoryPanel = () => {
+  const [variant, setVariant] = useState('5');
+  const [history5, setHistory5] = useState(null);
+  const [history6, setHistory6] = useState(null);
+
+  useEffect(() => {
+    getHistoricalData().then(setHistory5);
+    getHistoricalData6().then(setHistory6);
+  }, []);
+
+  const loading = !history5 || !history6;
+  const history = variant === '6' ? history6 : history5;
+  const maxAttempts = variant === '6' ? 7 : 6;
+
+  return (
+    <div className="space-y-4">
+      {/* Seletor 5 / 6 letras */}
+      <div
+        className="flex gap-1 rounded-xl p-1 w-fit border"
+        style={{ backgroundColor: CARD, borderColor: BDR }}
+      >
+        {[
+          { id: '5', label: '5 letras' },
+          { id: '6', label: '6 letras' },
+        ].map(v => (
+          <button
+            key={v.id}
+            onClick={() => setVariant(v.id)}
+            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+              variant === v.id ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'
+            }`}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {loading
+        ? <p className="text-zinc-600 text-sm text-center py-8">Carregando…</p>
+        : <HistoryList history={history} maxAttempts={maxAttempts} />
+      }
     </div>
   );
 };

@@ -102,20 +102,23 @@ const GameHeader = ({ allModes, currentMode, onModeChange }) => {
           <h1 className="text-2xl sm:text-3xl font-black tracking-[0.25em] text-white uppercase select-none">
             Kinto
           </h1>
-          <button
-            onClick={() => setShowInfo(true)}
-            className="w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-white transition-colors rounded-lg"
-            aria-label="Como jogar"
-          >
-            <HelpCircle className="w-5 h-5" />
-          </button>
+          <div className="w-9" />
         </div>
 
-        <ModeSelector
-          modes={allModes}
-          activeMode={currentMode}
-          onModeChange={onModeChange}
-        />
+        <div className="flex items-center justify-center gap-2 px-4 py-2">
+          <ModeSelector
+            modes={allModes}
+            activeMode={currentMode}
+            onModeChange={onModeChange}
+          />
+          <button
+            onClick={() => setShowInfo(true)}
+            className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-white transition-colors rounded-full"
+            aria-label="Como jogar"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </button>
+        </div>
       </header>
 
       <AnimatePresence>
