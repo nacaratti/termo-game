@@ -32,7 +32,8 @@ const GameBoardRow = ({
   wordLength,
 }) => {
   const isCurrentActiveRow = rowIndex === currentAttempt;
-  const colClass = wordLength === 6 ? 'grid-cols-6' : 'grid-cols-5';
+  const COL_CLASSES = { 5: 'grid-cols-5', 6: 'grid-cols-6', 7: 'grid-cols-7' };
+  const colClass = COL_CLASSES[wordLength] || 'grid-cols-5';
 
   return (
     <div className={`grid ${colClass} gap-1.5`} role="row">
@@ -82,7 +83,8 @@ const GameBoard = ({
 }) => {
   return (
     <div
-      className={`grid gap-1.5 mb-6${wordLength === 6 ? ' board-6' : ''}`}
+      data-word-length={wordLength}
+      className="grid gap-1.5 mb-6"
       role="grid"
       aria-label="Tabuleiro do jogo"
     >

@@ -67,11 +67,17 @@
   transition: border-color 0.1s ease;
 }
 
-/* Tiles levemente menores para o tabuleiro de 6 letras */
-.board-6 .tile {
+/* Tiles adaptados por número de letras */
+[data-word-length="6"] .tile {
   width: min(13vw, 62px);
   height: min(13vw, 62px);
   font-size: clamp(0.95rem, 3.5vw, 1.4rem);
+}
+
+[data-word-length="7"] .tile {
+  width: min(11.5vw, 56px);
+  height: min(11.5vw, 56px);
+  font-size: clamp(0.85rem, 3vw, 1.25rem);
 }
 
 .tile-empty  { background: transparent;  border-color: #2c2f3a; color: transparent; }

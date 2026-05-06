@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import GameBoard from '@/components/GameBoard';
 import Keyboard from '@/components/Keyboard';
@@ -6,9 +6,27 @@ import GameStatus from '@/components/GameStatus';
 import GameHeader from '@/components/GameHeader';
 import GameFooter from '@/components/GameFooter';
 import { useGameLogic } from '@/hooks/useGameLogic';
-import { WORD_LENGTH, MAX_GUESSES } from '@/config/constants';
+import { getModeByPath } from '@/config/gameModes';
 
-const App = ({ wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES, showChallenge = true }) => {
+const App = ({ initialMode, allModes }) => {
+  const [currentMode, setCurrentMode] = useState(initialMode);
+  const { wordLength, maxGuesses } = currentMode;
+
+  const handleModeChange = useCallback((newMode) => {
+    if (newMode.id === currentMode.id) return;
+    window.history.pushState({}, '', newMode.path);
+    document.title = newMode.id === 'classic' ? 'Kinto' : `Kinto · ${newMode.label}`;
+    setCurrentMode(newMode);
+  }, [currentMode.id]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentMode(getModeByPath(window.location.pathname));
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const {
     solution,
     currentGuess,
@@ -28,6 +46,10 @@ const App = ({ wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES, showChallenge
 
   const mainRef = useRef(null);
   const [showResult, setShowResult] = useState(false);
+
+  useEffect(() => {
+    setShowResult(false);
+  }, [currentMode.id]);
 
   useEffect(() => {
     if (!isGameOver) return;
@@ -65,7 +87,6 @@ const App = ({ wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES, showChallenge
     );
   }
 
-
   return (
     <div
       ref={mainRef}
@@ -74,9 +95,13 @@ const App = ({ wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES, showChallenge
       onClick={() => mainRef.current?.focus()}
     >
       <Toaster />
-      <GameHeader />
+      <GameHeader
+        allModes={allModes}
+        currentMode={currentMode}
+        onModeChange={handleModeChange}
+      />
 
-      <main className="flex flex-col items-center justify-between flex-1 w-full max-w-lg mx-auto px-3 pt-4 pb-2">
+      <main className="flex flex-col items-center justify-between flex-1 w-full max-w-lg mx-auto px-3 pt-3 pb-2">
         <GameBoard
           currentGuess={currentGuess}
           currentAttempt={currentAttempt}
@@ -124,7 +149,7 @@ const App = ({ wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES, showChallenge
           isOpen={showResult}
           onClose={() => setShowResult(false)}
           maxGuesses={maxGuesses}
-          showChallenge={showChallenge}
+          currentMode={currentMode}
         />
       )}
     </div>
