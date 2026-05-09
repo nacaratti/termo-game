@@ -5,9 +5,11 @@ import { getModeByPath, GAME_MODES } from '@/config/gameModes';
 import '@/index.css';
 
 const AdminApp = lazy(() => import('@/AdminApp'));
+const ChangelogApp = lazy(() => import('@/ChangelogApp'));
 
 const path = window.location.pathname.replace(/\/$/, '');
 const isAdmin = path.endsWith('/admin');
+const isChangelog = path === '/changelog';
 const initialMode = getModeByPath(path);
 
 const AdminFallback = () => (
@@ -21,6 +23,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     {isAdmin
       ? <Suspense fallback={<AdminFallback />}><AdminApp /></Suspense>
+      : isChangelog
+      ? <Suspense fallback={<AdminFallback />}><ChangelogApp /></Suspense>
       : <App initialMode={initialMode} allModes={GAME_MODES} />}
   </React.StrictMode>
 );

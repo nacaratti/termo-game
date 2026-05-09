@@ -17,6 +17,8 @@ import {
 import { getWordOfDay, setWordOfDay, getTodayDateStr } from '@/lib/wordOfDay';
 import { getWordOfDay6, setWordOfDay6 } from '@/lib/wordOfDay6';
 import { supabase } from '@/lib/supabase';
+import KanbanBoard from '@/components/admin/KanbanBoard';
+import ActivityLog from '@/components/admin/ActivityLog';
 
 const PAGE_SIZE = 50;
 
@@ -731,6 +733,8 @@ const tabs = [
   { id: 'stats',   label: 'Estatísticas', short: 'Stats'     },
   { id: 'history', label: 'Histórico',    short: 'Histórico' },
   { id: 'words',   label: 'Palavras',     short: 'Palavras'  },
+  { id: 'kanban',  label: 'Kanban',       short: 'Kanban'    },
+  { id: 'logs',    label: 'Atividade',    short: 'Atividade' },
 ];
 
 const Dashboard = ({ onLogout }) => {
@@ -795,6 +799,8 @@ const Dashboard = ({ onLogout }) => {
         {activeTab === 'stats'   && <StatsPanel />}
         {activeTab === 'history' && <HistoryPanel />}
         {activeTab === 'words'   && <WordsPanel />}
+        {activeTab === 'kanban'  && <KanbanBoard />}
+        {activeTab === 'logs'    && <ActivityLog />}
       </main>
 
       {/* Navegação inferior — apenas mobile */}

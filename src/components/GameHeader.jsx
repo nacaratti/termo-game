@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HelpCircle, Settings2, X, Check } from 'lucide-react';
+import { HelpCircle, Settings2, X, Check, ScrollText } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
 const ExampleTile = ({ letter, status }) => {
@@ -127,14 +127,24 @@ const GameHeader = ({ allModes, currentMode, onModeChange }) => {
       <header className="w-full border-b border-zinc-800/60" style={{ background: 'linear-gradient(to bottom, #1a1d27, #16181d)' }}>
         <div className="flex items-center justify-between max-w-lg mx-auto w-full px-3 py-3">
 
-          {/* Esquerda: ajuda */}
-          <button
-            onClick={() => setShowInfo(true)}
-            className="w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-white transition-colors rounded-lg"
-            aria-label="Como jogar"
-          >
-            <HelpCircle className="w-5 h-5" />
-          </button>
+          {/* Esquerda: ajuda + changelog */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowInfo(true)}
+              className="w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-white transition-colors rounded-lg"
+              aria-label="Como jogar"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
+            <a
+              href="/changelog"
+              className="w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-white transition-colors rounded-lg"
+              aria-label="Novidades"
+              title="Novidades"
+            >
+              <ScrollText className="w-5 h-5" />
+            </a>
+          </div>
 
           {/* Centro: título */}
           <h1 className="text-2xl sm:text-3xl font-black tracking-[0.25em] text-white uppercase select-none">
