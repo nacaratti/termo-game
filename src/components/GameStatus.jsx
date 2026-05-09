@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Share2, Clock, X, ChevronRight } from 'lucide-react';
+import { Share2, Clock, X, ChevronRight, MessageSquare } from 'lucide-react';
 import { getDailyResults } from '@/lib/stats';
 import { getDailyResults6 } from '@/lib/stats6';
 import { getTodayDateStr } from '@/lib/wordOfDay';
 import { GAME_MODES } from '@/config/gameModes';
 import { MAX_GUESSES } from '@/config/constants';
+import { submitComment, hasSubmittedComment } from '@/lib/comments';
 
 const useCountdown = () => {
   const getSecondsLeft = () => {
@@ -28,6 +29,74 @@ const useCountdown = () => {
   const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+};
+
+const CommentBox = ({ dateStr, solution, mode, isGameWon, currentAttempt, maxGuesses }) => {
+  const modeId = mode?.id === 'classic' ? '5' : '6';
+  const alreadySubmitted = hasSubmittedComment(dateStr, modeId);
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState('');
+  const [status, setStatus] = useState(alreadySubmitted ? 'done' : 'idle');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    setStatus('loading');
+    const result = await submitComment({
+      dateStr,
+      word: solution,
+      mode: modeId,
+      comment: text,
+      won: isGameWon,
+      attempts: isGameWon ? currentAttempt + 1 : maxGuesses,
+    });
+    setStatus(result.ok ? 'done' : 'error');
+  };
+
+  if (status === 'done') {
+    return (
+      <div className="rounded-xl border border-zinc-800 bg-zinc-800/40 px-4 py-3 text-center">
+        <p className="text-sm text-zinc-400">Obrigado pelo comentário!</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-800/40 overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2 px-4 py-3 text-sm text-zinc-400 hover:text-white transition-colors"
+      >
+        <MessageSquare className="h-4 w-4 shrink-0" />
+        <span className="flex-1 text-left">Deixe um comentário sobre o jogo</span>
+        <ChevronRight className={`h-4 w-4 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`} />
+      </button>
+      {open && (
+        <form onSubmit={handleSubmit} className="border-t border-zinc-800 px-4 pb-4 pt-3 flex flex-col gap-2">
+          <textarea
+            value={text}
+            onChange={e => setText(e.target.value.slice(0, 300))}
+            placeholder="O que achou da palavra de hoje? Sugestões?"
+            rows={3}
+            className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 bg-zinc-900 border border-zinc-700 outline-none resize-none focus:border-zinc-500 transition-colors"
+          />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-zinc-600">{text.length}/300</span>
+            {status === 'error' && (
+              <span className="text-xs text-red-400">Erro ao enviar. Tente novamente.</span>
+            )}
+            <button
+              type="submit"
+              disabled={!text.trim() || status === 'loading'}
+              className="bg-white hover:bg-zinc-100 text-black text-sm font-bold px-4 py-1.5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              {status === 'loading' ? 'Enviando…' : 'Enviar'}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
 };
 
 const GameStatus = ({
@@ -208,6 +277,16 @@ const GameStatus = ({
                 </div>
               </div>
             )}
+
+            {/* Comment */}
+            <CommentBox
+              dateStr={today}
+              solution={solution}
+              mode={currentMode}
+              isGameWon={isGameWon}
+              currentAttempt={currentAttempt}
+              maxGuesses={maxGuesses}
+            />
 
             {/* Countdown */}
             <div className="flex items-center justify-center gap-1.5 text-zinc-600 text-xs">
