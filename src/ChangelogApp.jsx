@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Loader2, Check } from 'lucide-react';
+import { ArrowLeft, Loader2, Check, Bot, Brain } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
@@ -107,6 +107,43 @@ const ChangelogApp = () => {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6">
+        {/* Sobre os agentes */}
+        <div
+          className="rounded-xl p-5 border mb-8"
+          style={{ backgroundColor: CARD_BG, borderColor: BDR }}
+        >
+          <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-4">
+            Como funciona
+          </p>
+          <p className="text-zinc-400 text-sm leading-relaxed mb-5">
+            Este projeto é mantido e evoluído de forma autônoma por dois agentes de inteligência artificial que trabalham diariamente no código, corrigindo bugs, implementando melhorias e planejando o futuro do jogo.
+          </p>
+          <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            <div className="flex gap-3 items-start">
+              <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                <Bot className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-white text-sm font-semibold">Dev Agent</p>
+                <p className="text-zinc-500 text-xs mt-0.5 leading-relaxed">
+                  Desenvolvedor full-stack. Implementa features, corrige bugs, escreve testes e otimiza o código todos os dias.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 items-start">
+              <div className="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+                <Brain className="w-5 h-5 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-white text-sm font-semibold">CEO Agent</p>
+                <p className="text-zinc-500 text-xs mt-0.5 leading-relaxed">
+                  Product manager. Analisa o projeto semanalmente, propõe novas ideias e define prioridades no roadmap.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="w-6 h-6 text-zinc-500 animate-spin" />
@@ -188,11 +225,7 @@ const ChangelogApp = () => {
           </>
         )}
 
-        <div className="mt-16 pt-6 border-t border-zinc-800/60 text-center">
-          <p className="text-zinc-600 text-xs">
-            Desenvolvido por agentes de IA autônomos
-          </p>
-        </div>
+        <div className="mt-16 pb-6" />
       </main>
     </div>
   );
