@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Loader2, Check, Circle, Clock } from 'lucide-react';
+import { ArrowLeft, Loader2, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
@@ -16,8 +16,9 @@ const TYPE_STYLES = {
 };
 
 const BOARD_COLUMNS = [
-  { id: 'planned',     label: 'Planejado',     icon: Clock,  color: '#6b7280', dotColor: 'bg-zinc-500' },
-  { id: 'in_progress', label: 'Em andamento',  icon: Circle, color: '#3b82f6', dotColor: 'bg-blue-500' },
+  { id: 'backlog',     label: 'Backlog',       dotColor: 'bg-zinc-500' },
+  { id: 'in_progress', label: 'In Progress',   dotColor: 'bg-blue-500' },
+  { id: 'review',      label: 'Review',        dotColor: 'bg-purple-500' },
 ];
 
 const BoardCard = ({ entry }) => {
@@ -27,7 +28,7 @@ const BoardCard = ({ entry }) => {
       className="rounded-lg p-3 border transition-colors hover:border-[#4a4d5e]"
       style={{ backgroundColor: SURF, borderColor: BDR }}
     >
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-1.5">
         <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
           {style.label}
         </span>
@@ -40,12 +41,12 @@ const BoardCard = ({ entry }) => {
   );
 };
 
-const CompletedCard = ({ entry }) => {
+const DoneCard = ({ entry }) => {
   const style = TYPE_STYLES[entry.type] || TYPE_STYLES.internal;
   const date = new Date(entry.published_at || entry.created_at).toLocaleDateString('pt-BR');
   return (
     <div
-      className="flex items-start gap-3 py-3 border-b last:border-b-0"
+      className="flex items-start gap-3 py-3.5 border-b last:border-b-0"
       style={{ borderColor: BDR }}
     >
       <div className="w-5 h-5 rounded-full bg-[#6aaa64]/20 flex items-center justify-center shrink-0 mt-0.5">
@@ -62,7 +63,7 @@ const CompletedCard = ({ entry }) => {
           <p className="text-zinc-500 text-xs mt-1 leading-relaxed">{entry.description}</p>
         )}
       </div>
-      <span className="text-zinc-600 text-xs shrink-0">{date}</span>
+      <span className="text-zinc-600 text-xs shrink-0 mt-0.5">{date}</span>
     </div>
   );
 };
@@ -84,16 +85,18 @@ const ChangelogApp = () => {
       });
   }, []);
 
-  const planned = entries.filter(e => e.status === 'planned');
-  const inProgress = entries.filter(e => e.status === 'in_progress');
+  const columnData = {
+    backlog: entries.filter(e => e.status === 'planned'),
+    in_progress: entries.filter(e => e.status === 'in_progress'),
+    review: entries.filter(e => e.status === 'review'),
+  };
   const done = entries.filter(e => e.status === 'done');
-  const columnData = { planned, in_progress: inProgress };
-  const hasBoard = planned.length > 0 || inProgress.length > 0;
+  const hasBoard = Object.values(columnData).some(arr => arr.length > 0);
 
   return (
     <div className="min-h-dvh text-white" style={{ backgroundColor: BG }}>
       <header className="sticky top-0 z-10 border-b border-zinc-800/60" style={{ background: 'linear-gradient(to bottom, #1a1d27, #16181d)' }}>
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors text-sm">
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Voltar ao jogo</span>
@@ -103,7 +106,7 @@ const ChangelogApp = () => {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="max-w-5xl mx-auto px-4 py-6">
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="w-6 h-6 text-zinc-500 animate-spin" />
@@ -115,16 +118,15 @@ const ChangelogApp = () => {
           </div>
         ) : (
           <>
-            {/* Kanban Board */}
+            {/* Kanban Board — 3 colunas */}
             {hasBoard && (
               <div className="mb-10">
                 <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-4">
                   Roadmap
                 </p>
-                <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-3'}`}>
                   {BOARD_COLUMNS.map(col => {
                     const items = columnData[col.id] || [];
-                    const Icon = col.icon;
                     return (
                       <div key={col.id}>
                         <div className="flex items-center gap-2 mb-3 px-1">
@@ -132,14 +134,16 @@ const ChangelogApp = () => {
                           <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
                             {col.label}
                           </p>
-                          <span className="text-zinc-600 text-xs">{items.length}</span>
+                          {items.length > 0 && (
+                            <span className="text-zinc-600 text-xs">{items.length}</span>
+                          )}
                         </div>
                         <div
                           className="rounded-xl p-3 min-h-[100px] space-y-2 border"
                           style={{ backgroundColor: CARD_BG, borderColor: BDR }}
                         >
                           {items.length === 0 ? (
-                            <p className="text-zinc-700 text-xs py-6 text-center">Nenhum item</p>
+                            <p className="text-zinc-700 text-xs py-8 text-center">—</p>
                           ) : (
                             items.map(entry => <BoardCard key={entry.id} entry={entry} />)
                           )}
@@ -151,14 +155,16 @@ const ChangelogApp = () => {
               </div>
             )}
 
-            {/* Lista de concluídos */}
+            {/* Registro de concluídos */}
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-2 h-2 rounded-full bg-[#6aaa64]" />
                 <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
-                  Concluído
+                  Registro de atualizações
                 </p>
-                <span className="text-zinc-600 text-xs">{done.length}</span>
+                {done.length > 0 && (
+                  <span className="text-zinc-600 text-xs">{done.length}</span>
+                )}
               </div>
 
               {done.length === 0 ? (
@@ -174,7 +180,7 @@ const ChangelogApp = () => {
                   style={{ backgroundColor: CARD_BG, borderColor: BDR }}
                 >
                   {done.map(entry => (
-                    <CompletedCard key={entry.id} entry={entry} />
+                    <DoneCard key={entry.id} entry={entry} />
                   ))}
                 </div>
               )}
