@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Loader2, Check, Bot, Brain } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import CommentsSection from '@/components/CommentsSection';
 
 const BG = '#16181d';
 const CARD_BG = '#1e2028';
@@ -224,6 +225,8 @@ const ChangelogApp = () => {
             </div>
           </>
         )}
+
+        <CommentsSection />
 
         <div className="mt-16 pb-6" />
       </main>
