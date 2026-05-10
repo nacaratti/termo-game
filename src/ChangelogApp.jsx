@@ -72,6 +72,7 @@ const DoneCard = ({ entry }) => {
 const ChangelogApp = () => {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -80,10 +81,11 @@ const ChangelogApp = () => {
       .from('changelog_entries')
       .select('*')
       .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setEntries(data || []);
+      .then(({ data, error: err }) => {
+        if (err) { setError(true); } else { setEntries(data || []); }
         setLoading(false);
-      });
+      })
+      .catch(() => { setError(true); setLoading(false); });
   }, []);
 
   const columnData = {
@@ -148,6 +150,11 @@ const ChangelogApp = () => {
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="w-6 h-6 text-zinc-500 animate-spin" />
+          </div>
+        ) : error ? (
+          <div className="text-center py-16">
+            <p className="text-red-400 text-sm">Não foi possível carregar as atualizações.</p>
+            <p className="text-zinc-600 text-xs mt-2">Verifique sua conexão e tente novamente.</p>
           </div>
         ) : entries.length === 0 ? (
           <div className="text-center py-16">
