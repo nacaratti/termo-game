@@ -45,19 +45,26 @@ const CommentsSection = () => {
   const [user, setUser] = useState(null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [text, setText] = useState('');
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState('');
 
   const fetchComments = useCallback(async () => {
     if (!supabase) { setLoading(false); return; }
-    const { data } = await supabase
-      .from('user_comments')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100);
-    setComments(data || []);
-    setLoading(false);
+    try {
+      const { data, error: err } = await supabase
+        .from('user_comments')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (err) { setFetchError(true); }
+      else { setComments(data || []); }
+    } catch {
+      setFetchError(true);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -196,6 +203,8 @@ const CommentsSection = () => {
         {/* Lista de comentários */}
         {loading ? (
           <p className="text-zinc-600 text-sm text-center py-6">Carregando…</p>
+        ) : fetchError ? (
+          <p className="text-red-400 text-sm text-center py-6">Não foi possível carregar os comentários.</p>
         ) : comments.length === 0 ? (
           <p className="text-zinc-600 text-sm text-center py-6">
             Nenhum comentário ainda. Seja o primeiro!
