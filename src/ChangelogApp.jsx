@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Loader2, Check, Bot, Brain, Activity } from 'lucide-react';
+import { ArrowLeft, Loader2, Check, Bot, Brain } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import CommentsSection from '@/components/CommentsSection';
@@ -30,18 +30,6 @@ const BOARD_COLUMNS = [
   { id: 'in_progress', label: 'Em andamento', dotColor: 'bg-blue-500',  statuses: ['in_progress'] },
   { id: 'review',      label: 'Em revisão',  dotColor: 'bg-purple-500', statuses: ['review'] },
 ];
-
-const ACTION_LABELS = {
-  card_started: 'iniciou',
-  card_completed: 'concluiu',
-  code_committed: 'commitou código em',
-  test_added: 'adicionou teste para',
-  bug_fixed: 'corrigiu bug em',
-  card_created: 'criou card',
-  report_generated: 'gerou relatório',
-  session_started: 'iniciou sessão',
-  session_ended: 'encerrou sessão',
-};
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -111,56 +99,29 @@ const DoneCard = ({ card }) => {
   );
 };
 
-const ActivityRow = ({ log, cardTitle }) => {
-  const agentLabel = log.agent === 'dev_agent' ? '⚙ Dev Agent' : log.agent === 'ceo_agent' ? '📋 CEO Agent' : log.agent;
-  const actionLabel = ACTION_LABELS[log.action] || log.action;
-  return (
-    <div className="flex items-start gap-3 py-2.5">
-      <div
-        className="w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 mt-0.5"
-        style={{ backgroundColor: SURF }}
-      >
-        {log.agent === 'dev_agent' ? '⚙' : '📋'}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-zinc-300 text-sm">
-          <span className="font-semibold text-white">{agentLabel}</span>{' '}
-          <span className="text-zinc-500">{actionLabel}</span>{' '}
-          {cardTitle && <span className="text-white">"{cardTitle}"</span>}
-        </p>
-        <p className="text-zinc-600 text-xs mt-0.5">{timeAgo(log.created_at)}</p>
-      </div>
-    </div>
-  );
-};
-
 const ChangelogApp = () => {
   const [cards, setCards] = useState([]);
-  const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!supabase) { setLoading(false); return; }
-    Promise.all([
-      supabase.from('kanban_cards').select('id,title,description,status,priority,labels,created_by,assigned_to,created_at,updated_at,completed_at').order('priority', { ascending: false }).order('created_at', { ascending: false }),
-      supabase.from('activity_logs').select('id,agent,action,card_id,created_at').order('created_at', { ascending: false }).limit(30),
-    ]).then(([cardsRes, logsRes]) => {
-      if (cardsRes.error) { setError(true); }
-      else {
-        // Filtra cards marcados como internal — não aparecem para usuários públicos
-        const publicCards = (cardsRes.data || []).filter(c => !(c.labels || []).includes('internal'));
-        setCards(publicCards);
-      }
-      if (!logsRes.error) setLogs(logsRes.data || []);
-      setLoading(false);
-    }).catch(() => { setError(true); setLoading(false); });
+    supabase
+      .from('kanban_cards')
+      .select('id,title,description,status,priority,labels,created_by,assigned_to,created_at,updated_at,completed_at')
+      .order('priority', { ascending: false })
+      .order('created_at', { ascending: false })
+      .then(({ data, error: err }) => {
+        if (err) { setError(true); }
+        else {
+          // Filtra cards marcados como internal — não aparecem para usuários públicos
+          const publicCards = (data || []).filter(c => !(c.labels || []).includes('internal'));
+          setCards(publicCards);
+        }
+        setLoading(false);
+      }, () => { setError(true); setLoading(false); });
   }, []);
-
-  // Map cards by id for activity log titles
-  const cardsById = {};
-  cards.forEach(c => { cardsById[c.id] = c; });
 
   // Group cards by board column
   const columnData = {};
@@ -171,9 +132,6 @@ const ChangelogApp = () => {
     .sort((a, b) => new Date(b.completed_at || b.updated_at) - new Date(a.completed_at || a.updated_at));
   const hasBoard = Object.values(columnData).some(arr => arr.length > 0);
   const hasContent = hasBoard || done.length > 0;
-
-  // Filtered visible logs (exclude generic session start/end noise)
-  const visibleLogs = logs.filter(l => !['session_started', 'session_ended'].includes(l.action)).slice(0, 10);
 
   return (
     <div className="min-h-dvh text-white" style={{ backgroundColor: BG }}>
@@ -331,27 +289,6 @@ const ChangelogApp = () => {
               )}
             </div>
 
-            {/* Atividade recente dos agentes */}
-            {visibleLogs.length > 0 && (
-              <div className="mb-10">
-                <div className="flex items-center gap-2 mb-4">
-                  <Activity className="w-3.5 h-3.5 text-zinc-500" />
-                  <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
-                    Atividade recente
-                  </p>
-                  <span className="text-zinc-600 text-xs">{visibleLogs.length}</span>
-                </div>
-                <div
-                  className="rounded-xl px-4 py-2 border divide-y"
-                  style={{ backgroundColor: CARD_BG, borderColor: BDR }}
-                >
-                  {visibleLogs.map(log => {
-                    const card = log.card_id ? cardsById[log.card_id] : null;
-                    return <ActivityRow key={log.id} log={log} cardTitle={card?.title} />;
-                  })}
-                </div>
-              </div>
-            )}
           </>
         )}
 
