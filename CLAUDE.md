@@ -40,3 +40,14 @@ scripts/
 - Manter compatibilidade com o dark theme existente
 - Preferir editar arquivos existentes a criar novos
 - Testes em `src/lib/*.test.js` usando Vitest
+
+## Registrar mudanças manuais no changelog
+Quando o admin (ou um colaborador via Claude Code) implementa uma feature manualmente fora do fluxo do Dev Agent, e quiser que apareça na página pública `/changelog`, use:
+
+```
+node scripts/add-done.mjs "Titulo" "Descricao opcional" [label]
+```
+
+- Labels válidos: `feature`, `bug`, `improvement`, `optimization`, `refactor`, `docs`, `test`
+- Use `internal` para mudanças que NÃO devem aparecer publicamente (configurações, refatorações internas, etc.)
+- Se Claude Code está fazendo a mudança a pedido do admin, ele deve rodar esse comando ao final de uma feature significativa, sem perguntar.
