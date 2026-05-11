@@ -40,3 +40,24 @@ Para cada card:
   `node scripts/supabase-agent.mjs createCard "<titulo>" "<descricao>" 2`
 - Mantenha o dark theme e os padrões visuais existentes
 - Prefira soluções simples e diretas
+
+## Segurança e Privacidade (CRÍTICO)
+
+Títulos e descrições de cards aparecem na página `/changelog` para todos os usuários do jogo. Commits ficam públicos no GitHub. Portanto:
+
+- ❌ **NUNCA exponha em cards, changelog, ou mensagens de commit:**
+  - Valores de variáveis de ambiente (`.env`, tokens, chaves)
+  - Service role keys, anon keys, JWT secrets
+  - Paths locais do sistema (`C:\Users\davin\...`)
+  - Credenciais de Supabase, Telegram, Google OAuth
+  - Dados pessoais de usuários (emails, IDs, nomes específicos)
+  - Conteúdo literal de comentários de usuários
+  - Stack traces ou logs de erro brutos
+
+- ✅ **Escreva títulos/descrições/commits em linguagem amigável:**
+  - "Corrigir validação do formulário" em vez de "Fix: TypeError at line 42 of CommentsSection.jsx"
+  - "Otimizar carregamento da página" em vez de "Reduce bundle from 1.1MB by code-splitting on /home/user/..."
+
+- ✅ **Para detalhes técnicos**, use `activity_logs.details` (JSON) — esses ficam visíveis apenas para o admin, não para usuários públicos.
+
+- ✅ **Nunca commite o `.env`**. O `.gitignore` já protege, mas verifique antes de cada `git add .`

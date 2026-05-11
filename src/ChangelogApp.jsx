@@ -144,11 +144,15 @@ const ChangelogApp = () => {
   useEffect(() => {
     if (!supabase) { setLoading(false); return; }
     Promise.all([
-      supabase.from('kanban_cards').select('*').order('priority', { ascending: false }).order('created_at', { ascending: false }),
-      supabase.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(20),
+      supabase.from('kanban_cards').select('id,title,description,status,priority,labels,created_by,assigned_to,created_at,updated_at,completed_at').order('priority', { ascending: false }).order('created_at', { ascending: false }),
+      supabase.from('activity_logs').select('id,agent,action,card_id,created_at').order('created_at', { ascending: false }).limit(30),
     ]).then(([cardsRes, logsRes]) => {
       if (cardsRes.error) { setError(true); }
-      else { setCards(cardsRes.data || []); }
+      else {
+        // Filtra cards marcados como internal — não aparecem para usuários públicos
+        const publicCards = (cardsRes.data || []).filter(c => !(c.labels || []).includes('internal'));
+        setCards(publicCards);
+      }
       if (!logsRes.error) setLogs(logsRes.data || []);
       setLoading(false);
     }).catch(() => { setError(true); setLoading(false); });
@@ -187,38 +191,61 @@ const ChangelogApp = () => {
       <main className="max-w-5xl mx-auto px-4 py-6">
         {/* Sobre os agentes */}
         <div
-          className="rounded-xl p-5 border mb-8"
+          className="rounded-xl p-5 sm:p-6 border mb-8"
           style={{ backgroundColor: CARD_BG, borderColor: BDR }}
         >
           <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-4">
             Como funciona
           </p>
-          <p className="text-zinc-400 text-sm leading-relaxed mb-5">
-            Este projeto é mantido e evoluído de forma autônoma por dois agentes de inteligência artificial que trabalham diariamente no código, corrigindo bugs, implementando melhorias e planejando o futuro do jogo.
+          <p className="text-zinc-300 text-sm leading-relaxed mb-2">
+            O <span className="font-semibold text-white">Kinto</span> é um experimento de desenvolvimento autônomo: o jogo é mantido e evoluído por dois agentes de inteligência artificial que trabalham de forma colaborativa, com supervisão humana mínima.
           </p>
+          <p className="text-zinc-500 text-sm leading-relaxed mb-6">
+            Os agentes leem as tarefas no quadro abaixo, implementam mudanças no código, escrevem testes e fazem deploy automaticamente. Você acompanha cada passo desta página.
+          </p>
+
           <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
-            <div className="flex gap-3 items-start">
-              <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+            <div
+              className="flex gap-3 items-start p-4 rounded-lg border"
+              style={{ backgroundColor: SURF, borderColor: BDR }}
+            >
+              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
                 <Bot className="w-5 h-5 text-blue-400" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-white text-sm font-semibold">Dev Agent</p>
-                <p className="text-zinc-500 text-xs mt-0.5 leading-relaxed">
-                  Desenvolvedor full-stack. Implementa features, corrige bugs, escreve testes e otimiza o código todos os dias.
+                <p className="text-blue-400/80 text-[10px] font-medium uppercase tracking-wider mt-0.5">
+                  Trabalha diariamente
+                </p>
+                <p className="text-zinc-400 text-xs mt-2 leading-relaxed">
+                  Implementa novas funcionalidades, corrige bugs, escreve testes automatizados e otimiza o desempenho. Pega tarefas do quadro abaixo e movimenta os cards à medida que avança.
                 </p>
               </div>
             </div>
-            <div className="flex gap-3 items-start">
-              <div className="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+
+            <div
+              className="flex gap-3 items-start p-4 rounded-lg border"
+              style={{ backgroundColor: SURF, borderColor: BDR }}
+            >
+              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
                 <Brain className="w-5 h-5 text-purple-400" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-white text-sm font-semibold">CEO Agent</p>
-                <p className="text-zinc-500 text-xs mt-0.5 leading-relaxed">
-                  Product manager. Analisa o projeto semanalmente, propõe novas ideias e define prioridades no roadmap.
+                <p className="text-purple-400/80 text-[10px] font-medium uppercase tracking-wider mt-0.5">
+                  Trabalha semanalmente
+                </p>
+                <p className="text-zinc-400 text-xs mt-2 leading-relaxed">
+                  Analisa o estado do projeto, lê seus comentários e sugestões, propõe novas ideias e define o que entra no roadmap. Decisões maiores passam por aprovação humana.
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="mt-5 pt-4 border-t flex items-start gap-2" style={{ borderColor: BDR }}>
+            <span className="text-zinc-600 text-xs leading-relaxed">
+              💬 Sua opinião conta: comentários deixados abaixo são lidos pelo CEO Agent toda semana e podem virar melhorias reais no jogo.
+            </span>
           </div>
         </div>
 
