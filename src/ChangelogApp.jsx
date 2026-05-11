@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Loader2, Check, Bot, Brain } from 'lucide-react';
+import { ArrowLeft, Loader2, Check, Bot, Brain, Activity } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import CommentsSection from '@/components/CommentsSection';
@@ -9,42 +9,82 @@ const CARD_BG = '#1e2028';
 const SURF = '#22252f';
 const BDR = '#2c2f3a';
 
-const TYPE_STYLES = {
-  feature:     { label: 'Feature',  bg: 'bg-[#6aaa64]/15', text: 'text-[#6aaa64]', border: 'border-[#6aaa64]/30' },
-  fix:         { label: 'Correção', bg: 'bg-red-500/15',    text: 'text-red-400',    border: 'border-red-500/30'   },
-  improvement: { label: 'Melhoria', bg: 'bg-[#c9a84c]/15', text: 'text-[#c9a84c]', border: 'border-[#c9a84c]/30' },
-  internal:    { label: 'Interno',  bg: 'bg-zinc-500/15',   text: 'text-zinc-400',   border: 'border-zinc-500/30'  },
+const LABEL_COLORS = {
+  bug:          { bg: 'bg-red-500/15',       text: 'text-red-400',     border: 'border-red-500/30' },
+  feature:      { bg: 'bg-[#6aaa64]/15',     text: 'text-[#6aaa64]',   border: 'border-[#6aaa64]/30' },
+  optimization: { bg: 'bg-blue-500/15',      text: 'text-blue-400',    border: 'border-blue-500/30' },
+  test:         { bg: 'bg-purple-500/15',    text: 'text-purple-400',  border: 'border-purple-500/30' },
+  refactor:     { bg: 'bg-cyan-500/15',      text: 'text-cyan-400',    border: 'border-cyan-500/30' },
+  docs:         { bg: 'bg-zinc-500/15',      text: 'text-zinc-400',    border: 'border-zinc-500/30' },
+};
+
+const PRIORITY_DOT = {
+  0: 'bg-zinc-500',
+  1: 'bg-[#c9a84c]',
+  2: 'bg-orange-400',
+  3: 'bg-red-400',
 };
 
 const BOARD_COLUMNS = [
-  { id: 'backlog',     label: 'Backlog',       dotColor: 'bg-zinc-500' },
-  { id: 'in_progress', label: 'In Progress',   dotColor: 'bg-blue-500' },
-  { id: 'review',      label: 'Review',        dotColor: 'bg-purple-500' },
+  { id: 'backlog',     label: 'Backlog',     dotColor: 'bg-zinc-500',   statuses: ['backlog', 'todo'] },
+  { id: 'in_progress', label: 'Em andamento', dotColor: 'bg-blue-500',  statuses: ['in_progress'] },
+  { id: 'review',      label: 'Em revisão',  dotColor: 'bg-purple-500', statuses: ['review'] },
 ];
 
-const BoardCard = ({ entry }) => {
-  const style = TYPE_STYLES[entry.type] || TYPE_STYLES.internal;
+const ACTION_LABELS = {
+  card_started: 'iniciou',
+  card_completed: 'concluiu',
+  code_committed: 'commitou código em',
+  test_added: 'adicionou teste para',
+  bug_fixed: 'corrigiu bug em',
+  card_created: 'criou card',
+  report_generated: 'gerou relatório',
+  session_started: 'iniciou sessão',
+  session_ended: 'encerrou sessão',
+};
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'agora';
+  if (mins < 60) return `${mins}min atrás`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h atrás`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d atrás`;
+  return new Date(dateStr).toLocaleDateString('pt-BR');
+}
+
+const BoardCard = ({ card }) => {
+  const priorityDot = PRIORITY_DOT[card.priority] || PRIORITY_DOT[0];
+  const mainLabel = card.labels?.[0];
+  const labelStyle = mainLabel ? LABEL_COLORS[mainLabel] : null;
+
   return (
     <div
       className="rounded-lg p-3 border transition-colors hover:border-[#4a4d5e]"
       style={{ backgroundColor: SURF, borderColor: BDR }}
     >
-      <div className="flex items-center gap-2 mb-1.5">
-        <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
-          {style.label}
-        </span>
+      <div className="flex items-center gap-2 mb-2">
+        <div className={`w-1.5 h-1.5 rounded-full ${priorityDot}`} />
+        {labelStyle && (
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${labelStyle.bg} ${labelStyle.text} ${labelStyle.border}`}>
+            {mainLabel}
+          </span>
+        )}
       </div>
-      <p className="text-white text-sm font-medium leading-snug">{entry.title}</p>
-      {entry.description && (
-        <p className="text-zinc-500 text-xs mt-1.5 leading-relaxed line-clamp-2">{entry.description}</p>
+      <p className="text-white text-sm font-medium leading-snug">{card.title}</p>
+      {card.description && (
+        <p className="text-zinc-500 text-xs mt-1.5 leading-relaxed line-clamp-2">{card.description}</p>
       )}
     </div>
   );
 };
 
-const DoneCard = ({ entry }) => {
-  const style = TYPE_STYLES[entry.type] || TYPE_STYLES.internal;
-  const date = new Date(entry.published_at || entry.created_at).toLocaleDateString('pt-BR');
+const DoneCard = ({ card }) => {
+  const mainLabel = card.labels?.[0];
+  const labelStyle = mainLabel ? LABEL_COLORS[mainLabel] : null;
+  const date = new Date(card.completed_at || card.updated_at || card.created_at).toLocaleDateString('pt-BR');
   return (
     <div
       className="flex items-start gap-3 py-3.5 border-b last:border-b-0"
@@ -55,13 +95,15 @@ const DoneCard = ({ entry }) => {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="text-white text-sm font-medium">{entry.title}</p>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${style.bg} ${style.text} ${style.border}`}>
-            {style.label}
-          </span>
+          <p className="text-white text-sm font-medium">{card.title}</p>
+          {labelStyle && (
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${labelStyle.bg} ${labelStyle.text} ${labelStyle.border}`}>
+              {mainLabel}
+            </span>
+          )}
         </div>
-        {entry.description && (
-          <p className="text-zinc-500 text-xs mt-1 leading-relaxed">{entry.description}</p>
+        {card.description && (
+          <p className="text-zinc-500 text-xs mt-1 leading-relaxed">{card.description}</p>
         )}
       </div>
       <span className="text-zinc-600 text-xs shrink-0 mt-0.5">{date}</span>
@@ -69,32 +111,65 @@ const DoneCard = ({ entry }) => {
   );
 };
 
+const ActivityRow = ({ log, cardTitle }) => {
+  const agentLabel = log.agent === 'dev_agent' ? '⚙ Dev Agent' : log.agent === 'ceo_agent' ? '📋 CEO Agent' : log.agent;
+  const actionLabel = ACTION_LABELS[log.action] || log.action;
+  return (
+    <div className="flex items-start gap-3 py-2.5">
+      <div
+        className="w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 mt-0.5"
+        style={{ backgroundColor: SURF }}
+      >
+        {log.agent === 'dev_agent' ? '⚙' : '📋'}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-zinc-300 text-sm">
+          <span className="font-semibold text-white">{agentLabel}</span>{' '}
+          <span className="text-zinc-500">{actionLabel}</span>{' '}
+          {cardTitle && <span className="text-white">"{cardTitle}"</span>}
+        </p>
+        <p className="text-zinc-600 text-xs mt-0.5">{timeAgo(log.created_at)}</p>
+      </div>
+    </div>
+  );
+};
+
 const ChangelogApp = () => {
-  const [entries, setEntries] = useState([]);
+  const [cards, setCards] = useState([]);
+  const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!supabase) { setLoading(false); return; }
-    supabase
-      .from('changelog_entries')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .then(({ data, error: err }) => {
-        if (err) { setError(true); } else { setEntries(data || []); }
-        setLoading(false);
-      })
-      .catch(() => { setError(true); setLoading(false); });
+    Promise.all([
+      supabase.from('kanban_cards').select('*').order('priority', { ascending: false }).order('created_at', { ascending: false }),
+      supabase.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(20),
+    ]).then(([cardsRes, logsRes]) => {
+      if (cardsRes.error) { setError(true); }
+      else { setCards(cardsRes.data || []); }
+      if (!logsRes.error) setLogs(logsRes.data || []);
+      setLoading(false);
+    }).catch(() => { setError(true); setLoading(false); });
   }, []);
 
-  const columnData = {
-    backlog: entries.filter(e => e.status === 'planned'),
-    in_progress: entries.filter(e => e.status === 'in_progress'),
-    review: entries.filter(e => e.status === 'review'),
-  };
-  const done = entries.filter(e => e.status === 'done');
+  // Map cards by id for activity log titles
+  const cardsById = {};
+  cards.forEach(c => { cardsById[c.id] = c; });
+
+  // Group cards by board column
+  const columnData = {};
+  for (const col of BOARD_COLUMNS) {
+    columnData[col.id] = cards.filter(c => col.statuses.includes(c.status));
+  }
+  const done = cards.filter(c => c.status === 'done')
+    .sort((a, b) => new Date(b.completed_at || b.updated_at) - new Date(a.completed_at || a.updated_at));
   const hasBoard = Object.values(columnData).some(arr => arr.length > 0);
+  const hasContent = hasBoard || done.length > 0;
+
+  // Filtered visible logs (exclude generic session start/end noise)
+  const visibleLogs = logs.filter(l => !['session_started', 'session_ended'].includes(l.action)).slice(0, 10);
 
   return (
     <div className="min-h-dvh text-white" style={{ backgroundColor: BG }}>
@@ -156,14 +231,14 @@ const ChangelogApp = () => {
             <p className="text-red-400 text-sm">Não foi possível carregar as atualizações.</p>
             <p className="text-zinc-600 text-xs mt-2">Verifique sua conexão e tente novamente.</p>
           </div>
-        ) : entries.length === 0 ? (
+        ) : !hasContent ? (
           <div className="text-center py-16">
             <p className="text-zinc-500 text-sm">Nenhuma atualização ainda.</p>
             <p className="text-zinc-600 text-xs mt-2">As novidades aparecerão aqui conforme o projeto evolui.</p>
           </div>
         ) : (
           <>
-            {/* Kanban Board — 3 colunas */}
+            {/* Kanban Board */}
             {hasBoard && (
               <div className="mb-10">
                 <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-4">
@@ -190,7 +265,7 @@ const ChangelogApp = () => {
                           {items.length === 0 ? (
                             <p className="text-zinc-700 text-xs py-8 text-center">—</p>
                           ) : (
-                            items.map(entry => <BoardCard key={entry.id} entry={entry} />)
+                            items.map(card => <BoardCard key={card.id} card={card} />)
                           )}
                         </div>
                       </div>
@@ -201,7 +276,7 @@ const ChangelogApp = () => {
             )}
 
             {/* Registro de concluídos */}
-            <div>
+            <div className="mb-10">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-2 h-2 rounded-full bg-[#6aaa64]" />
                 <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
@@ -224,12 +299,32 @@ const ChangelogApp = () => {
                   className="rounded-xl px-4 border"
                   style={{ backgroundColor: CARD_BG, borderColor: BDR }}
                 >
-                  {done.map(entry => (
-                    <DoneCard key={entry.id} entry={entry} />
-                  ))}
+                  {done.map(card => <DoneCard key={card.id} card={card} />)}
                 </div>
               )}
             </div>
+
+            {/* Atividade recente dos agentes */}
+            {visibleLogs.length > 0 && (
+              <div className="mb-10">
+                <div className="flex items-center gap-2 mb-4">
+                  <Activity className="w-3.5 h-3.5 text-zinc-500" />
+                  <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+                    Atividade recente
+                  </p>
+                  <span className="text-zinc-600 text-xs">{visibleLogs.length}</span>
+                </div>
+                <div
+                  className="rounded-xl px-4 py-2 border divide-y"
+                  style={{ backgroundColor: CARD_BG, borderColor: BDR }}
+                >
+                  {visibleLogs.map(log => {
+                    const card = log.card_id ? cardsById[log.card_id] : null;
+                    return <ActivityRow key={log.id} log={log} cardTitle={card?.title} />;
+                  })}
+                </div>
+              </div>
+            )}
           </>
         )}
 

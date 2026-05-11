@@ -823,7 +823,7 @@ const Dashboard = ({ onLogout }) => {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto w-full px-4 py-6 flex-1 pb-24 sm:pb-6">
+      <main className={`mx-auto w-full px-4 py-6 flex-1 pb-24 sm:pb-6 ${activeTab === 'kanban' ? 'max-w-none' : 'max-w-3xl'}`}>
         <div
           className="hidden sm:flex gap-1 mb-6 rounded-xl p-1 w-fit border"
           style={{ backgroundColor: CARD, borderColor: BDR }}
