@@ -823,22 +823,24 @@ const Dashboard = ({ onLogout }) => {
         </div>
       </header>
 
-      <main className={`mx-auto w-full px-4 py-6 flex-1 pb-24 sm:pb-6 ${activeTab === 'kanban' ? 'max-w-5xl' : 'max-w-3xl'}`}>
-        <div
-          className="hidden sm:flex gap-1 mb-6 rounded-xl p-1 w-fit border"
-          style={{ backgroundColor: CARD, borderColor: BDR }}
-        >
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                activeTab === tab.id ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+      <main className={`mx-auto w-full px-4 py-6 flex-1 pb-24 sm:pb-6 ${activeTab === 'kanban' ? 'max-w-none' : 'max-w-3xl'}`}>
+        <div className={`${activeTab === 'kanban' ? 'max-w-3xl mx-auto' : ''}`}>
+          <div
+            className={`hidden sm:flex gap-1 mb-6 rounded-xl p-1 border ${activeTab === 'kanban' ? 'w-fit mx-auto' : 'w-fit'}`}
+            style={{ backgroundColor: CARD, borderColor: BDR }}
+          >
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                  activeTab === tab.id ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {activeTab === 'wod' && (

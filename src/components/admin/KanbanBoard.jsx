@@ -295,13 +295,13 @@ const KanbanBoard = () => {
           })}
         </div>
       ) : (
-        <div className="overflow-x-auto pb-2 -mx-4 px-4">
-          <div className="flex gap-3 min-w-max">
+        <div className="pb-2">
+          <div className="grid grid-cols-5 gap-3">
             {COLUMNS.map(col => {
               const colCards = cards.filter(c => c.status === col.id);
               const isOver = dragOverCol === col.id;
               return (
-                <div key={col.id} className="w-72 shrink-0 flex flex-col">
+                <div key={col.id} className="min-w-0 flex flex-col">
                   <div className="flex items-center gap-2 mb-3 px-1">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: col.color }} />
                     <p className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
