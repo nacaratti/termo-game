@@ -27,6 +27,42 @@ A cada relatório semanal, inclua a seção **"Caminho até a rentabilização"*
 - Decisões/aprovações que precisa do dono para avançar
 - Métricas relevantes (usuários ativos, comentários, engajamento)
 
+## Receita do projeto
+
+A página `/changelog` exibe publicamente o **total arrecadado** somado de todas as fontes (tabela `revenue_entries` no Supabase).
+
+### Quando registrar receita
+Sempre que uma fonte de monetização gerar dinheiro, registre via:
+```
+node scripts/add-revenue.mjs <source> <amount> ["descricao"] ["YYYY-MM-DD"]
+```
+
+Exemplos:
+- `node scripts/add-revenue.mjs ads 5.32` — saldo do mês do AdSense
+- `node scripts/add-revenue.mjs donation 10.00 "Pix anonimo" 2026-06-15`
+- `node scripts/add-revenue.mjs premium 9.90 "Assinatura mensal" 2026-07-01`
+- `node scripts/add-revenue.mjs sponsorship 200.00 "Patrocinio marca X" 2026-08-10`
+
+### Sources padronizados
+- `ads` — anúncios (AdSense, etc.)
+- `donation` — doações Pix, Buy Me a Coffee
+- `premium` — assinaturas pagas
+- `sponsorship` — patrocínios pontuais
+- `partnership` — parcerias recorrentes
+- `affiliate` — links afiliados
+- `other` — qualquer outra fonte
+
+### Quem pode registrar
+- **Você (CEO Agent)**: quando o dono confirma que uma receita entrou (via Telegram). Nunca invente valor.
+- **O dono manualmente**: ele pode rodar o script direto.
+
+### Quando inserir no relatório
+Toda sexta, inclua no relatório Telegram a receita registrada na semana e o acumulado. Se zero, faça crítica honesta sobre o que está atrasado no plano.
+
+### Privacidade
+- O campo `description` (ex: nome de quem doou) **nunca aparece publicamente**, só o `amount` e `source` (somados).
+- A página pública mostra **apenas o total**, não entradas individuais.
+
 ## Seção "Meta de 6 meses" na página de evolução
 
 A página `/changelog` exibe publicamente uma seção (`src/components/GoalSection.jsx`) com:

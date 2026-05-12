@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, TrendingUp, MessageSquare, Gamepad2, CheckCircle2 } from 'lucide-react';
+import { Target, TrendingUp, MessageSquare, Gamepad2, CheckCircle2, DollarSign } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 const CARD_BG = '#1e2028';
@@ -35,7 +35,7 @@ const Metric = ({ icon: Icon, label, value, color }) => (
 );
 
 const GoalSection = () => {
-  const [stats, setStats] = useState({ games: 0, comments: 0, completed: 0 });
+  const [stats, setStats] = useState({ games: 0, comments: 0, completed: 0, revenue: 0 });
 
   useEffect(() => {
     if (!supabase) return;
@@ -44,11 +44,14 @@ const GoalSection = () => {
       supabase.from('daily_results_6').select('id', { count: 'exact', head: true }),
       supabase.from('user_comments').select('id', { count: 'exact', head: true }),
       supabase.from('kanban_cards').select('id', { count: 'exact', head: true }).eq('status', 'done'),
-    ]).then(([g5, g6, c, d]) => {
+      supabase.from('revenue_entries').select('amount'),
+    ]).then(([g5, g6, c, d, r]) => {
+      const revenueTotal = (r.data || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
       setStats({
         games: (g5.count || 0) + (g6.count || 0),
         comments: c.count || 0,
         completed: d.count || 0,
+        revenue: revenueTotal,
       });
     }).catch(() => {});
   }, []);
@@ -121,7 +124,13 @@ const GoalSection = () => {
         <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500 mb-2">
           Onde estamos
         </p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <Metric
+            icon={DollarSign}
+            label="Arrecadado"
+            value={stats.revenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: stats.revenue >= 100 ? 0 : 2 })}
+            color="bg-[#c9a84c]/15 text-[#c9a84c]"
+          />
           <Metric
             icon={Gamepad2}
             label="Jogos"
