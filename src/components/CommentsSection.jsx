@@ -124,15 +124,12 @@ const CommentsSection = () => {
   };
 
   return (
-    <div className="mt-12">
+    <div>
       <div className="flex items-center gap-2 mb-4">
         <div className="w-2 h-2 rounded-full bg-zinc-500" />
         <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
-          Comentários
+          {comments.length} {comments.length === 1 ? 'comentário' : 'comentários'}
         </p>
-        {comments.length > 0 && (
-          <span className="text-zinc-600 text-xs">{comments.length}</span>
-        )}
       </div>
 
       <div

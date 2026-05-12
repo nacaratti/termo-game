@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HelpCircle, Settings2, X, Check, ScrollText } from 'lucide-react';
+import { HelpCircle, Settings2, X, Check, ScrollText, MessageCircle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
 const ExampleTile = ({ letter, status }) => {
@@ -151,8 +151,16 @@ const GameHeader = ({ allModes, currentMode, onModeChange }) => {
             Kinto
           </h1>
 
-          {/* Direita: configurações de modo */}
-          <div className="relative">
+          {/* Direita: comentários + configurações de modo */}
+          <div className="flex items-center gap-1 relative">
+            <a
+              href="/comments"
+              className="w-9 h-9 flex items-center justify-center text-zinc-500 hover:text-white transition-colors rounded-lg"
+              aria-label="Comentários"
+              title="Comentários"
+            >
+              <MessageCircle className="w-5 h-5" />
+            </a>
             <button
               ref={gearRef}
               onClick={() => setShowModes((v) => !v)}

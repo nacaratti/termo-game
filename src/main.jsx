@@ -6,10 +6,12 @@ import '@/index.css';
 
 const AdminApp = lazy(() => import('@/AdminApp'));
 const ChangelogApp = lazy(() => import('@/ChangelogApp'));
+const CommentsApp = lazy(() => import('@/CommentsApp'));
 
 const path = window.location.pathname.replace(/\/$/, '');
 const isAdmin = path.endsWith('/admin');
 const isChangelog = path === '/changelog';
+const isComments = path === '/comments';
 const initialMode = getModeByPath(path);
 
 const AdminFallback = () => (
@@ -25,6 +27,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       ? <Suspense fallback={<AdminFallback />}><AdminApp /></Suspense>
       : isChangelog
       ? <Suspense fallback={<AdminFallback />}><ChangelogApp /></Suspense>
+      : isComments
+      ? <Suspense fallback={<AdminFallback />}><CommentsApp /></Suspense>
       : <App initialMode={initialMode} allModes={GAME_MODES} />}
   </React.StrictMode>
 );
