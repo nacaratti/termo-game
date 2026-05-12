@@ -21,6 +21,7 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES)
   const getSavedFn    = is6 ? getSavedGame6    : getSavedGame;
 
   const [solution, setSolution] = useState('');
+  const [gameDate, setGameDate] = useState('');
   const [guesses, setGuesses] = useState(Array(maxGuesses).fill(null));
   const [currentGuess, setCurrentGuess] = useState(Array(wordLength).fill(''));
   const [currentAttempt, setCurrentAttempt] = useState(0);
@@ -51,6 +52,7 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES)
     setIsLoading(true);
     const today = getTodayDateStr();
     const currentWord = await getWordFn();
+    setGameDate(today);
 
     const saved = getSavedFn(today, currentWord);
 
@@ -96,6 +98,25 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES)
     initializeGame();
   }, [initializeGame]);
 
+  // Detecta mudança de data quando o usuário volta para a aba (após meia-noite).
+  // Sem isso, o jogo continuaria com a palavra de ontem mas salvaria como se fosse hoje.
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible') return;
+      const now = getTodayDateStr();
+      if (gameDate && now !== gameDate) {
+        // Data mudou desde que o jogo iniciou — recarrega tudo
+        initializeGame();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('focus', onVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', onVisibility);
+    };
+  }, [gameDate, initializeGame]);
+
   const handleTileFocus = (index) => {
     if (isGameOver || currentAttempt >= maxGuesses) return;
     setActiveInputCol(index);
@@ -120,6 +141,20 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES)
         variant: "destructive",
         duration: 2000,
       });
+      return;
+    }
+
+    // Guard contra travessia de meia-noite: se a data mudou desde o início do
+    // jogo, a palavra em memória é de ontem mas estaríamos salvando como hoje.
+    // Em vez disso, recarrega o jogo com a palavra correta de hoje.
+    const nowDate = getTodayDateStr();
+    if (gameDate && nowDate !== gameDate) {
+      toast({
+        title: "Nova palavra disponível",
+        description: "Carregando o jogo de hoje…",
+        duration: 2500,
+      });
+      initializeGame();
       return;
     }
 
