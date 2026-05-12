@@ -121,13 +121,7 @@ npm test           # Roda os testes (160+ casos)
 
 Crie um projeto novo no [Supabase](https://supabase.com) e copie a URL e as keys para o `.env` de acordo com `.env.example`
 
-Execute os arquivos SQL em `scripts/` no SQL Editor do Supabase, **nesta ordem**:
-
-- `schema-comments.sql` — tabela de comentários (Google OAuth)
-- `schema-revenue.sql` — tabela de receita
-- (Outras tabelas como `kanban_cards`, `activity_logs`, `changelog_entries` já estarão criadas pelos commits iniciais)
-
-Habilite o provider **Google** em **Authentication → Providers** com credenciais OAuth do Google Cloud Console.
+- Caso queira o código sql entrar em contato com davinacaratti@gmail.com.
 
 ### 2. Telegram (opcional, só para o CEO Agent)
 
