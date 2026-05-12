@@ -44,3 +44,7 @@ Thumbs.db
 
 # Claude Code worktrees
 .claude/worktrees/
+
+# Esquema do banco (informação sensível)
+supabase/
+esquema-kinto.sql
