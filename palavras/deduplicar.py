@@ -10,7 +10,7 @@ from pathlib import Path
 from collections import defaultdict
 from wordfreq import word_frequency
 
-PALAVRAS = Path(r"C:\Users\davin\OneDrive\termo_fake\palavras")
+PALAVRAS = Path(__file__).resolve().parent
 
 def normalize(word):
     nfd = unicodedata.normalize('NFD', word)

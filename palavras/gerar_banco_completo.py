@@ -10,9 +10,10 @@ import re
 from pathlib import Path
 from collections import defaultdict
 
-AFF = Path(r"C:\Users\davin\OneDrive\termo_fake\palavras\pt_BR.aff")
-DIC = Path(r"C:\Users\davin\OneDrive\termo_fake\palavras\pt-br.dic")
-OUT = Path(r"C:\Users\davin\OneDrive\termo_fake\palavras\palavras_5_letras.txt")
+HERE = Path(__file__).resolve().parent
+AFF = HERE / "pt_BR.aff"
+DIC = HERE / "pt-br.dic"
+OUT = HERE / "palavras_5_letras.txt"
 
 # Letras válidas em português
 PT5 = re.compile(r'^[A-ZÁÂÃÀÉÊÍÓÔÕÚÜÇ]{5}$')

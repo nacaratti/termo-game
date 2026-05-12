@@ -3,7 +3,7 @@ REM ============================================================
 REM Agente Desenvolvedor - Kinto
 REM Configure AGENT_DURATION (minutos) como variavel de ambiente
 REM ============================================================
-cd /d "C:\Users\davin\OneDrive\termo_fake"
+cd /d "%~dp0.."
 
 if not defined AGENT_DURATION set AGENT_DURATION=30
 

@@ -81,7 +81,7 @@ Títulos e descrições de cards aparecem em `/changelog` (público). Commits fi
 - ❌ **NUNCA exponha em cards, changelog ou mensagens de commit:**
   - Valores de variáveis de ambiente, tokens, chaves
   - Service role keys, anon keys, JWT secrets
-  - Paths locais do sistema (`C:\Users\davin\...`)
+  - Paths locais do sistema (`C:\Users\<usuario>\...`)
   - Credenciais de Supabase, Telegram, Google OAuth
   - Dados pessoais de usuários (emails, IDs, nomes específicos)
   - Conteúdo literal de comentários de usuários

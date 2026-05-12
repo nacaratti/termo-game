@@ -1,14 +1,21 @@
 # ============================================================
 # Setup das tasks agendadas para os agentes do Kinto
-# Execute como Administrador: clique direito > Executar como admin
+# Execute como Administrador na pasta do projeto:
+#   PowerShell > Run as Administrator > navegue ate o projeto
+#   > .\scripts\setup-tasks.ps1
 # ============================================================
 
+$ProjectDir = (Resolve-Path "$PSScriptRoot\..").Path
+$DevBat = Join-Path $ProjectDir "scripts\run-dev-agent.bat"
+$CeoBat = Join-Path $ProjectDir "scripts\run-ceo-agent.bat"
+
+Write-Host "Projeto: $ProjectDir" -ForegroundColor Cyan
 Write-Host "Criando task: Kinto Dev Agent (diario as 20h)..." -ForegroundColor Cyan
 
 $devAction = New-ScheduledTaskAction `
   -Execute "cmd.exe" `
-  -Argument '/c "C:\Users\davin\OneDrive\termo_fake\scripts\run-dev-agent.bat"' `
-  -WorkingDirectory "C:\Users\davin\OneDrive\termo_fake"
+  -Argument "/c `"$DevBat`"" `
+  -WorkingDirectory $ProjectDir
 
 $devTrigger = New-ScheduledTaskTrigger -Daily -At "20:00"
 
@@ -27,14 +34,14 @@ Register-ScheduledTask `
 
 Write-Host "OK: Kinto Dev Agent criado!" -ForegroundColor Green
 
-# ─────────────────────────────────────────────────────────────
+# -----------------------------------------------------------
 
 Write-Host "Criando task: Kinto CEO Agent (sextas as 20h)..." -ForegroundColor Cyan
 
 $ceoAction = New-ScheduledTaskAction `
   -Execute "cmd.exe" `
-  -Argument '/c "C:\Users\davin\OneDrive\termo_fake\scripts\run-ceo-agent.bat"' `
-  -WorkingDirectory "C:\Users\davin\OneDrive\termo_fake"
+  -Argument "/c `"$CeoBat`"" `
+  -WorkingDirectory $ProjectDir
 
 $ceoTrigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Friday -At "20:00"
 

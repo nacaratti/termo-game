@@ -10,9 +10,10 @@ from pathlib import Path
 from wordfreq import word_frequency
 import unicodedata
 
-SRC  = Path(r"C:\Users\davin\OneDrive\termo_fake\palavras\palavras_5_letras.txt")
-SOL  = Path(r"C:\Users\davin\OneDrive\termo_fake\palavras\solucoes.txt")
-VAL  = Path(r"C:\Users\davin\OneDrive\termo_fake\palavras\validas.txt")
+HERE = Path(__file__).resolve().parent
+SRC  = HERE / "palavras_5_letras.txt"
+SOL  = HERE / "solucoes.txt"
+VAL  = HERE / "validas.txt"
 
 # Limiar de frequência para entrar na lista de soluções.
 # wordfreq retorna valores entre 0 e 1 (fração de uso no corpus).

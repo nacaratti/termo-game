@@ -2,7 +2,7 @@
 REM ============================================================
 REM Agente CEO - Kinto (execucao semanal)
 REM ============================================================
-cd /d "C:\Users\davin\OneDrive\termo_fake"
+cd /d "%~dp0.."
 
 echo [%date% %time%] Iniciando CEO Agent
 

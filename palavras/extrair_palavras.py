@@ -6,8 +6,9 @@ Inclui palavras com e sem acentos / ç.
 import re
 from pathlib import Path
 
-INPUT  = Path(r"C:\Users\davin\OneDrive\termo_fake\pt-br.dic")
-OUTPUT = Path(r"C:\Users\davin\OneDrive\termo_fake\palavras_5_letras.txt")
+HERE   = Path(__file__).resolve().parent
+INPUT  = HERE / "pt-br.dic"
+OUTPUT = HERE / "palavras_5_letras.txt"
 
 # Letras válidas em português (a-z + acentos + ç)
 PT_5 = re.compile(r"^[A-ZÁÂÃÀÉÊÍÓÔÕÚÜÇ]{5}$")

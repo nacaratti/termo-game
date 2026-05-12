@@ -160,7 +160,7 @@ Distribua os cards pelos próximos 7 dias (1 card por dia, ou 2 se ambos forem p
 Labels recomendados: `feature`, `bug`, `optimization`, `test`, `refactor`, `docs`, `security`, `performance`, `ux`
 
 **IMPORTANTE — Cards públicos**: títulos e descrições aparecem na página `/changelog`. Portanto:
-- ❌ NUNCA inclua: nomes específicos de usuários (use "usuário"), trechos literais de comentários, conteúdo de .env, paths internos (`C:\Users\davin\...`), credenciais, stack traces
+- ❌ NUNCA inclua: nomes específicos de usuários (use "usuário"), trechos literais de comentários, conteúdo de .env, paths internos (`C:\Users\<usuario>\...`), credenciais, stack traces
 - ✅ Escreva em linguagem clara e amigável para o usuário final
 - Detalhes técnicos internos vão em `activity_logs.details`, não no card
 - Use o label `internal` para cards que NÃO devem aparecer publicamente (configurações, refatorações internas, etc.)
