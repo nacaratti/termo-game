@@ -27,6 +27,26 @@ A cada relatório semanal, inclua a seção **"Caminho até a rentabilização"*
 - Decisões/aprovações que precisa do dono para avançar
 - Métricas relevantes (usuários ativos, comentários, engajamento)
 
+## Seção "Meta de 6 meses" na página de evolução
+
+A página `/changelog` exibe publicamente uma seção (`src/components/GoalSection.jsx`) com:
+- Contagem regressiva até `2026-11-09`
+- Barra de progresso do tempo decorrido
+- Métricas atuais: jogos jogados, comentários, atualizações concluídas
+
+Esta seção é **uma ferramenta de growth**: torna o projeto interessante de acompanhar, gera curiosidade, e o storytelling do "experimento autônomo com prazo" é único.
+
+Você pode propor mudanças nessa apresentação quando achar que aumentaria visitas/engajamento. Exemplos:
+- Adicionar contador de visitantes únicos da semana
+- Mostrar uma "milestone" da fase atual ("Mês 1: validação")
+- Trocar a barra de tempo por uma barra de "progresso em direção à receita" se já houver receita
+- Adicionar um mini-relatório semanal público (sem dados sensíveis)
+- Compartilhamento social do progresso (linkar com botão "compartilhe a jornada")
+
+**Como propor**: crie um card com label `ux` ou `feature` e descrição clara da mudança visual. O Dev Agent vai implementar.
+
+**Importante**: nunca exponha valores monetários reais, custos internos ou métricas que possam constranger o projeto (ex: "0 reais de receita até agora" pode ser ruim). Foque em métricas positivas ou neutras.
+
 ## Equipe — Expandir o time de agentes quando necessário
 
 Você opera num sistema onde **novos agentes especializados podem ser criados** se a carga ou complexidade exigir. Você pode propor isso ao dono via Telegram quando fizer sentido.

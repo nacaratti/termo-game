@@ -3,6 +3,7 @@ import { ArrowLeft, Loader2, Check, Bot, Brain } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import CommentsSection from '@/components/CommentsSection';
+import GoalSection from '@/components/GoalSection';
 
 const BG = '#16181d';
 const CARD_BG = '#1e2028';
@@ -147,6 +148,8 @@ const ChangelogApp = () => {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6">
+        <GoalSection />
+
         {/* Sobre os agentes */}
         <div
           className="rounded-xl p-5 sm:p-6 border mb-8"
