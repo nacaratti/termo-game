@@ -21,15 +21,15 @@ function daysBetween(a, b) {
 
 const Metric = ({ icon: Icon, label, value, color }) => (
   <div
-    className="rounded-lg p-3 flex items-center gap-3 border"
+    className="rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 border min-w-0"
     style={{ backgroundColor: SURF, borderColor: BDR }}
   >
     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
       <Icon className="w-4 h-4" />
     </div>
-    <div className="min-w-0">
-      <p className="text-white text-lg font-black leading-none">{value}</p>
-      <p className="text-zinc-500 text-[10px] uppercase tracking-wider mt-1">{label}</p>
+    <div className="min-w-0 w-full">
+      <p className="text-white text-base sm:text-lg font-black leading-none truncate">{value}</p>
+      <p className="text-zinc-500 text-[9px] sm:text-[10px] uppercase tracking-wider mt-1 leading-tight">{label}</p>
     </div>
   </div>
 );
@@ -124,7 +124,7 @@ const GoalSection = () => {
         <div className="grid grid-cols-3 gap-2">
           <Metric
             icon={Gamepad2}
-            label="Jogos jogados"
+            label="Jogos"
             value={stats.games.toLocaleString('pt-BR')}
             color="bg-[#6aaa64]/15 text-[#6aaa64]"
           />
