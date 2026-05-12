@@ -119,7 +119,7 @@ npm test           # Roda os testes (160+ casos)
 
 ### 1. Supabase
 
-Crie um projeto novo no [Supabase](https://supabase.com) e copie a URL e as keys para o `.env`.
+Crie um projeto novo no [Supabase](https://supabase.com) e copie a URL e as keys para o `.env` de acordo com `.env.example`
 
 Execute os arquivos SQL em `scripts/` no SQL Editor do Supabase, **nesta ordem**:
 
