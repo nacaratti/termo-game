@@ -60,13 +60,47 @@ Register-ScheduledTask `
 
 Write-Host "OK: Kinto CEO Agent criado!" -ForegroundColor Green
 
+# -----------------------------------------------------------
+
+Write-Host "Criando task: Kinto Watchdog (diario as 9h)..." -ForegroundColor Cyan
+
+$WatchdogBat = Join-Path $ProjectDir "scripts\run-watchdog.bat"
+
+$wdAction = New-ScheduledTaskAction `
+  -Execute "cmd.exe" `
+  -Argument "/c `"$WatchdogBat`"" `
+  -WorkingDirectory $ProjectDir
+
+$wdTrigger = New-ScheduledTaskTrigger -Daily -At "09:00"
+
+$wdSettings = New-ScheduledTaskSettingsSet `
+  -AllowStartIfOnBatteries `
+  -DontStopIfGoingOnBatteries `
+  -StartWhenAvailable `
+  -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
+
+Register-ScheduledTask `
+  -TaskName "Kinto Watchdog" `
+  -Action $wdAction `
+  -Trigger $wdTrigger `
+  -Settings $wdSettings `
+  -Description "Watchdog do Kinto - verifica se os agentes rodaram e alerta via Telegram se algum falhou" `
+  -Force
+
+Write-Host "OK: Kinto Watchdog criado!" -ForegroundColor Green
+
 Write-Host ""
 Write-Host "Tasks criadas com sucesso! Verifique no Agendador de Tarefas." -ForegroundColor Yellow
 Write-Host "  - Kinto Dev Agent: todo dia as 20h (30min)"
 Write-Host "  - Kinto CEO Agent: sextas as 20h"
+Write-Host "  - Kinto Watchdog:  todo dia as 9h (verifica execucoes do dia anterior)"
+Write-Host ""
+Write-Host "A flag -StartWhenAvailable no Watchdog garante que ele roda"
+Write-Host "mesmo se o PC tiver estado desligado as 9h, assim que o PC ligar."
 Write-Host ""
 Write-Host "Para testar manualmente:"
 Write-Host '  schtasks /Run /TN "Kinto Dev Agent"'
 Write-Host '  schtasks /Run /TN "Kinto CEO Agent"'
+Write-Host '  schtasks /Run /TN "Kinto Watchdog"'
 
 Read-Host "Pressione Enter para fechar"

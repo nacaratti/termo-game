@@ -8,4 +8,10 @@ echo [%date% %time%] Iniciando CEO Agent
 
 claude --dangerously-skip-permissions --print "Leia o arquivo .claude/agent-ceo.md e execute as instrucoes do agente CEO. Gere o relatorio semanal, crie cards de propostas e envie o resumo via Telegram."
 
-echo [%date% %time%] CEO Agent finalizado
+set EXIT_CODE=%errorlevel%
+echo [%date% %time%] CEO Agent finalizado (exit %EXIT_CODE%)
+
+if not %EXIT_CODE%==0 (
+  echo Erro detectado, enviando alerta Telegram...
+  node scripts/notify-failure.mjs ceo_agent %EXIT_CODE%
+)
