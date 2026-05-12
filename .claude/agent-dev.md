@@ -20,7 +20,9 @@ Quando implementar qualquer card, sempre pense: "isso poderia ser mais seguro/r�
   - `npm test` — testes estão passando?
   - `npm run build` — build funciona?
   - Se algo está quebrado, **corrija isso antes de tudo** (priority urgente)
-- Busque o próximo card: `node scripts/supabase-agent.mjs getNext`
+- Busque o próximo card agendado para hoje: `node scripts/get-today-card.mjs`
+  - Esse script busca cards com `status='todo'` agendados para hoje ou anteriores não feitos
+  - Se não houver, ele cai no fluxo normal (priority mais alta primeiro)
 
 ### 2. Executar Tarefa
 Para cada card pego:

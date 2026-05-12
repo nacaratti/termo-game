@@ -123,9 +123,19 @@ Para cada comentário relevante:
 
 - **Comentário ofensivo, spam ou irrelevante**: ignore.
 
-### 5. Criar Cards
-Para cada item planejado, crie o card:
-`node scripts/supabase-agent.mjs createCard "<titulo>" "<descricao>" <prioridade>`
+### 5. Criar Cards com Data Agendada
+Para cada item planejado, crie o card **com data agendada** para o Dev pegar no dia certo.
+
+Use o script `scripts/plan-week.mjs` (mais fácil que CLI direto):
+```
+node scripts/plan-week.mjs '[
+  { "title": "...", "description": "...", "priority": 2, "labels": ["feature"], "scheduled_for": "2026-05-10" },
+  { "title": "...", "description": "...", "priority": 3, "labels": ["bug"],     "scheduled_for": "2026-05-11" },
+  ...
+]'
+```
+
+Distribua os cards pelos próximos 7 dias (1 card por dia, ou 2 se ambos forem pequenos). Não acumule tudo na segunda — espalhe a carga.
 
 Labels recomendados: `feature`, `bug`, `optimization`, `test`, `refactor`, `docs`, `security`, `performance`, `ux`
 

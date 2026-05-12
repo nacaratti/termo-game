@@ -28,6 +28,7 @@ const CardForm = ({ card, onSave, onCancel }) => {
   const [priority, setPriority] = useState(card?.priority ?? 0);
   const [labels, setLabels] = useState(card?.labels || []);
   const [status, setStatus] = useState(card?.status || 'backlog');
+  const [scheduledFor, setScheduledFor] = useState(card?.scheduled_for || '');
   const [saving, setSaving] = useState(false);
 
   const toggleLabel = (label) => {
@@ -38,7 +39,14 @@ const CardForm = ({ card, onSave, onCancel }) => {
     e.preventDefault();
     if (!title.trim()) return;
     setSaving(true);
-    await onSave({ title: title.trim(), description: description.trim(), priority, labels, status });
+    await onSave({
+      title: title.trim(),
+      description: description.trim(),
+      priority,
+      labels,
+      status,
+      scheduled_for: scheduledFor || null,
+    });
     setSaving(false);
   };
 
@@ -103,6 +111,17 @@ const CardForm = ({ card, onSave, onCancel }) => {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-zinc-500 mb-1 block">Agendar para</label>
+            <input
+              type="date"
+              value={scheduledFor}
+              onChange={e => setScheduledFor(e.target.value)}
+              className="w-full rounded-lg px-3 py-2.5 text-white outline-none border"
+              style={{ backgroundColor: SURF, borderColor: BDR2, colorScheme: 'dark' }}
+            />
           </div>
 
           <div>

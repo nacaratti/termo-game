@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, ChevronLeft, ChevronRight, Calendar, User, Tag } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import CardForm from './CardForm';
@@ -106,6 +106,16 @@ const KanbanCard = ({ card, onMove, onEdit, onDelete, onDragStart, onDragEnd, is
                 {label}
               </span>
             ))}
+          </div>
+        )}
+
+        {/* Scheduled date highlight */}
+        {card.scheduled_for && (
+          <div className="flex items-center gap-1.5 text-[10px] text-zinc-400">
+            <Calendar className="w-3 h-3" />
+            <span>
+              {new Date(card.scheduled_for + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+            </span>
           </div>
         )}
 
