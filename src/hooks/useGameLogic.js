@@ -11,6 +11,7 @@ import { saveGameProgress, saveCompletedGame, getSavedGame } from '@/lib/gameSta
 import { saveGameProgress6, saveCompletedGame6, getSavedGame6 } from '@/lib/gameState6';
 import { isValidGuess } from '@/lib/customWords';
 import { isValidGuess6 } from '@/lib/customWords6';
+import { trackEvent } from '@/lib/analytics';
 
 export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES) => {
   const is6 = wordLength === 6;
@@ -90,6 +91,7 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES)
       }
     } else {
       applyNewSolution(currentWord);
+      trackEvent('jogo_iniciado', { modo: wordLength === 6 ? '6letras' : '5letras' });
     }
     setIsLoading(false);
   }, [applyNewSolution, wordLength]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -158,6 +160,8 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES)
       return;
     }
 
+    trackEvent('tentativa_correta', { tentativa: currentAttempt + 1, modo: wordLength === 6 ? '6letras' : '5letras' });
+
     const { newUsedLetters, isCorrect, guessEvaluation } = evaluateGuess(finalCurrentGuess, solution, usedLetters, wordLength);
 
     const newGuesses = [...guesses];
@@ -189,6 +193,7 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES)
         isGameWon: true,
         currentAttempt,
       });
+      trackEvent('jogo_concluido', { vitoria: true, tentativas: currentAttempt + 1, modo: is6 ? '6letras' : '5letras' });
       toast({
         title: "Parabéns!",
         description: "Você acertou a palavra!",
@@ -211,6 +216,7 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES)
         isGameWon: false,
         currentAttempt,
       });
+      trackEvent('jogo_concluido', { vitoria: false, tentativas: maxGuesses, modo: is6 ? '6letras' : '5letras' });
       toast({
         title: "Fim de jogo!",
         description: `A palavra era: ${solution}`,
