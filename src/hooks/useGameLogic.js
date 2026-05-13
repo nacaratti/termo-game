@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { WORD_LENGTH, MAX_GUESSES } from '@/config/constants';
 import { checkGuess as evaluateGuess } from '@/lib/gameLogic';
@@ -9,17 +9,16 @@ import { saveGameResult, saveDailyResult } from '@/lib/stats';
 import { saveDailyResult6 } from '@/lib/stats6';
 import { saveGameProgress, saveCompletedGame, getSavedGame } from '@/lib/gameState';
 import { saveGameProgress6, saveCompletedGame6, getSavedGame6 } from '@/lib/gameState6';
-import { isValidGuess } from '@/lib/customWords';
-import { isValidGuess6 } from '@/lib/customWords6';
 import { trackEvent } from '@/lib/analytics';
 
 export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES) => {
   const is6 = wordLength === 6;
-  const getWordFn     = is6 ? initWordOfDay6   : initWordOfDay;
-  const validateFn    = is6 ? isValidGuess6     : isValidGuess;
-  const saveProgressFn  = is6 ? saveGameProgress6  : saveGameProgress;
+  const getWordFn       = is6 ? initWordOfDay6    : initWordOfDay;
+  const saveProgressFn  = is6 ? saveGameProgress6 : saveGameProgress;
   const saveCompletedFn = is6 ? saveCompletedGame6 : saveCompletedGame;
-  const getSavedFn    = is6 ? getSavedGame6    : getSavedGame;
+  const getSavedFn      = is6 ? getSavedGame6     : getSavedGame;
+
+  const validateRef = useRef(null);
 
   const [solution, setSolution] = useState('');
   const [gameDate, setGameDate] = useState('');
@@ -51,8 +50,12 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES)
 
   const initializeGame = useCallback(async () => {
     setIsLoading(true);
+    validateRef.current = null;
     const today = getTodayDateStr();
-    const currentWord = await getWordFn();
+    const loadValidation = is6
+      ? import('@/lib/customWords6').then(m => { validateRef.current = m.isValidGuess6; })
+      : import('@/lib/customWords').then(m => { validateRef.current = m.isValidGuess; });
+    const [currentWord] = await Promise.all([getWordFn(), loadValidation]);
     setGameDate(today);
 
     const saved = getSavedFn(today, currentWord);
@@ -136,7 +139,7 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES)
       return;
     }
 
-    if (!validateFn(finalCurrentGuess)) {
+    if (validateRef.current && !validateRef.current(finalCurrentGuess)) {
       toast({
         title: "Palavra inválida",
         description: "Esta palavra não está no dicionário.",
