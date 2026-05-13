@@ -91,8 +91,12 @@ const InstructionsModal = ({ onClose, currentMode }) => (
   </motion.div>
 );
 
+const _TUTORIAL_KEY = '_kw';
+
 const GameHeader = ({ allModes, currentMode, onModeChange }) => {
-  const [showInfo, setShowInfo] = useState(false);
+  const [showInfo, setShowInfo] = useState(() => {
+    try { return !localStorage.getItem(_TUTORIAL_KEY); } catch { return false; }
+  });
   const [showModes, setShowModes] = useState(false);
   const isMobile = useIsMobile();
   const gearRef = useRef(null);
@@ -275,7 +279,15 @@ const GameHeader = ({ allModes, currentMode, onModeChange }) => {
 
       {/* Modal de instruções */}
       <AnimatePresence>
-        {showInfo && <InstructionsModal onClose={() => setShowInfo(false)} currentMode={currentMode} />}
+        {showInfo && (
+        <InstructionsModal
+          onClose={() => {
+            setShowInfo(false);
+            try { localStorage.setItem(_TUTORIAL_KEY, '1'); } catch {}
+          }}
+          currentMode={currentMode}
+        />
+      )}
       </AnimatePresence>
     </>
   );
