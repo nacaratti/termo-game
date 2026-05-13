@@ -29,25 +29,7 @@
 
     <title>Kinto</title>
 
-    <!-- Google Analytics 4 — ativo somente se VITE_GA_ID estiver definido -->
-    <script>
-      (function () {
-        var id = '%VITE_GA_ID%';
-        if (!id || id === '%VITE_GA_ID%') {
-          console.warn('[Kinto] VITE_GA_ID não definido — Google Analytics inativo.');
-          return;
-        }
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        window.gtag = gtag;
-        gtag('js', new Date());
-        gtag('config', id, { send_page_view: true });
-        var s = document.createElement('script');
-        s.async = true;
-        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
-        document.head.appendChild(s);
-      })();
-    </script>
+    <!-- __VITE_INJECT_GOOGLE_TAG__ -->
   </head>
   <body>
     <div id="root"></div>
