@@ -94,9 +94,15 @@ const InstructionsModal = ({ onClose, currentMode }) => (
 const _TUTORIAL_KEY = '_kw';
 
 const GameHeader = ({ allModes, currentMode, onModeChange }) => {
-  const [showInfo, setShowInfo] = useState(() => {
-    try { return !localStorage.getItem(_TUTORIAL_KEY); } catch { return false; }
-  });
+  const [showInfo, setShowInfo] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(_TUTORIAL_KEY)) setShowInfo(true);
+    } catch {
+      setShowInfo(true);
+    }
+  }, []);
   const [showModes, setShowModes] = useState(false);
   const isMobile = useIsMobile();
   const gearRef = useRef(null);
