@@ -731,17 +731,42 @@ const HistoryPanel = () => {
 const CommentsPanel = () => {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [filter, setFilter] = useState('');
 
   useEffect(() => {
-    getComments(200).then(data => { setComments(data); setLoading(false); });
+    const fetchAll = async () => {
+      try {
+        const [social, game] = await Promise.all([
+          supabase
+            ? supabase.from('user_comments').select('*').order('created_at', { ascending: false }).limit(200)
+                .then(({ data, error }) => {
+                  if (error) console.error('[admin] user_comments:', error.message);
+                  return (data || []).map(c => ({ ...c, _source: 'social', _text: c.content }));
+                })
+            : [],
+          getComments(200).then(data =>
+            data.map(c => ({ ...c, _source: 'game', _text: c.comment }))
+          ),
+        ]);
+        const merged = [...social, ...game].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        setComments(merged);
+      } catch (e) {
+        console.error('[admin] CommentsPanel:', e);
+        setFetchError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
   }, []);
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
     if (!q) return comments;
     return comments.filter(c =>
-      c.comment.toLowerCase().includes(q) ||
+      c._text?.toLowerCase().includes(q) ||
+      c.user_name?.toLowerCase().includes(q) ||
       c.word?.toLowerCase().includes(q) ||
       c.date?.includes(q)
     );
@@ -753,32 +778,46 @@ const CommentsPanel = () => {
       <input
         className="w-full rounded-lg px-4 py-2.5 text-white outline-none placeholder:text-zinc-600 border text-sm"
         style={{ backgroundColor: SURF, borderColor: BDR2 }}
-        placeholder="Filtrar por palavra, data ou texto…"
+        placeholder="Filtrar por nome, palavra, data ou texto…"
         value={filter}
         onChange={e => setFilter(e.target.value)}
       />
       {loading ? (
         <p className="text-zinc-500 text-sm text-center py-8">Carregando…</p>
+      ) : fetchError ? (
+        <p className="text-red-400 text-sm text-center py-8">Erro ao carregar comentários. Verifique as políticas de RLS no Supabase.</p>
       ) : filtered.length === 0 ? (
         <p className="text-zinc-600 text-sm text-center py-8">Nenhum comentário encontrado.</p>
       ) : (
         <div className="space-y-3">
           {filtered.map(c => (
-            <Card key={c.id} className="space-y-2">
+            <Card key={`${c._source}-${c.id}`} className="space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <span
-                  className="text-xs font-bold tracking-widest px-2 py-0.5 rounded"
-                  style={{ backgroundColor: SURF, color: '#6aaa64' }}
-                >
-                  {c.word}
-                </span>
-                <span className="text-xs text-zinc-500">{c.date}</span>
-                <span className="text-xs text-zinc-600">{c.mode === '6' ? '6 letras' : '5 letras'}</span>
-                <span className={`text-xs px-1.5 py-0.5 rounded ml-auto ${c.won ? 'text-green-400 bg-green-900/30' : 'text-red-400 bg-red-900/30'}`}>
-                  {c.won ? `✓ ${c.attempts} tent.` : '✗ perdeu'}
-                </span>
+                {c._source === 'social' ? (
+                  <span className="text-xs font-semibold text-zinc-300">{c.user_name || 'Anônimo'}</span>
+                ) : (
+                  <span
+                    className="text-xs font-bold tracking-widest px-2 py-0.5 rounded"
+                    style={{ backgroundColor: SURF, color: '#6aaa64' }}
+                  >
+                    {c.word}
+                  </span>
+                )}
+                {c._source === 'social' ? (
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-blue-900/30 text-blue-400">página /comments</span>
+                ) : (
+                  <>
+                    <span className="text-xs text-zinc-500">{c.date}</span>
+                    <span className="text-xs text-zinc-600">{c.mode === '6' ? '6 letras' : '5 letras'}</span>
+                    {c.won != null && (
+                      <span className={`text-xs px-1.5 py-0.5 rounded ml-auto ${c.won ? 'text-green-400 bg-green-900/30' : 'text-red-400 bg-red-900/30'}`}>
+                        {c.won ? `✓ ${c.attempts} tent.` : '✗ perdeu'}
+                      </span>
+                    )}
+                  </>
+                )}
               </div>
-              <p className="text-sm text-zinc-300 leading-relaxed">{c.comment}</p>
+              <p className="text-sm text-zinc-300 leading-relaxed">{c._text}</p>
               <p className="text-xs text-zinc-600">
                 {new Date(c.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
               </p>
