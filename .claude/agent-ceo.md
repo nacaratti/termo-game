@@ -127,7 +127,7 @@ Sempre que possível, **deixe o passo a passo pronto** para o dono executar rapi
 - Consulte atividades recentes: `node scripts/supabase-agent.mjs logs 50`
 - **Métricas de produto da semana** (fonte dura — NÃO alucine números):
   - Leia `reports/metrics-latest.json` (gerado diariamente por `pull-analytics.mjs`). Contém: linhas diárias dos últimos 7 dias, totais (sessions, active_users, pageviews, new_users), médias (LCP, INP, CLS, avg_engagement).
-  - Se o arquivo não existir ou estiver vazio, é porque GA4 ainda não foi configurado. Inclua isso na seção "Decisões necessárias" pedindo ao dono para ativar.
+  - Se as colunas de GA4 (sessions, active_users, etc.) estiverem todas `null`, é porque o backend ainda não tem acesso à GA4 Data API. O frontend tracking pode estar coletando dados normalmente — o usuário tem ciência disso. **Não inclua nas "Decisões necessárias" toda semana** — só mencione uma vez por mês como lembrete educado. Para a semana, foque em métricas que estão disponíveis (uptime, performance via PSI, cards entregues).
   - Alternativa via CLI: `node scripts/supabase-agent.mjs metrics 7`.
 - **North-star atual**: `node scripts/supabase-agent.mjs focus`. Já vem calculado pelo `compute-north-star.mjs` que roda antes desta sessão.
 - **Saúde da produção da semana**: `node scripts/supabase-agent.mjs health 168` (últimos 7 dias). Calcule o uptime aproximado (% de checks com `ok: true`) e a latência média.
