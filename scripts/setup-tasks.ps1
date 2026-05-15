@@ -89,18 +89,49 @@ Register-ScheduledTask `
 
 Write-Host "OK: Kinto Watchdog criado!" -ForegroundColor Green
 
+# -----------------------------------------------------------
+
+Write-Host "Criando task: Kinto Smoke Test (diario as 08h30)..." -ForegroundColor Cyan
+
+$SmokeBat = Join-Path $ProjectDir "scripts\run-smoke-test.bat"
+
+$smokeAction = New-ScheduledTaskAction `
+  -Execute "cmd.exe" `
+  -Argument "/c `"$SmokeBat`"" `
+  -WorkingDirectory $ProjectDir
+
+$smokeTrigger = New-ScheduledTaskTrigger -Daily -At "08:30"
+
+$smokeSettings = New-ScheduledTaskSettingsSet `
+  -AllowStartIfOnBatteries `
+  -DontStopIfGoingOnBatteries `
+  -StartWhenAvailable `
+  -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
+
+Register-ScheduledTask `
+  -TaskName "Kinto Smoke Test" `
+  -Action $smokeAction `
+  -Trigger $smokeTrigger `
+  -Settings $smokeSettings `
+  -Description "Smoke test do Kinto - checa saude do site e erros de cliente, alerta no Telegram" `
+  -Force
+
+Write-Host "OK: Kinto Smoke Test criado!" -ForegroundColor Green
+
 Write-Host ""
 Write-Host "Tasks criadas com sucesso! Verifique no Agendador de Tarefas." -ForegroundColor Yellow
-Write-Host "  - Kinto Dev Agent: todo dia as 20h (30min)"
-Write-Host "  - Kinto CEO Agent: sextas as 20h"
-Write-Host "  - Kinto Watchdog:  todo dia as 9h (verifica execucoes do dia anterior)"
+Write-Host "  - Kinto Smoke Test: todo dia as 8h30 (checa saude do site)"
+Write-Host "  - Kinto Watchdog:   todo dia as 9h (verifica execucoes + saude)"
+Write-Host "  - Kinto Dev Agent:  todo dia as 20h (30min)"
+Write-Host "  - Kinto CEO Agent:  sextas as 20h"
 Write-Host ""
-Write-Host "A flag -StartWhenAvailable no Watchdog garante que ele roda"
-Write-Host "mesmo se o PC tiver estado desligado as 9h, assim que o PC ligar."
+Write-Host "A flag -StartWhenAvailable garante que Smoke Test e Watchdog"
+Write-Host "rodam mesmo se o PC tiver estado desligado no horario, assim que ligar."
 Write-Host ""
 Write-Host "Para testar manualmente:"
+Write-Host '  schtasks /Run /TN "Kinto Smoke Test"'
+Write-Host '  schtasks /Run /TN "Kinto Watchdog"'
 Write-Host '  schtasks /Run /TN "Kinto Dev Agent"'
 Write-Host '  schtasks /Run /TN "Kinto CEO Agent"'
-Write-Host '  schtasks /Run /TN "Kinto Watchdog"'
 
 Read-Host "Pressione Enter para fechar"

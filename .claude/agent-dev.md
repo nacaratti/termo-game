@@ -16,13 +16,18 @@ Quando implementar qualquer card, sempre pense: "isso poderia ser mais seguro/r�
 
 ### 1. Início da Sessão
 - Logue o início: `node scripts/supabase-agent.mjs log dev_agent session_started '{"duration_minutes": <TEMPO>}'`
-- Verifique status do projeto:
+- **Verifique a saúde da produção primeiro** (sensores determinísticos):
+  - `node scripts/supabase-agent.mjs health 24` — checks do smoke test nas últimas 24h. Se houver `ok: false`, o site está com problema.
+  - `node scripts/supabase-agent.mjs clientErrors` — erros de runtime reportados pelos jogadores ainda não vistos.
+  - Se os sensores criaram cards `internal`+`bug` (do `smoke_test` ou `error_monitor`), **eles têm prioridade** — pegue esses antes de qualquer card de feature.
+- Verifique status do projeto local:
   - `npm test` — testes estão passando?
   - `npm run build` — build funciona?
   - Se algo está quebrado, **corrija isso antes de tudo** (priority urgente)
 - Busque o próximo card agendado para hoje: `node scripts/get-today-card.mjs`
   - Esse script busca cards com `status='todo'` agendados para hoje ou anteriores não feitos
   - Se não houver, ele cai no fluxo normal (priority mais alta primeiro)
+- Leia `docs/CARD_CONTRACT.md` para entender o que cada card deve entregar.
 
 ### 2. Executar Tarefa
 Para cada card pego:
@@ -73,6 +78,7 @@ Não saia do escopo do card atual para fazer isso — apenas registre o card par
 - Modifique `.env` ou commite credenciais
 - Pule testes
 - Faça mudanças grandes fora do escopo do card
+- Adicione testes E2E/Playwright ao script `npm test` — eles têm script próprio (`test:e2e`)
 
 ## Segurança e Privacidade (CRÍTICO)
 

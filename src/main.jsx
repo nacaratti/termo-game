@@ -2,7 +2,13 @@ import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from '@/App';
 import { getModeByPath, GAME_MODES } from '@/config/gameModes';
+import { initErrorReporter } from '@/lib/errorReporter';
 import '@/index.css';
+
+// Captura erros de runtime do navegador e envia para o Supabase
+// (ver src/lib/errorReporter.js). Os agentes leem isso para criar
+// cards de bug sem depender de comentário de usuário.
+initErrorReporter();
 
 const AdminApp = lazy(() => import('@/AdminApp'));
 const ChangelogApp = lazy(() => import('@/ChangelogApp'));

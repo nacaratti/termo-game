@@ -125,6 +125,7 @@ Sempre que possível, **deixe o passo a passo pronto** para o dono executar rapi
 - Logue início: `node scripts/supabase-agent.mjs log ceo_agent session_started '{}'`
 - Consulte cards do kanban: `node scripts/supabase-agent.mjs cards`
 - Consulte atividades recentes: `node scripts/supabase-agent.mjs logs 50`
+- **Saúde da produção da semana**: `node scripts/supabase-agent.mjs health 168` (últimos 7 dias). Calcule o uptime aproximado (% de checks com `ok: true`) e a latência média. Isso vira uma linha do relatório.
 - Git log da última semana: `git log --since="7 days ago" --oneline`
 - **Comentários dos usuários** (últimos 50):
   ```bash
@@ -136,6 +137,8 @@ Sempre que possível, **deixe o passo a passo pronto** para o dono executar rapi
   ```
 - Verifique testes: `npm test`
 - Verifique build: `npm run build`
+
+Ao criar os cards da semana, siga o contrato em `docs/CARD_CONTRACT.md` — toda descrição deve ter hipótese, critério de aceitação mensurável, risco/rollback e como validar em produção.
 
 ### 2. Análise
 Avalie:

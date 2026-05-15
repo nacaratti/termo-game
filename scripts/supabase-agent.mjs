@@ -138,6 +138,78 @@ export async function saveReport({ content, decisions_needed = [] }) {
   return data;
 }
 
+// ─── Idempotência de cards ───────────────────────────────────────────────────
+
+/**
+ * Retorna um card "aberto" (não done) com o título informado criado nas
+ * últimas `hoursWindow` horas, ou null. Usado pelos sensores para não
+ * duplicar cards a cada execução.
+ */
+export async function findOpenCardByTitle(title, hoursWindow = 24) {
+  const since = new Date(Date.now() - hoursWindow * 3600_000).toISOString();
+  const { data, error } = await supabase
+    .from('kanban_cards')
+    .select('id, title, status, created_at')
+    .eq('title', title)
+    .neq('status', 'done')
+    .gte('created_at', since)
+    .limit(1);
+  if (error) throw error;
+  return (data && data[0]) || null;
+}
+
+// ─── Saúde de produção (production_health) ───────────────────────────────────
+
+/**
+ * Grava em lote os resultados de um smoke test.
+ * rows: [{ url, run_id, http_status, latency_ms, ok, error }]
+ */
+export async function recordHealth(rows) {
+  if (!rows || rows.length === 0) return [];
+  const { data, error } = await supabase
+    .from('production_health')
+    .insert(rows)
+    .select();
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Retorna os checks de saúde das últimas `hours` horas, mais recentes primeiro.
+ */
+export async function getRecentHealth(hours = 24) {
+  const since = new Date(Date.now() - hours * 3600_000).toISOString();
+  const { data, error } = await supabase
+    .from('production_health')
+    .select('*')
+    .gte('checked_at', since)
+    .order('checked_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+// ─── Erros de cliente (client_errors) ────────────────────────────────────────
+
+export async function getUnseenClientErrors(limit = 200) {
+  const { data, error } = await supabase
+    .from('client_errors')
+    .select('*')
+    .eq('seen_by_agent', false)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function markClientErrorsSeen(ids) {
+  if (!ids || ids.length === 0) return;
+  const { error } = await supabase
+    .from('client_errors')
+    .update({ seen_by_agent: true })
+    .in('id', ids);
+  if (error) throw error;
+}
+
 // ─── CLI ─────────────────────────────────────────────────────────────────────
 
 const commands = {
@@ -169,17 +241,32 @@ const commands = {
     const entry = await createChangelog({ title, description, type });
     console.log('Created:', JSON.stringify(entry, null, 2));
   },
+  async health(hours = '24') {
+    const rows = await getRecentHealth(parseInt(hours));
+    console.log(JSON.stringify(rows, null, 2));
+  },
+  async clientErrors(limit = '200') {
+    const rows = await getUnseenClientErrors(parseInt(limit));
+    console.log(JSON.stringify(rows, null, 2));
+  },
 };
 
-const [,, cmd, ...args] = process.argv;
+// Só executa o CLI quando o arquivo é o ponto de entrada — assim ele
+// pode ser importado por outros scripts (smoke-test.mjs, etc.) sem
+// disparar comandos acidentalmente.
+import { fileURLToPath } from 'url';
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
 
-if (cmd && commands[cmd]) {
-  commands[cmd](...args).catch(err => {
-    console.error('Error:', err.message);
+if (isMain) {
+  const [,, cmd, ...args] = process.argv;
+  if (cmd && commands[cmd]) {
+    commands[cmd](...args).catch(err => {
+      console.error('Error:', err.message);
+      process.exit(1);
+    });
+  } else if (cmd) {
+    console.error(`Unknown command: ${cmd}`);
+    console.error('Available:', Object.keys(commands).join(', '));
     process.exit(1);
-  });
-} else if (cmd) {
-  console.error(`Unknown command: ${cmd}`);
-  console.error('Available:', Object.keys(commands).join(', '));
-  process.exit(1);
+  }
 }
