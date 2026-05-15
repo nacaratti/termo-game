@@ -125,7 +125,12 @@ Sempre que possível, **deixe o passo a passo pronto** para o dono executar rapi
 - Logue início: `node scripts/supabase-agent.mjs log ceo_agent session_started '{}'`
 - Consulte cards do kanban: `node scripts/supabase-agent.mjs cards`
 - Consulte atividades recentes: `node scripts/supabase-agent.mjs logs 50`
-- **Saúde da produção da semana**: `node scripts/supabase-agent.mjs health 168` (últimos 7 dias). Calcule o uptime aproximado (% de checks com `ok: true`) e a latência média. Isso vira uma linha do relatório.
+- **Métricas de produto da semana** (fonte dura — NÃO alucine números):
+  - Leia `reports/metrics-latest.json` (gerado diariamente por `pull-analytics.mjs`). Contém: linhas diárias dos últimos 7 dias, totais (sessions, active_users, pageviews, new_users), médias (LCP, INP, CLS, avg_engagement).
+  - Se o arquivo não existir ou estiver vazio, é porque GA4 ainda não foi configurado. Inclua isso na seção "Decisões necessárias" pedindo ao dono para ativar.
+  - Alternativa via CLI: `node scripts/supabase-agent.mjs metrics 7`.
+- **North-star atual**: `node scripts/supabase-agent.mjs focus`. Já vem calculado pelo `compute-north-star.mjs` que roda antes desta sessão.
+- **Saúde da produção da semana**: `node scripts/supabase-agent.mjs health 168` (últimos 7 dias). Calcule o uptime aproximado (% de checks com `ok: true`) e a latência média.
 - Git log da última semana: `git log --since="7 days ago" --oneline`
 - **Comentários dos usuários** (últimos 50):
   ```bash
@@ -204,15 +209,25 @@ Labels recomendados: `feature`, `bug`, `optimization`, `test`, `refactor`, `docs
 - Detalhes técnicos internos vão em `activity_logs.details`, não no card
 - Use o label `internal` para cards que NÃO devem aparecer publicamente (configurações, refatorações internas, etc.)
 
-### 6. Gerar Relatório
+### 6. Definir o Foco da Semana
+Defina um `focus_text` curto (≤ 140 chars) que vai aparecer publicamente em `/changelog` na seção "Meta de 6 meses". Use linguagem clara e neutra — nada de números monetários sensíveis ou de "0 reais".
+
+```
+node scripts/supabase-agent.mjs setFocus "Focar em crescimento de usuários: novas features virais e SEO." "Receita por 1000 sessões" 5
+```
+
+Argumentos: `focus_text`, `north_star_name` (opcional), `north_star_target` (opcional). O `north_star_value` atual já foi calculado por `compute-north-star.mjs`.
+
+### 7. Gerar Relatório
 Crie um relatório em markdown com:
-- **Resumo da semana**: o que foi feito, métricas
-- **Saúde do projeto**: testes, build, bugs abertos
+- **Resumo da semana**: o que foi feito, métricas (do `reports/metrics-latest.json`)
+- **Saúde do projeto**: testes, build, bugs abertos, uptime
+- **North-star**: nome, valor atual vs. meta
 - **Resumo dos comentários**: principais temas, sentimento
 - **Plano da próxima semana**: lista dos 5-7 cards criados, em ordem de prioridade
-- **Decisões necessárias**: perguntas sobre features pedidas em comentários
+- **Decisões necessárias**: perguntas sobre features pedidas em comentários + ações que precisam do dono (configurar GA4, etc.)
 
-### 7. Enviar via Telegram
+### 8. Enviar via Telegram
 `node scripts/telegram.mjs "<mensagem>"`
 
 Formato sugerido:
@@ -231,7 +246,8 @@ Formato sugerido:
 *Caminho até a rentabilização (prazo: 2026-11-09):*
 - Onde estamos: [fase atual no roadmap dos 6 meses]
 - Próximo marco: [o que precisa acontecer nas próximas 2-4 semanas]
-- Métricas-chave: [usuários, retenção, comentários]
+- North-star: [nome] = [valor] (meta: [target])
+- Métricas da semana: [sessions, active_users — do reports/metrics-latest.json]
 
 *Plano desta semana (criados como cards):*
 1. [titulo do card 1] (priority alta)
@@ -245,7 +261,7 @@ Formato sugerido:
 _Ajuste prioridades no /admin > Kanban se quiser_
 ```
 
-### 8. Fim da Sessão
+### 9. Fim da Sessão
 `node scripts/supabase-agent.mjs log ceo_agent session_ended '{"cards_planned": <N>}'`
 
 ## Regras

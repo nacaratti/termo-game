@@ -118,17 +118,48 @@ Register-ScheduledTask `
 
 Write-Host "OK: Kinto Smoke Test criado!" -ForegroundColor Green
 
+# -----------------------------------------------------------
+
+Write-Host "Criando task: Kinto Analytics Pull (diario as 07h00)..." -ForegroundColor Cyan
+
+$AnalyticsBat = Join-Path $ProjectDir "scripts\run-pull-analytics.bat"
+
+$paAction = New-ScheduledTaskAction `
+  -Execute "cmd.exe" `
+  -Argument "/c `"$AnalyticsBat`"" `
+  -WorkingDirectory $ProjectDir
+
+$paTrigger = New-ScheduledTaskTrigger -Daily -At "07:00"
+
+$paSettings = New-ScheduledTaskSettingsSet `
+  -AllowStartIfOnBatteries `
+  -DontStopIfGoingOnBatteries `
+  -StartWhenAvailable `
+  -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
+
+Register-ScheduledTask `
+  -TaskName "Kinto Analytics Pull" `
+  -Action $paAction `
+  -Trigger $paTrigger `
+  -Settings $paSettings `
+  -Description "Pull diario de metricas GA4 + PSI para product_metrics" `
+  -Force
+
+Write-Host "OK: Kinto Analytics Pull criado!" -ForegroundColor Green
+
 Write-Host ""
 Write-Host "Tasks criadas com sucesso! Verifique no Agendador de Tarefas." -ForegroundColor Yellow
-Write-Host "  - Kinto Smoke Test: todo dia as 8h30 (checa saude do site)"
-Write-Host "  - Kinto Watchdog:   todo dia as 9h (verifica execucoes + saude)"
-Write-Host "  - Kinto Dev Agent:  todo dia as 20h (30min)"
-Write-Host "  - Kinto CEO Agent:  sextas as 20h"
+Write-Host "  - Kinto Analytics Pull: todo dia as 7h (GA4 + PageSpeed)"
+Write-Host "  - Kinto Smoke Test:     todo dia as 8h30 (checa saude do site)"
+Write-Host "  - Kinto Watchdog:       todo dia as 9h (verifica execucoes + saude)"
+Write-Host "  - Kinto Dev Agent:      todo dia as 20h (30min)"
+Write-Host "  - Kinto CEO Agent:      sextas as 20h"
 Write-Host ""
 Write-Host "A flag -StartWhenAvailable garante que Smoke Test e Watchdog"
 Write-Host "rodam mesmo se o PC tiver estado desligado no horario, assim que ligar."
 Write-Host ""
 Write-Host "Para testar manualmente:"
+Write-Host '  schtasks /Run /TN "Kinto Analytics Pull"'
 Write-Host '  schtasks /Run /TN "Kinto Smoke Test"'
 Write-Host '  schtasks /Run /TN "Kinto Watchdog"'
 Write-Host '  schtasks /Run /TN "Kinto Dev Agent"'

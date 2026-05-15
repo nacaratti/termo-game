@@ -210,6 +210,92 @@ export async function markClientErrorsSeen(ids) {
   if (error) throw error;
 }
 
+// ─── Métricas de produto (product_metrics) ───────────────────────────────────
+
+/** Retorna linhas de product_metrics dos últimos `days` dias. */
+export async function getWeekMetrics(days = 7) {
+  const since = new Date(Date.now() - days * 86400_000).toISOString().slice(0, 10);
+  const { data, error } = await supabase
+    .from('product_metrics')
+    .select('*')
+    .gte('metric_date', since)
+    .order('metric_date', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+/** Upsert manual de métricas (raramente usado; o pull-analytics faz isso). */
+export async function recordMetrics(row) {
+  const { data, error } = await supabase
+    .from('product_metrics')
+    .upsert(row, { onConflict: 'metric_date' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// ─── Foco da semana / north-star (weekly_focus) ──────────────────────────────
+
+/**
+ * Retorna o foco da semana atual (ou da última semana com registro).
+ */
+export async function getWeeklyFocus() {
+  const { data, error } = await supabase
+    .from('weekly_focus')
+    .select('*')
+    .order('week_start', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Define/atualiza o foco da semana atual. `week_start` é calculado
+ * automaticamente como a segunda-feira da semana atual.
+ *
+ * Privacidade: focus_text aparece publicamente em /changelog.
+ * NUNCA inclua valores monetários sensíveis ou métricas constrangedoras.
+ */
+export async function setWeeklyFocus({ focus_text, north_star_name, north_star_target }) {
+  const d = new Date();
+  const day = d.getUTCDay();
+  const delta = (day + 6) % 7;
+  d.setUTCDate(d.getUTCDate() - delta);
+  const week_start = d.toISOString().slice(0, 10);
+
+  const { data: existing } = await supabase
+    .from('weekly_focus')
+    .select('id')
+    .eq('week_start', week_start)
+    .maybeSingle();
+
+  const update = {};
+  if (focus_text !== undefined) update.focus_text = focus_text;
+  if (north_star_name !== undefined) update.north_star_name = north_star_name;
+  if (north_star_target !== undefined) update.north_star_target = north_star_target;
+
+  if (existing) {
+    const { data, error } = await supabase
+      .from('weekly_focus')
+      .update(update)
+      .eq('id', existing.id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  } else {
+    const { data, error } = await supabase
+      .from('weekly_focus')
+      .insert({ week_start, focus_text: focus_text || 'Foco a definir', ...update })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+}
+
 // ─── CLI ─────────────────────────────────────────────────────────────────────
 
 const commands = {
@@ -248,6 +334,19 @@ const commands = {
   async clientErrors(limit = '200') {
     const rows = await getUnseenClientErrors(parseInt(limit));
     console.log(JSON.stringify(rows, null, 2));
+  },
+  async metrics(days = '7') {
+    const rows = await getWeekMetrics(parseInt(days));
+    console.log(JSON.stringify(rows, null, 2));
+  },
+  async focus() {
+    const f = await getWeeklyFocus();
+    console.log(f ? JSON.stringify(f, null, 2) : 'No weekly_focus yet');
+  },
+  async setFocus(focus_text, north_star_name, north_star_target) {
+    const target = north_star_target ? Number(north_star_target) : undefined;
+    const f = await setWeeklyFocus({ focus_text, north_star_name, north_star_target: target });
+    console.log('Saved:', JSON.stringify(f, null, 2));
   },
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, TrendingUp, MessageSquare, Gamepad2, CheckCircle2, DollarSign } from 'lucide-react';
+import { Target, TrendingUp, MessageSquare, Gamepad2, CheckCircle2, DollarSign, Compass } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 const CARD_BG = '#1e2028';
@@ -36,6 +36,7 @@ const Metric = ({ icon: Icon, label, value, color }) => (
 
 const GoalSection = () => {
   const [stats, setStats] = useState({ games: 0, comments: 0, completed: 0, revenue: 0 });
+  const [focus, setFocus] = useState(null);
 
   useEffect(() => {
     if (!supabase) return;
@@ -45,7 +46,9 @@ const GoalSection = () => {
       supabase.from('user_comments').select('id', { count: 'exact', head: true }),
       supabase.from('kanban_cards').select('id', { count: 'exact', head: true }).eq('status', 'done'),
       supabase.from('revenue_entries').select('amount'),
-    ]).then(([g5, g6, c, d, r]) => {
+      supabase.from('weekly_focus').select('focus_text, north_star_name, north_star_value, week_start')
+        .order('week_start', { ascending: false }).limit(1).maybeSingle(),
+    ]).then(([g5, g6, c, d, r, wf]) => {
       const revenueTotal = (r.data || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
       setStats({
         games: (g5.count || 0) + (g6.count || 0),
@@ -53,6 +56,7 @@ const GoalSection = () => {
         completed: d.count || 0,
         revenue: revenueTotal,
       });
+      if (wf?.data) setFocus(wf.data);
     }).catch(() => {});
   }, []);
 
@@ -150,6 +154,32 @@ const GoalSection = () => {
             color="bg-purple-500/15 text-purple-400"
           />
         </div>
+
+        {/* Foco da semana — definido pelo CEO Agent toda sexta */}
+        {focus?.focus_text && (
+          <div
+            className="mt-4 rounded-lg p-3 border flex items-start gap-3"
+            style={{ backgroundColor: SURF, borderColor: BDR }}
+          >
+            <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+              <Compass className="w-4 h-4 text-blue-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-blue-400/80 mb-1">
+                Foco da semana
+              </p>
+              <p className="text-white text-sm leading-snug">{focus.focus_text}</p>
+              {focus.north_star_name && focus.north_star_value != null && (
+                <p className="text-zinc-500 text-xs mt-1.5">
+                  {focus.north_star_name}:{' '}
+                  <span className="text-zinc-300 font-semibold">
+                    {Number(focus.north_star_value).toLocaleString('pt-BR')}
+                  </span>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="mt-4 pt-3 border-t flex items-start gap-2" style={{ borderColor: BDR }}>
           <TrendingUp className="w-3.5 h-3.5 text-zinc-600 shrink-0 mt-0.5" />

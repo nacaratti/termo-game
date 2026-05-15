@@ -5,6 +5,11 @@ REM Configure AGENT_DURATION (minutos) como variavel de ambiente
 REM ============================================================
 cd /d "%~dp0.."
 
+REM Carrega .env para o ambiente (Claude e scripts node herdam)
+for /f "usebackq tokens=1,* delims==" %%a in (".env") do (
+  if not "%%a"=="" if not "%%a:~0,1%"=="#" set "%%a=%%b"
+)
+
 if not defined AGENT_DURATION set AGENT_DURATION=30
 
 echo [%date% %time%] Iniciando Dev Agent (duracao: %AGENT_DURATION% min)
