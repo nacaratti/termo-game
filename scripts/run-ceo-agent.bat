@@ -14,10 +14,14 @@ node scripts/compute-north-star.mjs
 
 echo [%date% %time%] Iniciando CEO Agent
 
-claude --dangerously-skip-permissions --print "Leia o arquivo .claude/agent-ceo.md e execute as instrucoes do agente CEO. Gere o relatorio semanal, crie cards de propostas e envie o resumo via Telegram."
+set OUTFILE=%TEMP%\kinto-ceo-agent.json
+claude --dangerously-skip-permissions --print --output-format json "Leia o arquivo .claude/agent-ceo.md e execute as instrucoes do agente CEO. Gere o relatorio semanal, crie cards de propostas e envie o resumo via Telegram." > "%OUTFILE%"
 
 set EXIT_CODE=%errorlevel%
 echo [%date% %time%] CEO Agent finalizado (exit %EXIT_CODE%)
+
+REM Grava uso de tokens em agent_usage (nao bloqueia em caso de falha)
+node scripts/record-usage.mjs ceo_agent "%OUTFILE%" %EXIT_CODE%
 
 if not %EXIT_CODE%==0 (
   echo Erro detectado, enviando alerta Telegram...

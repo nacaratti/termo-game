@@ -9,7 +9,8 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"test": "cross-env VITEST_MAX_FORKS=1 vitest run",
-		"test:watch": "cross-env VITEST_MAX_FORKS=1 vitest"
+		"test:watch": "cross-env VITEST_MAX_FORKS=1 vitest",
+		"test:e2e": "playwright test"
 	},
 	"dependencies": {
 		"@radix-ui/react-alert-dialog": "^1.0.5",
@@ -33,6 +34,7 @@
 		"tailwindcss-animate": "^1.0.7"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.60.0",
 		"@types/node": "^20.8.3",
 		"@types/react": "^18.2.15",
 		"@types/react-dom": "^18.2.7",

@@ -203,6 +203,8 @@ Distribua os cards pelos próximos 7 dias (1 card por dia, ou 2 se ambos forem p
 
 Labels recomendados: `feature`, `bug`, `optimization`, `test`, `refactor`, `docs`, `security`, `performance`, `ux`
 
+**Label especial `needs-human`**: aplique este label em qualquer card que toque migrations de banco, dependências (`package.json`), secrets/`.env`, config de build/deploy (`vercel.json`, `vite.config.js`), ou infra dos agentes. Esses cards o Dev Agent vai pular automaticamente — o dono executa manualmente. Detalhes em `docs/AUTONOMY_POLICY.md`. Em caso de dúvida, marque com `needs-human` — é mais seguro pedir aprovação humana do que o Dev executar algo sensível por engano.
+
 **IMPORTANTE — Cards públicos**: títulos e descrições aparecem na página `/changelog`. Portanto:
 - ❌ NUNCA inclua: nomes específicos de usuários (use "usuário"), trechos literais de comentários, conteúdo de .env, paths internos (`C:\Users\<usuario>\...`), credenciais, stack traces
 - ✅ Escreva em linguagem clara e amigável para o usuário final

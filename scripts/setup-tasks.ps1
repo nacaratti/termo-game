@@ -147,11 +147,41 @@ Register-ScheduledTask `
 
 Write-Host "OK: Kinto Analytics Pull criado!" -ForegroundColor Green
 
+# -----------------------------------------------------------
+
+Write-Host "Criando task: Kinto E2E (diario as 19h30)..." -ForegroundColor Cyan
+
+$E2EBat = Join-Path $ProjectDir "scripts\run-e2e.bat"
+
+$e2eAction = New-ScheduledTaskAction `
+  -Execute "cmd.exe" `
+  -Argument "/c `"$E2EBat`"" `
+  -WorkingDirectory $ProjectDir
+
+$e2eTrigger = New-ScheduledTaskTrigger -Daily -At "19:30"
+
+$e2eSettings = New-ScheduledTaskSettingsSet `
+  -AllowStartIfOnBatteries `
+  -DontStopIfGoingOnBatteries `
+  -StartWhenAvailable `
+  -ExecutionTimeLimit (New-TimeSpan -Minutes 15)
+
+Register-ScheduledTask `
+  -TaskName "Kinto E2E" `
+  -Action $e2eAction `
+  -Trigger $e2eTrigger `
+  -Settings $e2eSettings `
+  -Description "Testes E2E Playwright contra kinto.fun - cria card se falhar" `
+  -Force
+
+Write-Host "OK: Kinto E2E criado!" -ForegroundColor Green
+
 Write-Host ""
 Write-Host "Tasks criadas com sucesso! Verifique no Agendador de Tarefas." -ForegroundColor Yellow
 Write-Host "  - Kinto Analytics Pull: todo dia as 7h (GA4 + PageSpeed)"
 Write-Host "  - Kinto Smoke Test:     todo dia as 8h30 (checa saude do site)"
 Write-Host "  - Kinto Watchdog:       todo dia as 9h (verifica execucoes + saude)"
+Write-Host "  - Kinto E2E:            todo dia as 19h30 (Playwright em producao)"
 Write-Host "  - Kinto Dev Agent:      todo dia as 20h (30min)"
 Write-Host "  - Kinto CEO Agent:      sextas as 20h"
 Write-Host ""
@@ -162,6 +192,7 @@ Write-Host "Para testar manualmente:"
 Write-Host '  schtasks /Run /TN "Kinto Analytics Pull"'
 Write-Host '  schtasks /Run /TN "Kinto Smoke Test"'
 Write-Host '  schtasks /Run /TN "Kinto Watchdog"'
+Write-Host '  schtasks /Run /TN "Kinto E2E"'
 Write-Host '  schtasks /Run /TN "Kinto Dev Agent"'
 Write-Host '  schtasks /Run /TN "Kinto CEO Agent"'
 

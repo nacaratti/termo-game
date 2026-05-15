@@ -29,6 +29,7 @@ Quando implementar qualquer card, sempre pense: "isso poderia ser mais seguro/r�
 - Busque o próximo card agendado para hoje: `node scripts/get-today-card.mjs`
   - Esse script busca cards com `status='todo'` agendados para hoje ou anteriores não feitos
   - Se não houver, ele cai no fluxo normal (priority mais alta primeiro)
+  - **Cards com label `needs-human` são automaticamente pulados** (ver `docs/AUTONOMY_POLICY.md`). Você não os executa.
 - Leia `docs/CARD_CONTRACT.md` para entender o que cada card deve entregar.
 
 ### 2. Executar Tarefa
@@ -80,7 +81,9 @@ Não saia do escopo do card atual para fazer isso — apenas registre o card par
 - Modifique `.env` ou commite credenciais
 - Pule testes
 - Faça mudanças grandes fora do escopo do card
-- Adicione testes E2E/Playwright ao script `npm test` — eles têm script próprio (`test:e2e`)
+- Adicione testes E2E/Playwright ao script `npm test` — eles têm script próprio (`test:e2e`) e rodam em task separada (19h30 diário)
+- Execute cards com label `needs-human` — pule e siga para o próximo (ver `docs/AUTONOMY_POLICY.md`)
+- Modifique arquivos listados em `docs/AUTONOMY_POLICY.md` como sensíveis (migrations, `.env`, `vercel.json`, dependências em `package.json`, infra dos agentes) — se um card pedir isso, ADICIONE o label `needs-human` ao card e pule
 
 ## Segurança e Privacidade (CRÍTICO)
 

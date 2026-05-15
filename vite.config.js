@@ -232,6 +232,8 @@ export default defineConfig(({ mode }) => {
 		test: {
 			environment: 'jsdom',
 			globals: true,
+			// e2e/ é Playwright (test:e2e) — Vitest NÃO deve pegar
+			exclude: ['node_modules', 'dist', 'e2e', '**/.git/**', '**/playwright-report/**'],
 		},
 		server: {
 			cors: true,

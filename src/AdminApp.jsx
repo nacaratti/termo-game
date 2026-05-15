@@ -20,6 +20,7 @@ import { supabase } from '@/lib/supabase';
 import { getComments } from '@/lib/comments';
 import KanbanBoard from '@/components/admin/KanbanBoard';
 import ActivityLog from '@/components/admin/ActivityLog';
+import UsagePanel from '@/components/admin/UsagePanel';
 
 const PAGE_SIZE = 50;
 
@@ -839,6 +840,7 @@ const tabs = [
   { id: 'kanban',    label: 'Kanban',        short: 'Kanban'    },
   { id: 'logs',      label: 'Atividade',    short: 'Atividade' },
   { id: 'comments',  label: 'Comentários',  short: 'Coment.'   },
+  { id: 'usage',     label: 'Uso',          short: 'Uso'       },
 ];
 
 const Dashboard = ({ onLogout }) => {
@@ -908,6 +910,7 @@ const Dashboard = ({ onLogout }) => {
         {activeTab === 'kanban'    && <KanbanBoard />}
         {activeTab === 'logs'      && <ActivityLog />}
         {activeTab === 'comments'  && <CommentsPanel />}
+        {activeTab === 'usage'     && <UsagePanel />}
       </main>
 
       {/* Navegação inferior — apenas mobile */}

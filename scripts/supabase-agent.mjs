@@ -296,6 +296,49 @@ export async function setWeeklyFocus({ focus_text, north_star_name, north_star_t
   }
 }
 
+// ─── Uso de tokens (agent_usage) ─────────────────────────────────────────────
+
+/**
+ * Retorna registros de uso dos últimos N dias, ordenados do mais
+ * recente para o mais antigo.
+ */
+export async function getRecentUsage(days = 30) {
+  const since = new Date(Date.now() - days * 86400_000).toISOString();
+  const { data, error } = await supabase
+    .from('agent_usage')
+    .select('*')
+    .gte('started_at', since)
+    .order('started_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+/** Get next card respecting needs-human label — não retorna cards bloqueados. */
+export async function getNextCardExecutable() {
+  const today = new Date().toISOString().slice(0, 10);
+  // Cards agendados para hoje ou antes, sem label needs-human
+  const { data, error } = await supabase
+    .from('kanban_cards')
+    .select('*')
+    .eq('status', 'todo')
+    .lte('scheduled_for', today)
+    .order('priority', { ascending: false })
+    .order('scheduled_for', { ascending: true });
+  if (error) throw error;
+  const executable = (data || []).find(c => !(c.labels || []).includes('needs-human'));
+  if (executable) return executable;
+
+  // Fallback: qualquer todo sem needs-human
+  const { data: fallback, error: err2 } = await supabase
+    .from('kanban_cards')
+    .select('*')
+    .eq('status', 'todo')
+    .order('priority', { ascending: false })
+    .order('created_at', { ascending: true });
+  if (err2) throw err2;
+  return (fallback || []).find(c => !(c.labels || []).includes('needs-human')) || null;
+}
+
 // ─── CLI ─────────────────────────────────────────────────────────────────────
 
 const commands = {
@@ -347,6 +390,10 @@ const commands = {
     const target = north_star_target ? Number(north_star_target) : undefined;
     const f = await setWeeklyFocus({ focus_text, north_star_name, north_star_target: target });
     console.log('Saved:', JSON.stringify(f, null, 2));
+  },
+  async usage(days = '30') {
+    const rows = await getRecentUsage(parseInt(days));
+    console.log(JSON.stringify(rows, null, 2));
   },
 };
 

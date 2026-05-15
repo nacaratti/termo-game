@@ -126,7 +126,36 @@ if (now >= lastFridayDeadline) {
   }
 }
 
-// ── Check 4: saúde do site (production_health últimas 24h) ─────────
+// ── Check 4: último E2E (activity_logs) ────────────────────────────
+try {
+  const { data: lastE2E } = await supabase
+    .from('activity_logs')
+    .select('action, details, created_at')
+    .eq('agent', 'e2e_monitor')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (lastE2E) {
+    const ageHours = (now - new Date(lastE2E.created_at)) / 3600_000;
+    if (lastE2E.action === 'e2e_failed') {
+      alerts.push(
+        `🔴 *E2E falhou* na última execução (${toBRDate(new Date(lastE2E.created_at))}). ` +
+        `Card de bug foi criado no kanban.`
+      );
+    } else if (ageHours > 30) {
+      // E2E roda diário às 19h30; mais de 30h sem registro = task não rodou
+      alerts.push(
+        `⚪ *Kinto E2E* — última execução há ${Math.floor(ageHours)}h. ` +
+        `A task pode não estar configurada ou não rodou.`
+      );
+    }
+  }
+} catch (err) {
+  console.error('Erro ao checar E2E:', err.message);
+}
+
+// ── Check 5: saúde do site (production_health últimas 24h) ─────────
 try {
   const since = new Date(now.getTime() - 24 * 3600_000).toISOString();
   const { data: health } = await supabase

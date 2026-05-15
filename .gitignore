@@ -51,3 +51,8 @@ esquema-kinto.sql
 
 # Relatórios gerados pelos sensores (regenerados diariamente)
 reports/
+
+# Playwright
+playwright-report/
+test-results/
+
