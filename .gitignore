@@ -48,3 +48,6 @@ Thumbs.db
 # Esquema do banco (informação sensível)
 supabase/
 esquema-kinto.sql
+
+# Relatórios gerados pelos sensores (regenerados diariamente)
+reports/
