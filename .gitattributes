@@ -1,0 +1,26 @@
+# Normalização automática: LF no repositório, conversão no checkout
+* text=auto
+
+# Arquivos Windows que SEMPRE precisam de CRLF — senão CMD/PowerShell
+# falham com "A sintaxe do comando está incorreta" em blocos if/for
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Sempre LF (scripts Unix, configs cross-platform)
+*.sh    text eol=lf
+*.mjs   text eol=lf
+*.js    text eol=lf
+*.jsx   text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.sql   text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+
+# Binários
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary

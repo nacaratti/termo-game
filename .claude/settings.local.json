@@ -17,7 +17,11 @@
       "Write",
       "Edit",
       "Glob",
-      "Grep"
+      "Grep",
+      "Bash(iconv -f UTF-16LE -t UTF-8 /tmp/all_tasks.txt)",
+      "Bash(cp /tmp/all_tasks.txt /tmp/all_tasks_utf8.txt)",
+      "Read(//tmp/**)",
+      "PowerShell(Get-ScheduledTask *)"
     ]
   }
 }

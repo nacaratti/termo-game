@@ -5,8 +5,8 @@ REM ============================================================
 cd /d "%~dp0.."
 
 REM Carrega .env para o ambiente (necessario para scripts node abaixo)
-for /f "usebackq tokens=1,* delims==" %%a in (".env") do (
-  if not "%%a"=="" if not "%%a:~0,1%"=="#" set "%%a=%%b"
+for /f "usebackq eol=# tokens=1,* delims==" %%a in (".env") do (
+  if not "%%a"=="" set "%%a=%%b"
 )
 
 echo [%date% %time%] Calculando north-star da semana...
