@@ -58,9 +58,11 @@ export const getWordOfDay = () => {
 export const initWordOfDay = async () => {
   const today = getTodayDateStr();
 
+  const cached = getWordOfDay();
+  if (cached) return cached;
+
   if (supabase) {
     try {
-      // 1. Tenta buscar a palavra já definida para hoje
       const { data } = await supabase
         .from('daily_words')
         .select('word')
@@ -73,34 +75,18 @@ export const initWordOfDay = async () => {
         return word;
       }
 
-      // 2. Não existe — seleciona determinísticamente pela data
       const autoWord = computeDefaultWord(today);
 
-      // 3. Salva no Supabase (race-condition seguro com ignoreDuplicates)
       await supabase
         .from('daily_words')
         .upsert({ date: today, word: autoWord }, { onConflict: 'date', ignoreDuplicates: true });
 
-      // 4. Re-busca para confirmar a palavra que ficou gravada
-      const { data: saved } = await supabase
-        .from('daily_words')
-        .select('word')
-        .eq('date', today)
-        .maybeSingle();
-
-      if (saved?.word) {
-        const word = saved.word.toUpperCase();
-        writeCache(today, word);
-        return word;
-      }
+      writeCache(today, autoWord);
+      return autoWord;
     } catch (err) {
       if (import.meta.env.DEV) console.error('[Supabase] initWordOfDay:', err);
     }
   }
-
-  // Fallback offline: cache local ou seleção determinística
-  const cached = getWordOfDay();
-  if (cached) return cached;
 
   const fallback = computeDefaultWord(today);
   writeCache(today, fallback);

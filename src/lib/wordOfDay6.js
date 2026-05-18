@@ -38,6 +38,9 @@ export const setWordOfDay6 = (word) => {
 export const initWordOfDay6 = async () => {
   const today = getTodayDateStr();
 
+  const cached = readCache();
+  if (cached?.date === today) return cached.word.toUpperCase();
+
   if (supabase) {
     try {
       const { data } = await supabase
@@ -58,24 +61,12 @@ export const initWordOfDay6 = async () => {
         .from('daily_words_6')
         .upsert({ date: today, word: autoWord }, { onConflict: 'date', ignoreDuplicates: true });
 
-      const { data: saved } = await supabase
-        .from('daily_words_6')
-        .select('word')
-        .eq('date', today)
-        .maybeSingle();
-
-      if (saved?.word) {
-        const word = saved.word.toUpperCase();
-        writeCache(today, word);
-        return word;
-      }
+      writeCache(today, autoWord);
+      return autoWord;
     } catch (err) {
       if (import.meta.env.DEV) console.error('[Supabase] initWordOfDay6:', err);
     }
   }
-
-  const cached = readCache();
-  if (cached?.date === today) return cached.word;
 
   const fallback = computeDefaultWord6(today);
   writeCache(today, fallback);
