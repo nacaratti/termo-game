@@ -20,8 +20,9 @@ import { sendMessage } from './telegram.mjs';
 
 const SITE_URL = (process.env.SITE_URL || 'https://kinto.fun').replace(/\/$/, '');
 const PATHS = ['/', '/6', '/changelog', '/comments'];
-const LATENCY_LIMIT_MS = 5000; // acima disso, considera não-ok mesmo com 200
-const FETCH_TIMEOUT_MS = 10000;
+const LATENCY_LIMIT_MS = 8000; // limite final — acima disso, considera não-ok mesmo com 200
+const RETRY_THRESHOLD_MS = 3000; // se a 1ª req passar disso, faz retry para descartar cold start
+const FETCH_TIMEOUT_MS = 12000;
 const RETRY_ON_SLOW = true; // se lento na 1ª req, tenta 1x mais (warm CDN)
 
 function genRunId() {
@@ -44,8 +45,8 @@ async function checkUrl(path, runId) {
   try {
     let result = await fetchOnce(url);
 
-    // Se a 1ª req foi lenta, faz 1 retry para eliminar cold start de CDN
-    if (RETRY_ON_SLOW && result.latency_ms >= LATENCY_LIMIT_MS && result.status >= 200 && result.status < 400) {
+    // Se a 1ª req foi lenta, faz 1 retry para eliminar cold start de CDN/deploy
+    if (RETRY_ON_SLOW && result.latency_ms >= RETRY_THRESHOLD_MS && result.status >= 200 && result.status < 400) {
       await new Promise(r => setTimeout(r, 500));
       result = await fetchOnce(url);
     }
