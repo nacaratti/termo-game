@@ -22,33 +22,45 @@ const SITE_URL = (process.env.SITE_URL || 'https://kinto.fun').replace(/\/$/, ''
 const PATHS = ['/', '/6', '/changelog', '/comments'];
 const LATENCY_LIMIT_MS = 5000; // acima disso, considera não-ok mesmo com 200
 const FETCH_TIMEOUT_MS = 10000;
+const RETRY_ON_SLOW = true; // se lento na 1ª req, tenta 1x mais (warm CDN)
 
 function genRunId() {
   return (globalThis.crypto?.randomUUID?.() ?? `run-${Date.now()}`);
 }
 
+async function fetchOnce(url) {
+  const started = Date.now();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const res = await fetch(url, { signal: controller.signal, redirect: 'follow' });
+  clearTimeout(timer);
+  return { status: res.status, latency_ms: Date.now() - started };
+}
+
 async function checkUrl(path, runId) {
   const url = `${SITE_URL}${path}`;
-  const started = Date.now();
   const row = { url: path, run_id: runId, http_status: null, latency_ms: null, ok: false, error: null };
 
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    const res = await fetch(url, { signal: controller.signal, redirect: 'follow' });
-    clearTimeout(timer);
+    let result = await fetchOnce(url);
 
-    row.latency_ms = Date.now() - started;
-    row.http_status = res.status;
-    row.ok = res.status >= 200 && res.status < 400 && row.latency_ms < LATENCY_LIMIT_MS;
-    if (!row.ok && !row.error) {
-      row.error = res.status >= 400
-        ? `HTTP ${res.status}`
+    // Se a 1ª req foi lenta, faz 1 retry para eliminar cold start de CDN
+    if (RETRY_ON_SLOW && result.latency_ms >= LATENCY_LIMIT_MS && result.status >= 200 && result.status < 400) {
+      await new Promise(r => setTimeout(r, 500));
+      result = await fetchOnce(url);
+    }
+
+    row.latency_ms = result.latency_ms;
+    row.http_status = result.status;
+    row.ok = result.status >= 200 && result.status < 400 && row.latency_ms < LATENCY_LIMIT_MS;
+    if (!row.ok) {
+      row.error = result.status >= 400
+        ? `HTTP ${result.status}`
         : `Latência alta: ${row.latency_ms}ms`;
     }
   } catch (err) {
-    row.latency_ms = Date.now() - started;
     row.error = err.name === 'AbortError' ? `Timeout após ${FETCH_TIMEOUT_MS}ms` : err.message;
+    if (row.latency_ms === null) row.latency_ms = FETCH_TIMEOUT_MS;
   }
 
   return row;
