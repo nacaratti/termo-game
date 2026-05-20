@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Target, TrendingUp, MessageSquare, Gamepad2, CheckCircle2, DollarSign, Compass, CalendarDays } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { getTodayDateStr } from '@/lib/wordOfDay';
 
 const CARD_BG = '#1e2028';
 const SURF = '#22252f';
@@ -82,7 +83,7 @@ const GoalSection = () => {
     }).catch(() => {});
   }, []);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayDateStr();
   const totalDays = daysBetween(GOAL.startDate, GOAL.endDate);
   const elapsedDays = Math.max(0, daysBetween(GOAL.startDate, today));
   const remainingDays = Math.max(0, daysBetween(today, GOAL.endDate));
