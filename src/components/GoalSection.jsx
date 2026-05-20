@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, TrendingUp, MessageSquare, Gamepad2, CheckCircle2, DollarSign, Compass } from 'lucide-react';
+import { Target, TrendingUp, MessageSquare, Gamepad2, CheckCircle2, DollarSign, Compass, CalendarDays } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 const CARD_BG = '#1e2028';
@@ -34,12 +34,24 @@ const Metric = ({ icon: Icon, label, value, color }) => (
   </div>
 );
 
+/** Retorna a segunda-feira da semana atual em YYYY-MM-DD (Brasília). */
+function getWeekStart() {
+  const now = new Date();
+  const day = now.getDay(); // 0=dom, 1=seg, ...
+  const diff = day === 0 ? 6 : day - 1; // dias desde segunda
+  const mon = new Date(now);
+  mon.setDate(mon.getDate() - diff);
+  return mon.toISOString().slice(0, 10);
+}
+
 const GoalSection = () => {
   const [stats, setStats] = useState({ games: 0, comments: 0, completed: 0, revenue: 0 });
+  const [weekly, setWeekly] = useState(null);
   const [focus, setFocus] = useState(null);
 
   useEffect(() => {
     if (!supabase) return;
+    const weekStart = getWeekStart();
     Promise.all([
       supabase.from('daily_results').select('id', { count: 'exact', head: true }),
       supabase.from('daily_results_6').select('id', { count: 'exact', head: true }),
@@ -48,13 +60,23 @@ const GoalSection = () => {
       supabase.from('revenue_entries').select('amount'),
       supabase.from('weekly_focus').select('focus_text, north_star_name, north_star_value, week_start')
         .order('week_start', { ascending: false }).limit(1).maybeSingle(),
-    ]).then(([g5, g6, c, d, r, wf]) => {
+      // Dados da semana
+      supabase.from('daily_results').select('id', { count: 'exact', head: true }).gte('created_at', weekStart),
+      supabase.from('daily_results_6').select('id', { count: 'exact', head: true }).gte('created_at', weekStart),
+      supabase.from('kanban_cards').select('id', { count: 'exact', head: true })
+        .eq('status', 'done').gte('completed_at', weekStart)
+        .not('labels', 'cs', '{"internal"}'),
+    ]).then(([g5, g6, c, d, r, wf, wg5, wg6, wd]) => {
       const revenueTotal = (r.data || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
       setStats({
         games: (g5.count || 0) + (g6.count || 0),
         comments: c.count || 0,
         completed: d.count || 0,
         revenue: revenueTotal,
+      });
+      setWeekly({
+        games: (wg5.count || 0) + (wg6.count || 0),
+        completed: wd.count || 0,
       });
       if (wf?.data) setFocus(wf.data);
     }).catch(() => {});
@@ -154,6 +176,32 @@ const GoalSection = () => {
             color="bg-purple-500/15 text-purple-400"
           />
         </div>
+
+        {/* Mini-relatório semanal */}
+        {weekly && (weekly.games > 0 || weekly.completed > 0) && (
+          <div
+            className="mt-4 rounded-lg p-3 border flex items-start gap-3"
+            style={{ backgroundColor: SURF, borderColor: BDR }}
+          >
+            <div className="w-7 h-7 rounded-lg bg-[#6aaa64]/10 flex items-center justify-center shrink-0">
+              <CalendarDays className="w-4 h-4 text-[#6aaa64]" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6aaa64]/80 mb-1">
+                Esta semana
+              </p>
+              <p className="text-white text-sm leading-snug">
+                {weekly.games > 0 && (
+                  <><span className="font-bold">{weekly.games.toLocaleString('pt-BR')}</span> {weekly.games === 1 ? 'jogo jogado' : 'jogos jogados'}</>
+                )}
+                {weekly.games > 0 && weekly.completed > 0 && <span className="text-zinc-500"> · </span>}
+                {weekly.completed > 0 && (
+                  <><span className="font-bold">{weekly.completed}</span> {weekly.completed === 1 ? 'atualização entregue' : 'atualizações entregues'}</>
+                )}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Foco da semana — definido pelo CEO Agent toda sexta */}
         {focus?.focus_text && (
