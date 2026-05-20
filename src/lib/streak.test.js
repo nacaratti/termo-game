@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 let getStreak;
+let getBestStreak;
 
 const encode = (obj) => btoa(JSON.stringify(obj));
 
@@ -14,6 +15,7 @@ beforeEach(async () => {
 
   const mod = await import('./streak.js');
   getStreak = mod.getStreak;
+  getBestStreak = mod.getBestStreak;
 });
 
 describe('getStreak', () => {
@@ -58,6 +60,25 @@ describe('getStreak', () => {
       '2026-05-17|TESTE': [{ won: true, attempts: 3 }],
     }));
     expect(getStreak()).toBe(0);
+  });
+
+  it('salva o melhor streak em localStorage', () => {
+    localStorage.setItem('_s2z', encode({
+      '2026-05-18|TESTE': [{ won: true, attempts: 3 }],
+      '2026-05-17|OUTRO': [{ won: true, attempts: 2 }],
+      '2026-05-16|MAIS':  [{ won: true, attempts: 1 }],
+    }));
+    expect(getStreak()).toBe(3);
+    expect(getBestStreak()).toBe(3);
+  });
+
+  it('nao sobrescreve recorde maior com streak menor', () => {
+    localStorage.setItem('_bsk', '7');
+    localStorage.setItem('_s2z', encode({
+      '2026-05-18|TESTE': [{ won: true, attempts: 3 }],
+    }));
+    expect(getStreak()).toBe(1);
+    expect(getBestStreak()).toBe(7);
   });
 
   it('conta corretamente cruzando virada de mes', () => {

@@ -2,6 +2,7 @@ import { getTodayDateStr } from '@/lib/wordOfDay';
 
 const DAILY_KEY_5 = '_s2z';
 const DAILY_KEY_6 = '_s2z6';
+const BEST_STREAK_KEY = '_bsk';
 
 const readDaily = (key) => {
   try { return JSON.parse(atob(localStorage.getItem(key) || '')); } catch { return {}; }
@@ -11,6 +12,10 @@ const dateMinusOne = (dateStr) => {
   const [y, m, d] = dateStr.split('-').map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d - 1));
   return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(dt.getUTCDate()).padStart(2, '0')}`;
+};
+
+export const getBestStreak = () => {
+  try { return Number(localStorage.getItem(BEST_STREAK_KEY) || 0); } catch { return 0; }
 };
 
 export const getStreak = () => {
@@ -29,6 +34,12 @@ export const getStreak = () => {
   while (dates.has(check)) {
     streak++;
     check = dateMinusOne(check);
+  }
+
+  // Persist best streak
+  const best = getBestStreak();
+  if (streak > best) {
+    try { localStorage.setItem(BEST_STREAK_KEY, streak); } catch {}
   }
 
   return streak;

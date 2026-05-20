@@ -31,18 +31,6 @@ const BOARD_COLUMNS = [
   { id: 'review',      label: 'Em revisão',  dotColor: 'bg-purple-500', statuses: ['review'] },
 ];
 
-function timeAgo(dateStr) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'agora';
-  if (mins < 60) return `${mins}min atrás`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h atrás`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d atrás`;
-  return new Date(dateStr).toLocaleDateString('pt-BR');
-}
-
 const BoardCard = ({ card }) => {
   const priorityDot = PRIORITY_DOT[card.priority] || PRIORITY_DOT[0];
   const mainLabel = card.labels?.[0];

@@ -4,7 +4,7 @@ import { Share2, Clock, X, ChevronRight, MessageSquare, Flame } from 'lucide-rea
 import { getDailyResults } from '@/lib/stats';
 import { getDailyResults6 } from '@/lib/stats6';
 import { getTodayDateStr } from '@/lib/wordOfDay';
-import { getStreak } from '@/lib/streak';
+import { getStreak, getBestStreak } from '@/lib/streak';
 import { GAME_MODES } from '@/config/gameModes';
 import { MAX_GUESSES } from '@/config/constants';
 import { submitComment, hasSubmittedComment } from '@/lib/comments';
@@ -113,6 +113,7 @@ const GameStatus = ({
   const [copied, setCopied] = useState(false);
   const [todayResults, setTodayResults] = useState([]);
   const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
   const countdown = useCountdown();
   const today = getTodayDateStr();
 
@@ -120,7 +121,9 @@ const GameStatus = ({
     if (!isOpen) return;
     const fn = currentMode.id === 'classic' ? getDailyResults : getDailyResults6;
     fn(today, solution).then(setTodayResults);
-    setStreak(getStreak());
+    const current = getStreak();
+    setStreak(current);
+    setBestStreak(getBestStreak());
   }, [isOpen, today]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const buildShareText = () => {
@@ -235,8 +238,15 @@ const GameStatus = ({
             {/* Streak */}
             {streak >= 2 && (
               <div className="flex items-center justify-center gap-2 rounded-xl bg-[#c9a84c]/10 border border-[#c9a84c]/20 py-2.5 px-4">
-                <Flame className="h-5 w-5 text-[#c9a84c]" />
-                <span className="text-sm font-bold text-[#c9a84c]">{streak} dias seguidos!</span>
+                <Flame className="h-5 w-5 text-[#c9a84c] shrink-0" />
+                <div className="text-center">
+                  <p className="text-sm font-bold text-[#c9a84c]">
+                    {streak === bestStreak && streak > 2 ? `🏆 Novo recorde! ${streak} dias seguidos!` : `${streak} dias seguidos!`}
+                  </p>
+                  {bestStreak > streak && (
+                    <p className="text-[10px] text-[#c9a84c]/60 mt-0.5">Recorde: {bestStreak} dias</p>
+                  )}
+                </div>
               </div>
             )}
 
