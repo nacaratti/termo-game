@@ -133,7 +133,8 @@ const GameStatus = ({
       ).join(''))
       .join('\n');
     const modeLabel = currentMode.id === 'classic' ? '' : ` (${currentMode.label})`;
-    return `Kinto${modeLabel} ${today} ${result}\n\n${rows}\n\nhttps://kinto.fun`;
+    const streakSuffix = streak >= 2 ? ` 🔥${streak}` : '';
+    return `Kinto${modeLabel} ${today} ${result}${streakSuffix}\n\n${rows}\n\nhttps://kinto.fun`;
   };
 
   const handleShare = async () => {
