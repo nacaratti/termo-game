@@ -168,6 +168,32 @@ Sempre que possível, **deixe o passo a passo pronto** para o dono executar rapi
   ```
 - Verifique testes: `npm test`
 - Verifique build: `npm run build`
+- **Pesquisa web — radar da comunidade** (Twitter/X e Reddit):
+  Use `WebSearch` para buscar tendências e oportunidades relevantes ao Kinto. Execute as queries abaixo e aplique o filtro de relevância antes de incluir no relatório.
+
+  **Twitter/X** (execute 2-3 queries, variando por semana):
+  - `"Claude Code" site:x.com` — posts gerais
+  - `"Claude Code" agents OR autonomous site:x.com` — agentes autônomos
+  - `"vibe coding" site:x.com` — tendência de vibe coding
+  - `"Claude Code" plugin OR skill OR MCP site:x.com` — plugins/skills novos
+  - `"indie dev" AI monetization site:x.com` — monetização com IA
+
+  **Reddit r/ClaudeAI** (execute 1-2 queries):
+  - `site:reddit.com/r/ClaudeAI "Claude Code"` — posts recentes
+  - `site:reddit.com/r/ClaudeAI agents OR autonomous OR MCP` — agentes e ferramentas
+
+  **Filtro de relevância** — só inclua se o post se encaixar em pelo menos 1 categoria:
+  - Agentes autônomos gerenciando produto (caso de uso igual ao Kinto)
+  - Vibe coding / indie dev com IA
+  - Monetização de projetos construídos com IA
+  - Features/plugins/skills do Claude Code úteis para o projeto
+  - Cases de sucesso de projetos similares (jogos indie, projetos autônomos)
+
+  **Descarte**: spam, self-promotion vazia, posts com baixo engajamento, perguntas básicas de setup, reclamações genéricas sem insight acionável.
+
+  **Para cada achado relevante**, anote: resumo (1 linha), link, por que importa para o Kinto, e ação sugerida (card / decisão do dono / informativo).
+
+  Limite `WebFetch` a 3-5 posts por semana para não consumir tempo excessivo da sessão (~30min total).
 
 Ao criar os cards da semana, siga o contrato em `docs/CARD_CONTRACT.md` — toda descrição deve ter hipótese, critério de aceitação mensurável, risco/rollback e como validar em produção.
 
@@ -192,7 +218,15 @@ Como o Dev trabalha 30min/dia, planeje cards do tamanho certo para uma sessão:
 - **Card médio** (1 sessão completa): feature pequena, otimização focada, refatoração de um módulo
 - **Card grande** (precisa quebrar em sub-cards): feature complexa — divida em 2-3 cards menores entregáveis individualmente
 
-**Crie de 5 a 7 cards para a semana**, distribuindo por tipo (não só features — equilibre com segurança, performance, UX, testes, refatoração).
+**REGRA CRÍTICA — O Dev Agent NÃO pode ficar ocioso nenhum dia.**
+O Dev roda 6 dias por semana (sábado a quinta). Se ele terminar todos os cards antes da sexta, ele fica sem trabalho — isso é desperdício.
+
+**Crie pelo menos 8-10 cards para a semana** (mais do que os 6 dias úteis), distribuindo por tipo (não só features — equilibre com segurança, performance, UX, testes, refatoração). A margem extra garante que:
+- Se um card for resolvido em menos tempo que o esperado, o Dev pega o próximo imediatamente
+- Se um card tiver label `needs-human` ou já estiver feito, o Dev não fica parado
+- O backlog nunca zera antes de sexta-feira
+
+**Calibre o tamanho dos cards pela velocidade real do Dev**: revise quantos cards ele completou na semana anterior. Se completou todos em 3 dias, os cards estavam pequenos demais — crie cards maiores ou mais numerosos. Se não completou nenhum, quebre em partes menores.
 
 Use prioridades para ordenar a sequência:
 - `priority=3` (urgente): bugs críticos ou segurança — primeiro da semana
@@ -225,7 +259,7 @@ node scripts/plan-week.mjs '[
 ]'
 ```
 
-Distribua os cards pelos próximos 7 dias (1 card por dia, ou 2 se ambos forem pequenos). Não acumule tudo na segunda — espalhe a carga.
+Distribua os cards pelos próximos 6 dias úteis do Dev (sábado a quinta). Agende **pelo menos 1 card por dia, preferencialmente 2 se forem pequenos**. Não acumule tudo na segunda — espalhe a carga. Se sobrar cards sem data, deixe-os como backlog sem `scheduled_for` — o Dev os pega quando terminar os agendados do dia.
 
 Labels recomendados: `feature`, `bug`, `optimization`, `test`, `refactor`, `docs`, `security`, `performance`, `ux`
 
@@ -270,6 +304,11 @@ Formato sugerido:
 
 *Comentários da semana:*
 [resumo dos temas]
+
+*🔍 Radar da comunidade (Twitter/Reddit):*
+- [resumo do achado 1 + link]
+- [resumo do achado 2 + link]
+- (se nada relevante: "Sem achados relevantes esta semana.")
 
 *Caminho até a rentabilização (prazo: 2026-11-09):*
 - Onde estamos: [fase atual no roadmap dos 6 meses]
