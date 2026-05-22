@@ -15,12 +15,27 @@ const MAX_PER_SESSION = 5;
 const STACK_LIMIT = 2000;
 const APP_VERSION = import.meta.env.VITE_APP_VERSION || 'dev';
 
+// Erros benignos do runtime do browser/libs que não representam bug
+// da aplicação e não devem gerar alertas nem cards.
+const IGNORED_PATTERNS = [
+  // Supabase usa Web Locks API para sincronizar sessão entre abas;
+  // quando outra aba assume o lock, este erro é lançado — é esperado.
+  'lock was stolen',
+  'lock request aborted',
+];
+
+export function isBenign(message) {
+  const lower = String(message).toLowerCase();
+  return IGNORED_PATTERNS.some(p => lower.includes(p));
+}
+
 let sentCount = 0;
 const seenMessages = new Set();
 
 async function report(message, stack) {
   if (!supabase) return;
   if (!message) return;
+  if (isBenign(message)) return;
   if (sentCount >= MAX_PER_SESSION) return;
 
   // Dedupe: mesma mensagem só é enviada uma vez por sessão
