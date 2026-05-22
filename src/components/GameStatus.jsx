@@ -121,9 +121,13 @@ const GameStatus = ({
     if (!isOpen) return;
     const fn = currentMode.id === 'classic' ? getDailyResults : getDailyResults6;
     fn(today, solution).then(setTodayResults);
+    // Ler best ANTES de getStreak(), que atualiza _bsk quando streak > best.
+    // Assim bestStreak reflete o recorde anterior e streak > bestStreak indica
+    // verdadeiro recorde novo (não apenas igualar o antigo).
+    const prevBest = getBestStreak();
     const current = getStreak();
     setStreak(current);
-    setBestStreak(getBestStreak());
+    setBestStreak(prevBest);
   }, [isOpen, today]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const buildShareText = () => {
@@ -241,7 +245,7 @@ const GameStatus = ({
                 <Flame className="h-5 w-5 text-[#c9a84c] shrink-0" />
                 <div className="text-center">
                   <p className="text-sm font-bold text-[#c9a84c]">
-                    {streak === bestStreak && streak > 2 ? `🏆 Novo recorde! ${streak} dias seguidos!` : `${streak} dias seguidos!`}
+                    {streak > bestStreak ? `🏆 Novo recorde! ${streak} dias seguidos!` : `${streak} dias seguidos!`}
                   </p>
                   {bestStreak > streak && (
                     <p className="text-[10px] text-[#c9a84c]/60 mt-0.5">Recorde: {bestStreak} dias</p>
