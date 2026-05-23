@@ -51,6 +51,25 @@ describe('initWordOfDay com Supabase online', () => {
     const cached = await initWordOfDay();
     expect(cached).toBe('TERMO');
   });
+
+  it('cache-first: com cache válido, não chama o Supabase na segunda execução', async () => {
+    const online = makeOnlineSupabase('mundo');
+    supabase.from.mockImplementation(online.from);
+
+    await initWordOfDay();
+    supabase.from.mockClear();
+
+    await initWordOfDay();
+    expect(supabase.from).not.toHaveBeenCalled();
+  });
+
+  it('cache-first: quando cache já tem palavra de hoje, não acessa o Supabase', async () => {
+    setWordOfDay('crise');
+
+    await initWordOfDay();
+
+    expect(supabase.from).not.toHaveBeenCalled();
+  });
 });
 
 describe('initWordOfDay fallback / offline', () => {
