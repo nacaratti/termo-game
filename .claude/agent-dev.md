@@ -84,6 +84,7 @@ Não saia do escopo do card atual para fazer isso — apenas registre o card par
 - Adicione testes E2E/Playwright ao script `npm test` — eles têm script próprio (`test:e2e`) e rodam em task separada (19h30 diário)
 - Execute cards com label `needs-human` — pule e siga para o próximo (ver `docs/AUTONOMY_POLICY.md`)
 - Modifique arquivos listados em `docs/AUTONOMY_POLICY.md` como sensíveis (migrations, `.env`, `vercel.json`, dependências em `package.json`, infra dos agentes) — se um card pedir isso, ADICIONE o label `needs-human` ao card e pule
+- **NUNCA rode `node scripts/add-done.mjs` para cards que vieram do kanban** — isso cria uma duplicata visível em `/changelog`. Cards do quadro vão direto para `done` via `move <id> done` (já mostrado em "Executar Tarefa" acima). O `add-done.mjs` é exclusivo para mudanças manuais sem card pré-existente. Se o título do card está muito técnico para o público, edite o título do próprio card (`updateCard` ou diretamente no admin) ao invés de criar um novo
 
 ## Segurança e Privacidade (CRÍTICO)
 

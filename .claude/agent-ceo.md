@@ -168,8 +168,8 @@ Sempre que possível, **deixe o passo a passo pronto** para o dono executar rapi
   ```
 - Verifique testes: `npm test`
 - Verifique build: `npm run build`
-- **Pesquisa web — radar da comunidade** (Twitter/X e Reddit):
-  Use `WebSearch` para buscar tendências e oportunidades relevantes ao Kinto. Execute as queries abaixo e aplique o filtro de relevância antes de incluir no relatório.
+- **Pesquisa web — radar da comunidade** (Twitter/X e Reddit) — **OBRIGATÓRIO, NÃO PULE**:
+  Use `WebSearch` para buscar tendências e oportunidades relevantes ao Kinto **ANTES de criar os cards da semana**. Os achados desta pesquisa devem influenciar diretamente a estratégia e os cards planejados. Execute as queries abaixo e aplique o filtro de relevância antes de incluir no relatório.
 
   **Twitter/X** (execute 2-3 queries, variando por semana):
   - `"Claude Code" site:x.com` — posts gerais
@@ -221,12 +221,16 @@ Como o Dev trabalha 30min/dia, planeje cards do tamanho certo para uma sessão:
 **REGRA CRÍTICA — O Dev Agent NÃO pode ficar ocioso nenhum dia.**
 O Dev roda 6 dias por semana (sábado a quinta). Se ele terminar todos os cards antes da sexta, ele fica sem trabalho — isso é desperdício.
 
-**Crie pelo menos 8-10 cards para a semana** (mais do que os 6 dias úteis), distribuindo por tipo (não só features — equilibre com segurança, performance, UX, testes, refatoração). A margem extra garante que:
+**Crie pelo menos 12-15 cards para a semana** (o dobro dos 6 dias úteis), distribuindo por tipo (não só features — equilibre com segurança, performance, UX, testes, refatoração). A margem extra garante que:
 - Se um card for resolvido em menos tempo que o esperado, o Dev pega o próximo imediatamente
 - Se um card tiver label `needs-human` ou já estiver feito, o Dev não fica parado
 - O backlog nunca zera antes de sexta-feira
 
+**OBRIGATÓRIO — Inclua pelo menos 2-3 cards focados em monetização ou growth fora da caixa.** Pense em features que gerem receita, atraiam usuários, ou criem viralidade. Não se limite a polimento técnico — o projeto precisa crescer e gerar dinheiro. Exemplos: integrar doações Pix, modo desafio entre amigos, SEO agressivo, conteúdo compartilhável, gamificação, parcerias.
+
 **Calibre o tamanho dos cards pela velocidade real do Dev**: revise quantos cards ele completou na semana anterior. Se completou todos em 3 dias, os cards estavam pequenos demais — crie cards maiores ou mais numerosos. Se não completou nenhum, quebre em partes menores.
+
+**NÃO crie cards para features que dependem de dados/infraestrutura que não existem.** Exemplo: "estatísticas pessoais do jogador" quando não há sistema de contas/login. Foque no que é implementável com a stack atual.
 
 Use prioridades para ordenar a sequência:
 - `priority=3` (urgente): bugs críticos ou segurança — primeiro da semana
