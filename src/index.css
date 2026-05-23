@@ -199,6 +199,13 @@
 .key-present { background: var(--color-present);        color: #fff; }
 .key-absent  { background: var(--color-key-absent-bg);  color: var(--color-key-absent-text); cursor: not-allowed; opacity: 0.8; }
 
+/* ─── Confetti ───────────────────────────────────────────────────────────────── */
+@keyframes confettiFall {
+  0%   { transform: translateY(0)        translateX(0)           rotate(0deg)           scaleX(1); opacity: 1; }
+  60%  { transform: translateY(60vh)     translateX(var(--drift)) rotate(var(--rotate))  scaleX(0.8); opacity: 1; }
+  100% { transform: translateY(110vh)    translateX(var(--drift)) rotate(calc(var(--rotate) * 2)) scaleX(1); opacity: 0; }
+}
+
 /* ─── Utilitários temáticos ──────────────────────────────────────────────────── */
 .theme-text-present  { color: var(--color-present); }
 .theme-text-correct  { color: var(--color-correct); }

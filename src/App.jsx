@@ -9,11 +9,13 @@ import { useGameLogic } from '@/hooks/useGameLogic';
 import { getModeByPath } from '@/config/gameModes';
 import { useTheme } from '@/hooks/useTheme';
 import { getStreak } from '@/lib/streak';
+import Confetti from '@/components/Confetti';
 
 const App = ({ initialMode, allModes }) => {
   const { theme, setTheme, themes } = useTheme();
   const [currentMode, setCurrentMode] = useState(initialMode);
   const [streak] = useState(() => getStreak());
+  const [showConfetti, setShowConfetti] = useState(false);
   const { wordLength, maxGuesses } = currentMode;
 
   const handleModeChange = useCallback((newMode) => {
@@ -57,6 +59,7 @@ const App = ({ initialMode, allModes }) => {
 
   useEffect(() => {
     if (!isGameOver) return;
+    if (isGameWon && !isRestored) setShowConfetti(true);
     const delay = isRestored ? 400 : 1650;
     const timer = setTimeout(() => setShowResult(true), delay);
     return () => clearTimeout(timer);
@@ -99,6 +102,7 @@ const App = ({ initialMode, allModes }) => {
       onClick={() => mainRef.current?.focus()}
     >
       <Toaster />
+      {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
       <GameHeader
         allModes={allModes}
         currentMode={currentMode}
