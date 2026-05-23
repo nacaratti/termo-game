@@ -5,7 +5,8 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  :root,
+  [data-theme="default"] {
     --background:         222 14% 10%;
     --foreground:         0 0% 93%;
 
@@ -35,6 +36,72 @@
     --ring:               0 0% 55%;
 
     --radius: 0.25rem;
+
+    /* Cores do jogo */
+    --color-bg:                 #16181d;
+    --color-header-bg-start:    #1a1d27;
+    --color-tile-empty-border:  #2c2f3a;
+    --color-tile-filled-bg:     #22252f;
+    --color-tile-active-border: #7a7d8e;
+    --color-tile-active-text:   #f0f0f0;
+    --color-tile-filled-text:   #f0f0f0;
+    --color-correct:            #6aaa64;
+    --color-present:            #c9a84c;
+    --color-absent-bg:          #383b4a;
+    --color-absent-text:        #676a7a;
+    --color-key-default-bg:     #5a5d70;
+    --color-key-default-text:   #e8e9ee;
+    --color-key-absent-bg:      #2a2d39;
+    --color-key-absent-text:    #484b5a;
+  }
+
+  [data-theme="pastel"] {
+    --background:         228 16% 15%;
+    --foreground:         220 20% 92%;
+
+    --card:               228 14% 18%;
+    --card-foreground:    220 20% 92%;
+
+    --popover:            228 14% 18%;
+    --popover-foreground: 220 20% 92%;
+
+    --primary:            220 20% 90%;
+    --primary-foreground: 228 16% 8%;
+
+    --secondary:          228 12% 22%;
+    --secondary-foreground: 220 15% 65%;
+
+    --muted:              228 12% 22%;
+    --muted-foreground:   220 10% 48%;
+
+    --accent:             228 12% 26%;
+    --accent-foreground:  220 20% 90%;
+
+    --destructive:        0 65% 55%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border:             228 14% 26%;
+    --input:              228 14% 19%;
+    --ring:               220 15% 55%;
+
+    --radius: 0.25rem;
+
+    /* Cores do jogo — tema pastel */
+    --color-bg:                 #1e2330;
+    --color-header-bg-start:    #232840;
+    --color-tile-empty-border:  #353a50;
+    --color-tile-filled-bg:     #282e42;
+    --color-tile-active-border: #7a7d92;
+    --color-tile-active-text:   #e8ecf8;
+    --color-tile-filled-text:   #e8ecf8;
+    --color-correct:            #7bc987;
+    --color-present:            #d4b06a;
+    --color-absent-bg:          #3d4258;
+    --color-absent-text:        #72758a;
+    --color-key-default-bg:     #4a5068;
+    --color-key-default-text:   #e0e3f0;
+    --color-key-absent-bg:      #2d3247;
+    --color-key-absent-text:    #4e5268;
   }
 }
 
@@ -80,26 +147,26 @@
   font-size: clamp(0.85rem, 3vw, 1.25rem);
 }
 
-.tile-empty  { background: transparent;  border-color: #2c2f3a; color: transparent; }
-.tile-filled { background: #22252f;      border-color: #4c4f5e; color: #f0f0f0; }
-.tile-active { background: transparent;  border-color: #7a7d8e; color: #f0f0f0; }
+.tile-empty  { background: transparent;                         border-color: var(--color-tile-empty-border); color: transparent; }
+.tile-filled { background: var(--color-tile-filled-bg);         border-color: var(--color-tile-active-border); color: var(--color-tile-filled-text); }
+.tile-active { background: transparent;                         border-color: var(--color-tile-active-border); color: var(--color-tile-active-text); }
 
 .tile-correct {
-  background: #6aaa64;
-  border-color: #6aaa64;
+  background: var(--color-correct);
+  border-color: var(--color-correct);
   color: #fff;
   animation: tileReveal 0.5s ease forwards;
 }
 .tile-present {
-  background: #c9a84c;
-  border-color: #c9a84c;
+  background: var(--color-present);
+  border-color: var(--color-present);
   color: #fff;
   animation: tileReveal 0.5s ease forwards;
 }
 .tile-absent {
-  background: #383b4a;
-  border-color: #383b4a;
-  color: #676a7a;
+  background: var(--color-absent-bg);
+  border-color: var(--color-absent-bg);
+  color: var(--color-absent-text);
   animation: tileReveal 0.5s ease forwards;
 }
 
@@ -127,7 +194,16 @@
   transform: scale(0.96);
 }
 
-.key-default { background: #5a5d70; color: #e8e9ee; }
-.key-correct { background: #6aaa64; color: #fff; }
-.key-present { background: #c9a84c; color: #fff; }
-.key-absent  { background: #2a2d39; color: #484b5a; cursor: not-allowed; opacity: 0.8; }
+.key-default { background: var(--color-key-default-bg); color: var(--color-key-default-text); }
+.key-correct { background: var(--color-correct);        color: #fff; }
+.key-present { background: var(--color-present);        color: #fff; }
+.key-absent  { background: var(--color-key-absent-bg);  color: var(--color-key-absent-text); cursor: not-allowed; opacity: 0.8; }
+
+/* ─── Utilitários temáticos ──────────────────────────────────────────────────── */
+.theme-text-present  { color: var(--color-present); }
+.theme-text-correct  { color: var(--color-correct); }
+.theme-bg-correct    { background-color: var(--color-correct); }
+.theme-badge-present {
+  background-color: color-mix(in srgb, var(--color-present) 12%, transparent);
+  border-color:     color-mix(in srgb, var(--color-present) 25%, transparent);
+}

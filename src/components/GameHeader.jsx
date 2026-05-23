@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HelpCircle, Settings2, X, Check, ScrollText, MessageCircle } from 'lucide-react';
+import { HelpCircle, Settings2, X, Check, ScrollText, MessageCircle, Palette } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
 const ExampleTile = ({ letter, status }) => {
@@ -93,7 +93,7 @@ const InstructionsModal = ({ onClose, currentMode }) => (
 
 const _TUTORIAL_KEY = '_kw';
 
-const GameHeader = ({ allModes, currentMode, onModeChange }) => {
+const GameHeader = ({ allModes, currentMode, onModeChange, theme, setTheme, themes }) => {
   const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
@@ -134,7 +134,7 @@ const GameHeader = ({ allModes, currentMode, onModeChange }) => {
 
   return (
     <>
-      <header className="w-full border-b border-zinc-800/60" style={{ background: 'linear-gradient(to bottom, #1a1d27, #16181d)' }}>
+      <header className="w-full border-b border-zinc-800/60" style={{ background: 'linear-gradient(to bottom, var(--color-header-bg-start), var(--color-bg))' }}>
         <div className="flex items-center justify-between max-w-lg mx-auto w-full px-3 py-3">
 
           {/* Esquerda: ajuda + changelog */}
@@ -194,7 +194,7 @@ const GameHeader = ({ allModes, currentMode, onModeChange }) => {
                 <motion.div
                   ref={modeMenuRef}
                   role="menu"
-                  className="absolute right-0 top-full mt-2 z-50 min-w-[190px] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden"
+                  className="absolute right-0 top-full mt-2 z-50 min-w-[210px] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden"
                   initial={{ opacity: 0, scale: 0.95, y: -6 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -6 }}
@@ -208,7 +208,7 @@ const GameHeader = ({ allModes, currentMode, onModeChange }) => {
                       key={mode.id}
                       role="menuitem"
                       onClick={() => handleModeSelect(mode)}
-                      className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors last:rounded-b-xl ${
+                      className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${
                         currentMode.id === mode.id
                           ? 'bg-zinc-800 text-white'
                           : 'text-zinc-400 hover:bg-zinc-800/70 hover:text-white'
@@ -223,6 +223,40 @@ const GameHeader = ({ allModes, currentMode, onModeChange }) => {
                       )}
                     </button>
                   ))}
+                  {themes && (
+                    <>
+                      <div className="border-t border-zinc-800 mt-1" />
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500 px-4 pt-3 pb-1 flex items-center gap-1.5">
+                        <Palette className="w-3 h-3" /> Tema
+                      </p>
+                      {themes.map((t) => (
+                        <button
+                          key={t.id}
+                          role="menuitem"
+                          onClick={() => { setTheme(t.id); }}
+                          className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors last:rounded-b-xl ${
+                            theme === t.id
+                              ? 'bg-zinc-800 text-white'
+                              : 'text-zinc-400 hover:bg-zinc-800/70 hover:text-white'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2.5">
+                            <span
+                              className="w-4 h-4 rounded-full border border-zinc-600 flex-shrink-0"
+                              style={{ backgroundColor: t.preview }}
+                            />
+                            <span className="flex flex-col">
+                              <span className="font-semibold text-sm">{t.label}</span>
+                              <span className="text-xs text-zinc-500 mt-0.5">{t.description}</span>
+                            </span>
+                          </span>
+                          {theme === t.id && (
+                            <Check className="w-4 h-4 text-[#6aaa64] ml-4 flex-shrink-0" />
+                          )}
+                        </button>
+                      ))}
+                    </>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -255,6 +289,10 @@ const GameHeader = ({ allModes, currentMode, onModeChange }) => {
                 <div className="w-10 h-1 rounded-full bg-zinc-700" />
               </div>
               <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 text-center pt-2 pb-3">
+                Configurações
+              </p>
+
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600 px-6 pb-1">
                 Modo de jogo
               </p>
               {allModes.map((mode) => (
@@ -277,6 +315,40 @@ const GameHeader = ({ allModes, currentMode, onModeChange }) => {
                   )}
                 </button>
               ))}
+
+              {themes && (
+                <>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600 px-6 pt-4 pb-1 flex items-center gap-1.5">
+                    <Palette className="w-3 h-3" /> Tema
+                  </p>
+                  {themes.map((t) => (
+                    <button
+                      key={t.id}
+                      role="menuitem"
+                      onClick={() => { setTheme(t.id); }}
+                      className={`w-full flex items-center justify-between px-6 py-4 text-left border-t border-zinc-800 transition-colors active:bg-zinc-800 ${
+                        theme === t.id
+                          ? 'bg-zinc-800/60 text-white'
+                          : 'text-zinc-400'
+                      }`}
+                    >
+                      <span className="flex items-center gap-3">
+                        <span
+                          className="w-5 h-5 rounded-full border border-zinc-600 flex-shrink-0"
+                          style={{ backgroundColor: t.preview }}
+                        />
+                        <span className="flex flex-col">
+                          <span className="font-semibold text-base">{t.label}</span>
+                          <span className="text-sm text-zinc-500 mt-0.5">{t.description}</span>
+                        </span>
+                      </span>
+                      {theme === t.id && (
+                        <Check className="w-5 h-5 text-[#6aaa64]" />
+                      )}
+                    </button>
+                  ))}
+                </>
+              )}
               <div className="pb-8" />
             </motion.div>
           </motion.div>

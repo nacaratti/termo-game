@@ -241,14 +241,14 @@ const GameStatus = ({
 
             {/* Streak */}
             {streak >= 2 && (
-              <div className="flex items-center justify-center gap-2 rounded-xl bg-[#c9a84c]/10 border border-[#c9a84c]/20 py-2.5 px-4">
-                <Flame className="h-5 w-5 text-[#c9a84c] shrink-0" />
+              <div className="flex items-center justify-center gap-2 rounded-xl theme-badge-present border py-2.5 px-4">
+                <Flame className="h-5 w-5 theme-text-present shrink-0" />
                 <div className="text-center">
-                  <p className="text-sm font-bold text-[#c9a84c]">
+                  <p className="text-sm font-bold theme-text-present">
                     {streak > bestStreak ? `🏆 Novo recorde! ${streak} dias seguidos!` : `${streak} dias seguidos!`}
                   </p>
                   {bestStreak > streak && (
-                    <p className="text-[10px] text-[#c9a84c]/60 mt-0.5">Recorde: {bestStreak} dias</p>
+                    <p className="text-[10px] theme-text-present opacity-60 mt-0.5">Recorde: {bestStreak} dias</p>
                   )}
                 </div>
               </div>
@@ -295,7 +295,7 @@ const GameStatus = ({
                         <div className="flex-1 bg-zinc-800 rounded-sm h-5 overflow-hidden">
                           <div
                             className={`h-5 rounded-sm flex items-center justify-end pr-2 transition-all duration-500 ${
-                              isMine ? 'bg-white' : 'bg-[#6aaa64]'
+                              isMine ? 'bg-white' : 'theme-bg-correct'
                             }`}
                             style={{ width: `${Math.max(pct, count > 0 ? 10 : 0)}%` }}
                           >

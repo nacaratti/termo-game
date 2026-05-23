@@ -36,6 +36,12 @@
     <!-- __VITE_INJECT_GOOGLE_TAG__ -->
   </head>
   <body>
+    <script>
+      try {
+        var t = localStorage.getItem('_kt');
+        if (t) document.documentElement.setAttribute('data-theme', t);
+      } catch(e) {}
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

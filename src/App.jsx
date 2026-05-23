@@ -7,8 +7,10 @@ import GameHeader from '@/components/GameHeader';
 import GameFooter from '@/components/GameFooter';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { getModeByPath } from '@/config/gameModes';
+import { useTheme } from '@/hooks/useTheme';
 
 const App = ({ initialMode, allModes }) => {
+  const { theme, setTheme, themes } = useTheme();
   const [currentMode, setCurrentMode] = useState(initialMode);
   const { wordLength, maxGuesses } = currentMode;
 
@@ -81,7 +83,7 @@ const App = ({ initialMode, allModes }) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center" style={{ minHeight: '100dvh', backgroundColor: '#16181d' }}>
+      <div className="flex items-center justify-center" style={{ minHeight: '100dvh', backgroundColor: 'var(--color-bg)' }}>
         <div className="w-8 h-8 rounded-full border-2 border-zinc-600 border-t-white animate-spin" />
       </div>
     );
@@ -91,7 +93,7 @@ const App = ({ initialMode, allModes }) => {
     <div
       ref={mainRef}
       className="flex flex-col"
-      style={{ minHeight: '100dvh', backgroundColor: '#16181d' }}
+      style={{ minHeight: '100dvh', backgroundColor: 'var(--color-bg)' }}
       onClick={() => mainRef.current?.focus()}
     >
       <Toaster />
@@ -99,6 +101,9 @@ const App = ({ initialMode, allModes }) => {
         allModes={allModes}
         currentMode={currentMode}
         onModeChange={handleModeChange}
+        theme={theme}
+        setTheme={setTheme}
+        themes={themes}
       />
 
       <main className="flex flex-col items-center justify-between flex-1 w-full max-w-lg mx-auto px-3 pt-3 pb-2">
