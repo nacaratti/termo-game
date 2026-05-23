@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HelpCircle, Settings2, X, Check, ScrollText, MessageCircle, Palette } from 'lucide-react';
+import { HelpCircle, Settings2, X, Check, ScrollText, MessageCircle, Palette, Flame } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
 const ExampleTile = ({ letter, status }) => {
@@ -93,7 +93,7 @@ const InstructionsModal = ({ onClose, currentMode }) => (
 
 const _TUTORIAL_KEY = '_kw';
 
-const GameHeader = ({ allModes, currentMode, onModeChange, theme, setTheme, themes }) => {
+const GameHeader = ({ allModes, currentMode, onModeChange, theme, setTheme, themes, hardMode, setHardMode }) => {
   const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
@@ -234,7 +234,7 @@ const GameHeader = ({ allModes, currentMode, onModeChange, theme, setTheme, them
                           key={t.id}
                           role="menuitem"
                           onClick={() => { setTheme(t.id); }}
-                          className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors last:rounded-b-xl ${
+                          className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${
                             theme === t.id
                               ? 'bg-zinc-800 text-white'
                               : 'text-zinc-400 hover:bg-zinc-800/70 hover:text-white'
@@ -255,6 +255,27 @@ const GameHeader = ({ allModes, currentMode, onModeChange, theme, setTheme, them
                           )}
                         </button>
                       ))}
+                    </>
+                  )}
+                  {setHardMode && (
+                    <>
+                      <div className="border-t border-zinc-800 mt-1" />
+                      <button
+                        role="menuitem"
+                        onClick={() => setHardMode(!hardMode)}
+                        className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors rounded-b-xl ${
+                          hardMode ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:bg-zinc-800/70 hover:text-white'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <Flame className="w-4 h-4 flex-shrink-0" />
+                          <span className="flex flex-col">
+                            <span className="font-semibold text-sm">Modo difícil</span>
+                            <span className="text-xs text-zinc-500 mt-0.5">Use as dicas reveladas</span>
+                          </span>
+                        </span>
+                        {hardMode && <Check className="w-4 h-4 text-[#6aaa64] ml-4 flex-shrink-0" />}
+                      </button>
                     </>
                   )}
                 </motion.div>
@@ -347,6 +368,26 @@ const GameHeader = ({ allModes, currentMode, onModeChange, theme, setTheme, them
                       )}
                     </button>
                   ))}
+                </>
+              )}
+              {setHardMode && (
+                <>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600 px-6 pt-4 pb-1 flex items-center gap-1.5">
+                    <Flame className="w-3 h-3" /> Dificuldade
+                  </p>
+                  <button
+                    role="menuitem"
+                    onClick={() => setHardMode(!hardMode)}
+                    className={`w-full flex items-center justify-between px-6 py-4 text-left border-t border-zinc-800 transition-colors active:bg-zinc-800 ${
+                      hardMode ? 'bg-zinc-800/60 text-white' : 'text-zinc-400'
+                    }`}
+                  >
+                    <span className="flex flex-col">
+                      <span className="font-semibold text-base">Modo difícil</span>
+                      <span className="text-sm text-zinc-500 mt-0.5">Use as dicas reveladas</span>
+                    </span>
+                    {hardMode && <Check className="w-5 h-5 text-[#6aaa64]" />}
+                  </button>
                 </>
               )}
               <div className="pb-8" />

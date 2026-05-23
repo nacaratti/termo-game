@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { WORD_LENGTH, MAX_GUESSES } from '@/config/constants';
 import { checkGuess as evaluateGuess } from '@/lib/gameLogic';
+import { validateHardModeGuess } from '@/hooks/useHardMode';
 import { initWordOfDay, getTodayDateStr } from '@/lib/wordOfDay';
 import { initWordOfDay6 } from '@/lib/wordOfDay6';
 import { saveGameResult, saveDailyResult } from '@/lib/stats';
@@ -11,7 +12,7 @@ import { saveGameProgress, saveCompletedGame, getSavedGame } from '@/lib/gameSta
 import { saveGameProgress6, saveCompletedGame6, getSavedGame6 } from '@/lib/gameState6';
 import { trackEvent } from '@/lib/analytics';
 
-export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES) => {
+export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES, hardMode = false) => {
   const is6 = wordLength === 6;
   const getWordFn       = is6 ? initWordOfDay6    : initWordOfDay;
   const saveProgressFn  = is6 ? saveGameProgress6 : saveGameProgress;
@@ -147,6 +148,19 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES)
         duration: 2000,
       });
       return;
+    }
+
+    if (hardMode && currentAttempt > 0) {
+      const hm = validateHardModeGuess(finalCurrentGuess, submittedGuessesInfo);
+      if (!hm.valid) {
+        toast({
+          title: "Modo difícil",
+          description: hm.message,
+          variant: "destructive",
+          duration: 2500,
+        });
+        return;
+      }
     }
 
     // Guard contra travessia de meia-noite: se a data mudou desde o início do

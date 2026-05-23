@@ -109,6 +109,7 @@ const GameStatus = ({
   onClose,
   maxGuesses = MAX_GUESSES,
   currentMode,
+  hardMode = false,
 }) => {
   const [copied, setCopied] = useState(false);
   const [todayResults, setTodayResults] = useState([]);
@@ -140,8 +141,9 @@ const GameStatus = ({
       ).join(''))
       .join('\n');
     const modeLabel = currentMode.id === 'classic' ? '' : ` (${currentMode.label})`;
+    const hardSuffix = hardMode ? ' *' : '';
     const streakSuffix = streak >= 2 ? ` 🔥${streak}` : '';
-    return `Kinto${modeLabel} ${today} ${result}${streakSuffix}\n\n${rows}\n\nhttps://kinto.fun`;
+    return `Kinto${modeLabel}${hardSuffix} ${today} ${result}${streakSuffix}\n\n${rows}\n\nhttps://kinto.fun`;
   };
 
   const handleShare = async () => {

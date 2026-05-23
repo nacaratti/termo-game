@@ -10,9 +10,11 @@ import { getModeByPath } from '@/config/gameModes';
 import { useTheme } from '@/hooks/useTheme';
 import { getStreak } from '@/lib/streak';
 import Confetti from '@/components/Confetti';
+import { useHardMode } from '@/hooks/useHardMode';
 
 const App = ({ initialMode, allModes }) => {
   const { theme, setTheme, themes } = useTheme();
+  const { hardMode, setHardMode } = useHardMode();
   const [currentMode, setCurrentMode] = useState(initialMode);
   const [streak] = useState(() => getStreak());
   const [showConfetti, setShowConfetti] = useState(false);
@@ -48,7 +50,7 @@ const App = ({ initialMode, allModes }) => {
     processGuess,
     handleKeyboardPress,
     setActiveInputCol,
-  } = useGameLogic(wordLength, maxGuesses);
+  } = useGameLogic(wordLength, maxGuesses, hardMode);
 
   const mainRef = useRef(null);
   const [showResult, setShowResult] = useState(false);
@@ -110,6 +112,8 @@ const App = ({ initialMode, allModes }) => {
         theme={theme}
         setTheme={setTheme}
         themes={themes}
+        hardMode={hardMode}
+        setHardMode={setHardMode}
       />
 
       {/* Banner de streak — visível apenas se streak >= 2 e jogo não concluído */}
@@ -173,6 +177,7 @@ const App = ({ initialMode, allModes }) => {
           onClose={() => setShowResult(false)}
           maxGuesses={maxGuesses}
           currentMode={currentMode}
+          hardMode={hardMode}
         />
       )}
     </div>
