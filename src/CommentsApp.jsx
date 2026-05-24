@@ -1,6 +1,7 @@
-import React from 'react';
-import { ArrowLeft } from 'lucide-react';
-import CommentsSection from '@/components/CommentsSection';
+import React, { lazy, Suspense } from 'react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+
+const CommentsSection = lazy(() => import('@/components/CommentsSection'));
 
 const BG = '#16181d';
 
@@ -25,7 +26,13 @@ const CommentsApp = () => {
           </p>
         </div>
 
-        <CommentsSection />
+        <Suspense fallback={
+          <div className="flex justify-center py-16">
+            <Loader2 className="w-5 h-5 text-zinc-600 animate-spin" />
+          </div>
+        }>
+          <CommentsSection />
+        </Suspense>
 
         <div className="mt-12 pb-6 text-center">
           <a

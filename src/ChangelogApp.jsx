@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { ArrowLeft, Loader2, Check, Bot, Brain } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import GoalSection from '@/components/GoalSection';
+
+const GoalSection = lazy(() => import('@/components/GoalSection'));
 
 const BG = '#16181d';
 const CARD_BG = '#1e2028';
@@ -135,7 +136,13 @@ const ChangelogApp = () => {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6">
-        <GoalSection />
+        <Suspense fallback={
+          <div className="rounded-xl border mb-8 h-40 flex items-center justify-center" style={{ backgroundColor: '#1e2028', borderColor: '#2c2f3a' }}>
+            <Loader2 className="w-5 h-5 text-zinc-600 animate-spin" />
+          </div>
+        }>
+          <GoalSection />
+        </Suspense>
 
         {/* Sobre os agentes */}
         <div
