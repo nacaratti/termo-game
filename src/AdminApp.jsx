@@ -794,22 +794,24 @@ const CommentsPanel = () => {
           {filtered.map(c => (
             <Card key={`${c._source}-${c.id}`} className="space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
-                {c._source === 'social' ? (
-                  <span className="text-xs font-semibold text-zinc-300">{c.user_name || 'Anônimo'}</span>
-                ) : (
-                  <span
-                    className="text-xs font-bold tracking-widest px-2 py-0.5 rounded"
-                    style={{ backgroundColor: SURF, color: '#6aaa64' }}
-                  >
-                    {c.word}
-                  </span>
-                )}
+                <span className="text-xs font-semibold text-zinc-300">
+                  {c._source === 'social' ? (c.user_name || 'Anônimo') : (c.author_name || 'Anônimo')}
+                </span>
                 {c._source === 'social' ? (
                   <span className="text-xs px-1.5 py-0.5 rounded bg-blue-900/30 text-blue-400">página /comments</span>
                 ) : (
                   <>
-                    <span className="text-xs text-zinc-500">{c.date}</span>
-                    <span className="text-xs text-zinc-600">{c.mode === '6' ? '6 letras' : '5 letras'}</span>
+                    {c.word && (
+                      <span
+                        className="text-xs font-bold tracking-widest px-2 py-0.5 rounded"
+                        style={{ backgroundColor: SURF, color: '#6aaa64' }}
+                      >
+                        {c.word}
+                      </span>
+                    )}
+                    {c.date && <span className="text-xs text-zinc-500">{c.date}</span>}
+                    {c.mode && <span className="text-xs text-zinc-600">{c.mode === '6' ? '6 letras' : '5 letras'}</span>}
+                    {!c.word && <span className="text-xs px-1.5 py-0.5 rounded bg-purple-900/30 text-purple-400">página /comments</span>}
                     {c.won != null && (
                       <span className={`text-xs px-1.5 py-0.5 rounded ml-auto ${c.won ? 'text-green-400 bg-green-900/30' : 'text-red-400 bg-red-900/30'}`}>
                         {c.won ? `✓ ${c.attempts} tent.` : '✗ perdeu'}
@@ -826,32 +828,36 @@ const CommentsPanel = () => {
                     <span className="ml-2 text-zinc-500">— {c.author_name}</span>
                   )}
                 </p>
-                {c._source === 'game' && c.approved === false && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-yellow-500">Pendente</span>
-                    <button
-                      onClick={async () => {
-                        await moderateComment(c.id, true);
-                        setComments(prev => prev.map(x => x.id === c.id && x._source === 'game' ? { ...x, approved: true } : x));
-                      }}
-                      className="text-xs px-2 py-1 rounded bg-green-900/40 text-green-400 hover:bg-green-900/60 transition-colors"
-                    >
-                      ✓ Aprovar
-                    </button>
-                    <button
-                      onClick={async () => {
-                        await moderateComment(c.id, false);
-                        setComments(prev => prev.filter(x => !(x.id === c.id && x._source === 'game')));
-                      }}
-                      className="text-xs px-2 py-1 rounded bg-red-900/40 text-red-400 hover:bg-red-900/60 transition-colors"
-                    >
-                      ✗ Rejeitar
-                    </button>
-                  </div>
-                )}
-                {c._source === 'game' && c.approved === true && (
-                  <span className="text-xs text-green-600">Aprovado</span>
-                )}
+                <div className="flex items-center gap-2">
+                  {c._source === 'game' && c.approved === false && (
+                    <>
+                      <span className="text-xs text-yellow-500">Pendente</span>
+                      <button
+                        onClick={async () => {
+                          await moderateComment(c.id, true);
+                          setComments(prev => prev.map(x => x.id === c.id && x._source === 'game' ? { ...x, approved: true } : x));
+                        }}
+                        className="text-xs px-2 py-1 rounded bg-green-900/40 text-green-400 hover:bg-green-900/60 transition-colors"
+                      >
+                        ✓ Aprovar
+                      </button>
+                    </>
+                  )}
+                  {c._source === 'game' && c.approved === true && (
+                    <span className="text-xs text-green-600">Aprovado</span>
+                  )}
+                  <button
+                    onClick={async () => {
+                      if (!confirm('Excluir este comentário?')) return;
+                      const table = c._source === 'game' ? 'player_comments' : 'user_comments';
+                      if (supabase) await supabase.from(table).delete().eq('id', c.id);
+                      setComments(prev => prev.filter(x => !(x.id === c.id && x._source === c._source)));
+                    }}
+                    className="text-xs px-2 py-1 rounded bg-red-900/40 text-red-400 hover:bg-red-900/60 transition-colors"
+                  >
+                    ✗ Excluir
+                  </button>
+                </div>
               </div>
             </Card>
           ))}

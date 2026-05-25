@@ -33,9 +33,9 @@ export const submitComment = async ({ dateStr, word, mode, comment, won, attempt
 
   try {
     const { error } = await supabase.from('player_comments').insert({
-      date: dateStr,
-      word: word?.toUpperCase(),
-      mode: String(mode),
+      date: dateStr || null,
+      word: word?.toUpperCase() || null,
+      mode: mode ? String(mode) : null,
       comment: comment.trim().slice(0, 300),
       won: won ?? null,
       attempts: attempts ?? null,
@@ -43,7 +43,7 @@ export const submitComment = async ({ dateStr, word, mode, comment, won, attempt
       approved: isAuthenticated ? true : false,
     });
     if (error) return { ok: false, error: error.message };
-    _markSubmitted(dateStr, mode);
+    if (dateStr && mode) _markSubmitted(dateStr, mode);
     return { ok: true, needsApproval: !isAuthenticated };
   } catch (e) {
     return { ok: false, error: e.message };
