@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Share2, Clock, X, ChevronRight, MessageSquare, Flame } from 'lucide-react';
+import { Share2, Clock, X, ChevronRight, MessageSquare, Flame, Coffee } from 'lucide-react';
 import { getDailyResults } from '@/lib/stats';
 import { getDailyResults6 } from '@/lib/stats6';
 import { getTodayDateStr } from '@/lib/wordOfDay';
@@ -14,8 +14,8 @@ const BouncingCoffee = () => {
   const state = useRef({
     x: Math.random() * 80 + 10,
     y: Math.random() * 80 + 10,
-    vx: (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random()),
-    vy: (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random()),
+    vx: (Math.random() > 0.5 ? 1 : -1) * (0.6 + Math.random() * 0.4),
+    vy: (Math.random() > 0.5 ? 1 : -1) * (0.6 + Math.random() * 0.4),
   });
   const raf = useRef(null);
 
@@ -28,7 +28,7 @@ const BouncingCoffee = () => {
 
     const pw = parent.clientWidth;
     const ph = parent.clientHeight;
-    const size = 48;
+    const size = 56;
 
     s.x += s.vx;
     s.y += s.vy;
@@ -56,11 +56,11 @@ const BouncingCoffee = () => {
       ref={ref}
       href="/apoie"
       onClick={(e) => e.stopPropagation()}
-      className="absolute top-0 left-0 z-10 w-12 h-12 flex items-center justify-center bg-amber-500 hover:bg-amber-400 rounded-full shadow-xl transition-colors text-2xl"
+      className="absolute top-0 left-0 z-10 w-14 h-14 flex items-center justify-center bg-amber-900/20 border border-amber-800/30 hover:bg-amber-900/40 rounded-2xl shadow-xl transition-colors"
       aria-label="Apoiar o Kinto"
       style={{ willChange: 'transform' }}
     >
-      ☕
+      <Coffee className="w-7 h-7 text-amber-400" />
     </a>
   );
 };
