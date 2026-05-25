@@ -9,8 +9,8 @@ import { supabase } from '@/lib/supabase';
 
 const TILE = 16;
 const ZOOM = 3;
-const COLS = 30;
-const ROWS = 20;
+const COLS = 28;
+const ROWS = 17;
 const W = COLS * TILE;
 const H = ROWS * TILE;
 const CHAR_W = 16;
@@ -21,32 +21,192 @@ const FRAMES_PER_ROW = 7;
 const DIR_DOWN = 0, DIR_UP = 1, DIR_RIGHT = 2, DIR_LEFT = 3;
 const ST_TYPE = 0, ST_IDLE = 1, ST_WALK = 2;
 
-// Timing
-const WALK_SPEED = 40;
+// Goal types for NPC Simulation
+const GOAL_WORK = 'work';
+const GOAL_COFFEE = 'coffee';
+const GOAL_REST = 'rest';
+const GOAL_PLANT = 'plant';
+const GOAL_WHITEBOARD = 'whiteboard';
+const GOAL_MEETING = 'meeting';
+
+// Timing constants
+const WALK_SPEED = 20; // Slower walking speed
 const TYPE_FRAME_DUR = 0.4;
-const WALK_FRAME_DUR = 0.15;
+const WALK_FRAME_DUR = 0.20; // Slower walking animation frames
 
-// ─── Action labels ──────────────────────────────────────────────────────────
-const ACTION_SHORT = {
-  card_started: 'Iniciando tarefa…', card_completed: 'Tarefa concluída!',
-  code_committed: 'Commit enviado', test_added: 'Escrevendo testes',
-  bug_fixed: 'Bug corrigido!', card_created: 'Criou card',
-  report_generated: 'Gerando relatório', session_started: 'Começando',
-  session_ended: 'Finalizando',
-};
+const BASE = '/assets/pixel-agents/';
+const LOUNGE_FLOOR = 6; // Offset wood planks pattern (floor_6.png) to avoid checkers pattern
 
-function timeAgo(dateStr) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'agora';
-  if (mins < 60) return `${mins}min`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h`;
-  return `${Math.floor(hrs / 24)}d`;
+// ─── Word Wrap for Canvas Speech Bubbles ─────────────────────────────────────
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = words[0];
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i];
+    const width = ctx.measureText(currentLine + " " + word).width;
+    if (width < maxWidth) {
+      currentLine += " " + word;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+  lines.push(currentLine);
+  return lines;
+}
+
+// ─── Bubble Path and Rounded Rect for Canvas Speech Bubbles ───────────────────
+function drawRoundedRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function drawBubblePath(ctx, x, y, w, h, radius, px, py) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  
+  // Bottom pointer at px, py (py is pointer tip, px is pointer center)
+  // Arrow width is 12px (from px - 6 to px + 6), height is 6px (from y + h to py)
+  ctx.lineTo(Math.min(x + w - radius, px + 6), y + h);
+  ctx.lineTo(px, py);
+  ctx.lineTo(Math.max(x + radius, px - 6), y + h);
+  
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+// ─── Dialog Generation from Kanban Cards ─────────────────────────────────────
+function getNPCBubbleText(agentKey, goal, cards) {
+  const inProgress = cards.filter(c => c.status === 'in_progress');
+  const todo = cards.filter(c => c.status === 'todo' || c.status === 'backlog');
+
+  const randEl = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  if (goal === GOAL_WORK) {
+    if (agentKey === 'dev') {
+      if (inProgress.length > 0 && Math.random() < 0.6) {
+        const c = randEl(inProgress);
+        return randEl([
+          `Codando o card: "${c.title}"`,
+          `Arrumando bugs em "${c.title}"...`,
+          `Quase finalizando "${c.title}"!`
+        ]);
+      }
+      if (todo.length > 0 && Math.random() < 0.4) {
+        const c = randEl(todo);
+        return `Analisando requisitos de "${c.title}".`;
+      }
+      return randEl([
+        "Refatorando algumas funções...",
+        "Escrevendo testes unitários.",
+        "Acho que o build passou!",
+        "Limpando o console.log do código...",
+        "Commitando alterações de performance."
+      ]);
+    } else { // ceo
+      if (todo.length > 0 && Math.random() < 0.6) {
+        const c = randEl(todo);
+        return randEl([
+          `Priorizando "${c.title}" no backlog.`,
+          `Esse card "${c.title}" vai ajudar na receita.`
+        ]);
+      }
+      return randEl([
+        "Analisando métricas de acesso diário...",
+        "Revisando o planejamento financeiro.",
+        "Planejando o próximo sprint...",
+        "Lendo o feedback dos usuários de hoje.",
+        "A meta é tornar o Kinto rentável!"
+      ]);
+    }
+  }
+
+  if (goal === GOAL_COFFEE) {
+    if (agentKey === 'dev') {
+      return randEl([
+        "Mais cafeína, por favor!",
+        "Sem café, sem código.",
+        "Preparando um café bem forte...",
+        "Esse café está cheiroso!"
+      ]);
+    } else {
+      return randEl([
+        "Uma pausa para o café do CEO.",
+        "Café ajuda a clarear as ideias.",
+        "Hora de um cafezinho expresso."
+      ]);
+    }
+  }
+
+  if (goal === GOAL_REST) {
+    if (agentKey === 'dev') {
+      return randEl([
+        "Cinco minutinhos de descanso...",
+        "Que sofá aconchegante.",
+        "Vou cochilar um pouquinho... zZz"
+      ]);
+    } else {
+      return randEl([
+        "Lendo relatórios no celular...",
+        "Bela sala de convivência.",
+        "Uma pausa estratégica para descansar."
+      ]);
+    }
+  }
+
+  if (goal === GOAL_PLANT) {
+    if (agentKey === 'dev') {
+      return randEl([
+        "Regando as plantinhas...",
+        "Elas deixam o escritório mais vivo.",
+        "Um pouco de água para você!"
+      ]);
+    } else {
+      return randEl([
+        "Inspecionando a vegetação local.",
+        "O escritório está bem verde hoje.",
+        "Essa planta está crescendo rápido."
+      ]);
+    }
+  }
+
+  if (goal === GOAL_WHITEBOARD) {
+    if (agentKey === 'dev') {
+      return randEl([
+        "Esboçando a arquitetura do banco...",
+        "Vejamos o fluxo de requisições.",
+        "Aqui vai um diagrama de blocos..."
+      ]);
+    } else {
+      return randEl([
+        "Escrevendo metas na lousa...",
+        "Roadmap de 6 meses no quadro.",
+        "Metas semanais desenhadas!"
+      ]);
+    }
+  }
+
+  return null;
 }
 
 // ─── Asset helpers ──────────────────────────────────────────────────────────
-const BASE = '/assets/pixel-agents/';
 function loadImg(path) {
   return new Promise(resolve => {
     const img = new Image();
@@ -85,71 +245,71 @@ function extractCharFrames(img) {
   return frames;
 }
 
-// ─── Room layout ────────────────────────────────────────────────────────────
-// Tile types: -1=wall, 0=void, 7=wood floor, 1=light floor, 4=tile floor
-//
-// Layout (30×20):
-//   cols:  0  1-8  9  10-19  20  21-28  29
-//   rows:
-//   0:    [────── top wall ──────────────]
-//   1-8:  [w] CEO [w] LOUNGE [w] MEETING[w]
-//         door: col9 r4-5    col20 r4-5
-//   9:    [w  wall  w] LOUNGE [wall wall w]
-//   10-18:[w] DEV  [w] LOUNGE  LOUNGE   [w]
-//         door: col9 r13-14
-//   19:   [────── bottom wall ───────────]
-//
-// CEO & Dev have NO shared door (row 9 is solid wall on cols 0-9)
-// Lounge is L-shaped: cols 10-19 full height + cols 20-28 below meeting
-
-function buildTileMap() {
+// ─── Room layout builder ────────────────────────────────────────────────────
+function buildTileMap(loungeFloorId) {
   const map = [];
   for (let r = 0; r < ROWS; r++) {
     const row = [];
     for (let c = 0; c < COLS; c++) {
-      // Outer walls
+      // Outer boundaries
       if (r === 0 || r === ROWS - 1 || c === 0 || c === COLS - 1) {
         row.push(-1); continue;
       }
-      // CEO room: cols 1-8, rows 1-8, floor 5 (brick)
-      if (r >= 1 && r <= 8 && c >= 1 && c <= 8) {
+      
+      // Top wall (row 1)
+      if (r === 1) {
+        row.push(-1); continue;
+      }
+      
+      // CEO Room: cols 1-8, rows 2-7, floor 5 (brick)
+      if (r >= 2 && r <= 7 && c >= 1 && c <= 8) {
         row.push(5); continue;
       }
-      // Dev room: cols 1-8, rows 10-18, floor 3 (tile grid)
-      if (r >= 10 && r <= 18 && c >= 1 && c <= 8) {
+      
+      // Dev Room: cols 1-8, rows 9-15, floor 3 (tile grid)
+      if (r >= 9 && r <= 15 && c >= 1 && c <= 8) {
         row.push(3); continue;
       }
-      // Meeting room: cols 21-28, rows 1-8, floor 8 (dark checker)
-      if (r >= 1 && r <= 8 && c >= 21 && c <= 28) {
+      
+      // Meeting Room: cols 19-25, rows 2-7, floor 8 (dark checker)
+      if (r >= 2 && r <= 7 && c >= 19 && c <= 25) {
         row.push(8); continue;
       }
+      
       // Vertical wall col 9: separates CEO/Dev from Lounge
       if (c === 9) {
-        // Doors: CEO→Lounge (rows 4-5), Dev→Lounge (rows 13-14)
-        if ((r >= 4 && r <= 5) || (r >= 13 && r <= 14)) {
-          row.push(6); continue; // door = lounge floor
+        // Doors: CEO→Lounge (row 4), Dev→Lounge (row 12)
+        if (r === 4 || r === 12) {
+          row.push(loungeFloorId); continue;
         }
         row.push(-1); continue;
       }
-      // Horizontal wall row 9, cols 0-9: solid between CEO/Dev (no door)
-      if (r === 9 && c <= 9) {
+      
+      // Horizontal wall row 8, cols 0-9: separates CEO from Dev Room
+      if (r === 8 && c <= 9) {
         row.push(-1); continue;
       }
-      // Meeting left wall: col 20, rows 1-8
-      if (c === 20 && r >= 1 && r <= 8) {
-        // Door at rows 4-5
-        if (r >= 4 && r <= 5) { row.push(6); continue; }
+      
+      // Meeting left wall: col 18, rows 2-7
+      if (c === 18 && r >= 2 && r <= 7) {
+        // Door at row 4
+        if (r === 4) {
+          row.push(loungeFloorId); continue;
+        }
         row.push(-1); continue;
       }
-      // Meeting bottom wall: row 9, cols 20-28
-      if (r === 9 && c >= 20 && c <= 28) {
+      
+      // Meeting bottom wall: row 8, cols 18-27
+      if (r === 8 && c >= 18 && c <= 27) {
         row.push(-1); continue;
       }
-      // Lounge L-shape: cols 10-19 rows 1-18 + cols 20-28 rows 10-18
-      if ((c >= 10 && c <= 19 && r >= 1 && r <= 18) ||
-          (c >= 20 && c <= 28 && r >= 10 && r <= 18)) {
-        row.push(6); continue; // lounge floor (brick variant)
+      
+      // Lounge L-shape: cols 10-17 rows 2-15 + cols 18-26 rows 9-15
+      if ((c >= 10 && c <= 17 && r >= 2 && r <= 15) ||
+          (c >= 18 && c <= 26 && r >= 9 && r <= 15)) {
+        row.push(loungeFloorId); continue;
       }
+      
       // Everything else is wall
       row.push(-1);
     }
@@ -158,10 +318,7 @@ function buildTileMap() {
   return map;
 }
 
-const TILE_MAP = buildTileMap();
-
 // ─── Furniture definitions ──────────────────────────────────────────────────
-// { key, col, row, dims: {w,h,fpW,fpH,bgTiles} }
 const DIMS = {
   DESK_FRONT:      { w: 48, h: 32, fpW: 3, fpH: 2, bgTiles: 1 },
   PC_FRONT:        { w: 16, h: 32, fpW: 1, fpH: 2, bgTiles: 1 },
@@ -194,144 +351,101 @@ const DIMS = {
 };
 
 const FURNITURE = [
-  // ── CEO Office (cols 1-8, rows 1-8) ──
-  { key: 'DESK_FRONT',  col: 3, row: 3 },   // desk cols 3-5, rows 3-4
-  { key: 'PC_FRONT',    col: 4, row: 3 },    // PC on desk
-  { key: 'CHAIR_BACK',  col: 4, row: 5 },    // chair behind desk
-  { key: 'LARGE_PAINTING', col: 2, row: 0 }, // painting on top wall
-  { key: 'BOOKSHELF',   col: 6, row: 0 },    // bookshelf on top wall
-  { key: 'PLANT',       col: 1, row: 1 },    // plant in top-left corner
-  { key: 'SMALL_TABLE_FRONT', col: 7, row: 7 }, // side table in corner
-  { key: 'COFFEE',      col: 7, row: 7 },    // coffee ON the table
-  { key: 'BIN',         col: 1, row: 7 },    // bin in bottom-left corner
+  // ── CEO Office (cols 1-8, rows 2-7) ──
+  { key: 'DESK_FRONT',  col: 3, row: 4 },
+  { key: 'PC_FRONT',    col: 4, row: 4 },
+  { key: 'CHAIR_BACK',  col: 4, row: 6 },
+  { key: 'LARGE_PAINTING', col: 2, row: 1 },
+  { key: 'BOOKSHELF',   col: 6, row: 1 },
+  { key: 'PLANT',       col: 1, row: 2 },
+  { key: 'SMALL_TABLE_FRONT', col: 7, row: 6 },
+  { key: 'COFFEE',      col: 7, row: 6 },
+  { key: 'BIN',         col: 8, row: 5 },
 
-  // ── Meeting Room (cols 21-28, rows 1-8) ──
-  // TABLE_FRONT is 3×4 tiles → cols 23-25, rows 5-8 (bgTiles=1 so visual from row 4)
-  { key: 'TABLE_FRONT', col: 23, row: 5 },
-  { key: 'WHITEBOARD',  col: 24, row: 0 },   // whiteboard on top wall
-  // Left chairs beside table (col 22, aligned with table rows 6 and 8)
-  { key: 'WOODEN_CHAIR_SIDE', col: 22, row: 6 },
-  { key: 'WOODEN_CHAIR_SIDE', col: 22, row: 8 },
-  // Right chairs beside table (col 26, aligned with table rows 6 and 8)
-  { key: 'CHAIR_SIDE',  col: 26, row: 6, mirror: true },
-  { key: 'CHAIR_SIDE',  col: 26, row: 8, mirror: true },
-  { key: 'CLOCK',       col: 28, row: 0 },   // clock on top wall, right corner
-  { key: 'PLANT',       col: 21, row: 1 },   // plant in top-left corner of room
+  // ── Meeting Room (cols 19-25, rows 2-7) ──
+  { key: 'TABLE_FRONT', col: 21, row: 5 },
+  { key: 'WHITEBOARD',  col: 22, row: 1 },
+  { key: 'CHAIR_SIDE',  col: 20, row: 3 },
+  { key: 'CHAIR_SIDE',  col: 20, row: 4 },
+  { key: 'CHAIR_SIDE',  col: 24, row: 3, mirror: true },
+  { key: 'CHAIR_SIDE',  col: 24, row: 4, mirror: true },
+  { key: 'CLOCK',       col: 25, row: 1 },
+  { key: 'PLANT',       col: 19, row: 2 },
 
-  // ── Dev Room (cols 1-8, rows 10-18) ──
-  { key: 'DESK_FRONT',  col: 3, row: 12 },   // desk cols 3-5, rows 12-13
-  { key: 'PC_FRONT',    col: 4, row: 12 },    // PC on desk
-  { key: 'CHAIR_BACK',  col: 4, row: 14 },    // chair behind desk
-  { key: 'DOUBLE_BOOKSHELF', col: 1, row: 9 }, // bookshelf on top wall
-  { key: 'DOUBLE_BOOKSHELF', col: 4, row: 9 }, // bookshelf on top wall
-  { key: 'CACTUS',      col: 8, row: 10 },    // cactus in corner, against right wall
-  { key: 'SMALL_PAINTING_2', col: 7, row: 9 }, // painting on top wall
-  { key: 'BIN',         col: 1, row: 17 },    // bin in bottom-left corner
+  // ── Dev Room (cols 1-8, rows 9-15) ──
+  { key: 'DESK_FRONT',  col: 3, row: 11 },
+  { key: 'PC_FRONT',    col: 4, row: 11 },
+  { key: 'CHAIR_BACK',  col: 4, row: 13 },
+  { key: 'DOUBLE_BOOKSHELF', col: 1, row: 9 },
+  { key: 'DOUBLE_BOOKSHELF', col: 4, row: 9 },
+  { key: 'CACTUS',      col: 8, row: 10 },
+  { key: 'SMALL_PAINTING_2', col: 7, row: 9 },
+  { key: 'BIN',         col: 8, row: 15 },
 
-  // ══════════════════════════════════════════════════════════════
-  // Lounge L-shape (cols 10-19 rows 1-18 + cols 20-28 rows 10-18)
-  // ══════════════════════════════════════════════════════════════
+  // ── Lounge L-shape (cols 10-17 rows 2-15 + cols 18-26 rows 9-15) ──
+  { key: 'SOFA_FRONT',  col: 11, row: 2 },
+  { key: 'COFFEE_TABLE', col: 11, row: 4 },
+  { key: 'SOFA_FRONT',  col: 11, row: 6 },
+  { key: 'DESK_FRONT',  col: 15, row: 2 }, // Coffee station support table (covers 15, 16, 17)
+  { key: 'COFFEE',      col: 15, row: 2 },
+  { key: 'COFFEE',      col: 16, row: 2 },
+  { key: 'SMALL_PAINTING', col: 14, row: 1 },
+  { key: 'PLANT_2',     col: 10, row: 2 },
 
-  // ── Upper lounge strip (cols 10-19, rows 1-8) ──
-  // Sofa seating area 1: against left wall (col 10)
-  { key: 'SOFA_FRONT',  col: 11, row: 1 },   // sofa against top wall
-  { key: 'COFFEE_TABLE', col: 11, row: 3 },   // table in front of sofa
-  { key: 'SOFA_FRONT',  col: 11, row: 5 },   // second sofa facing table
+  { key: 'SOFA_FRONT',  col: 11, row: 10 },
+  { key: 'SMALL_TABLE_FRONT', col: 13, row: 10 },
+  { key: 'PLANT',       col: 10, row: 14 },
 
-  // Coffee station against top wall (row 1)
-  { key: 'SMALL_TABLE_FRONT', col: 16, row: 1 }, // support table on top wall
-  { key: 'COFFEE',      col: 16, row: 1 },    // coffee ON table
-  { key: 'COFFEE',      col: 17, row: 1 },    // second coffee ON table
-  { key: 'POT',         col: 18, row: 1 },    // pot next to coffee
 
-  // Decor on walls (upper strip)
-  { key: 'SMALL_PAINTING', col: 14, row: 0 }, // painting on top wall
-  { key: 'PLANT_2',     col: 10, row: 1 },    // plant in corner against left wall
+  { key: 'SOFA_FRONT',  col: 19, row: 10 },
+  { key: 'COFFEE_TABLE', col: 19, row: 12 },
+  { key: 'SOFA_FRONT',  col: 19, row: 14 },
 
-  // ── Middle transition strip (cols 10-19, rows 9-10) ──
-  { key: 'HANGING_PLANT', col: 10, row: 9 },  // on horizontal wall
-  { key: 'HANGING_PLANT', col: 14, row: 9 },  // on horizontal wall
-  { key: 'LARGE_PAINTING', col: 17, row: 9 }, // painting on horizontal wall
+  { key: 'LARGE_PLANT', col: 25, row: 11 },
 
-  // ── Lower lounge strip (cols 10-19, rows 11-18) ──
-  { key: 'SOFA_FRONT',  col: 11, row: 11 },   // sofa against wall area
-  { key: 'SMALL_TABLE_FRONT', col: 13, row: 11 }, // side table
-  { key: 'PLANT',       col: 10, row: 17 },    // plant in bottom-left corner
-
-  // ── Wide lounge area (cols 20-28, rows 10-18) ──
-  // Seating cluster: sofas facing each other with coffee table
-  { key: 'SOFA_FRONT',  col: 21, row: 12 },   // sofa top
-  { key: 'COFFEE_TABLE', col: 21, row: 14 },   // coffee table between sofas
-  { key: 'SOFA_FRONT',  col: 21, row: 16 },   // sofa bottom
-
-  // Second seating area along right wall
-  { key: 'CUSHIONED_BENCH', col: 27, row: 13 }, // bench against right wall
-  { key: 'CUSHIONED_BENCH', col: 28, row: 13 }, // bench against right wall
-  { key: 'SMALL_TABLE_FRONT', col: 27, row: 15 }, // table near benches
-  { key: 'COFFEE',      col: 27, row: 15 },    // coffee ON table
-
-  // Plants in corners (not middle!)
-  { key: 'LARGE_PLANT', col: 27, row: 16 },   // plant in bottom-right corner
-  { key: 'PLANT_2',     col: 20, row: 17 },   // plant in bottom-left of wide area
-  { key: 'SMALL_PAINTING', col: 24, row: 9 }, // painting on top wall of wide area
+  { key: 'CUSHIONED_BENCH', col: 25, row: 14 },
+  { key: 'CUSHIONED_BENCH', col: 26, row: 14 },
+  { key: 'SMALL_TABLE_FRONT', col: 25, row: 15 },
+  { key: 'COFFEE',      col: 25, row: 15 },
+  { key: 'SMALL_PAINTING', col: 22, row: 9 },
 ];
 
-// ─── Blocked tiles ──────────────────────────────────────────────────────────
+// ─── Blocked tiles (Dynamically populated based on furniture footprints) ─────
 const BLOCKED = new Set();
 function blockRect(c, r, w, h) {
   for (let dr = 0; dr < h; dr++)
     for (let dc = 0; dc < w; dc++)
       BLOCKED.add(`${c + dc},${r + dr}`);
 }
-// CEO desk+chair+table
-blockRect(3, 3, 3, 2); blockRect(4, 5, 1, 1); blockRect(7, 7, 2, 1);
-// Meeting table + chairs (table cols 23-25 rows 5-8, chairs at 22 & 26)
-blockRect(23, 5, 3, 4); blockRect(22, 5, 1, 1); blockRect(22, 7, 1, 1); blockRect(26, 5, 1, 1); blockRect(26, 7, 1, 1);
-// Dev desk+chair
-blockRect(3, 12, 3, 2); blockRect(4, 14, 1, 1);
-// Bookshelves (on wall row 9)
-blockRect(1, 9, 2, 2); blockRect(4, 9, 2, 2);
-// Upper lounge: sofas + coffee table + coffee station
-blockRect(11, 1, 2, 1); blockRect(11, 3, 2, 2); blockRect(11, 5, 2, 1);
-blockRect(16, 1, 3, 1);
-// Lower lounge strip: sofa + table
-blockRect(11, 11, 2, 1); blockRect(13, 11, 2, 1);
-// Wide lounge: sofa cluster + benches + table
-blockRect(21, 12, 2, 1); blockRect(21, 14, 2, 2); blockRect(21, 16, 2, 1);
-blockRect(27, 13, 2, 1); blockRect(27, 15, 2, 1);
-// Large plant (corner)
-blockRect(27, 17, 2, 2);
 
-// Walkable tiles
-const WALKABLE = {};
-function getWalkable(room) {
-  if (WALKABLE[room]) return WALKABLE[room];
-  const tiles = [];
-  let cMin, cMax, rMin, rMax;
-  switch (room) {
-    case 'ceo':     cMin=1; cMax=8; rMin=1; rMax=8; break;
-    case 'meeting': cMin=21; cMax=28; rMin=1; rMax=8; break;
-    case 'dev':     cMin=1; cMax=8; rMin=10; rMax=18; break;
-    case 'lounge':  cMin=10; cMax=28; rMin=1; rMax=18; break;
-    default:        cMin=1; cMax=28; rMin=1; rMax=18;
-  }
-  for (let r = rMin; r <= rMax; r++)
-    for (let c = cMin; c <= cMax; c++)
-      if (!BLOCKED.has(`${c},${r}`) && TILE_MAP[r]?.[c] >= 0)
-        tiles.push({ col: c, row: r });
-  WALKABLE[room] = tiles;
-  return tiles;
-}
+ // Automatically block tiles where furniture objects are placed
+ for (const f of FURNITURE) {
+   const dims = DIMS[f.key];
+   if (!dims) continue;
+ 
+   const isWallDecor = ['LARGE_PAINTING', 'SMALL_PAINTING', 'SMALL_PAINTING_2', 'CLOCK', 'WHITEBOARD', 'HANGING_PLANT'].includes(f.key);
+   const isTableItem = ['COFFEE', 'POT'].includes(f.key);
+ 
+   if (!isWallDecor && !isTableItem) {
+     if (f.key === 'TABLE_FRONT') {
+       // TABLE_FRONT is drawn shifted up by 3 tiles relative to its anchor row.
+       // We block rows f.row - 3 to f.row to match the visual position.
+       blockRect(f.col, f.row - 3, dims.fpW, dims.fpH);
+     } else {
+       blockRect(f.col, f.row, dims.fpW, dims.fpH);
+     }
+   }
+ }
 
-// ─── Pathfinding ────────────────────────────────────────────────────────────
-function isWalkable(col, row) {
+// Pathfinding Helpers
+function isTileWalkable(col, row, tileMap) {
   if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return false;
-  if (TILE_MAP[row]?.[col] < 0) return false;
+  if (tileMap[row]?.[col] < 0) return false;
   if (BLOCKED.has(`${col},${row}`)) return false;
   return true;
 }
 
-function findPath(sc, sr, ec, er, extraUnblock) {
+function findPath(sc, sr, ec, er, tileMap, extraUnblock) {
   if (sc === ec && sr === er) return [];
   const key = (c, r) => `${c},${r}`;
   const visited = new Set(); visited.add(key(sc, sr));
@@ -342,13 +456,11 @@ function findPath(sc, sr, ec, er, extraUnblock) {
       const nc = col + dc, nr = row + dr;
       const k = key(nc, nr);
       if (visited.has(k)) continue;
-      // Allow walking through door tiles + target tile
       const isTarget = nc === ec && nr === er;
       const isUnblocked = extraUnblock && extraUnblock.has(k);
-      if (!isTarget && !isUnblocked && !isWalkable(nc, nr)) continue;
-      // Also check basic bounds + not wall
+      if (!isTarget && !isUnblocked && !isTileWalkable(nc, nr, tileMap)) continue;
       if (nc < 0 || nc >= COLS || nr < 0 || nr >= ROWS) continue;
-      if (TILE_MAP[nr]?.[nc] < 0 && !isTarget && !isUnblocked) continue;
+      if (tileMap[nr]?.[nc] < 0 && !isTarget && !isUnblocked) continue;
       visited.add(k);
       const newPath = [...path, { col: nc, row: nr }];
       if (isTarget) return newPath;
@@ -370,40 +482,57 @@ function tileCenter(c, r) {
   return { x: c * TILE + TILE / 2, y: r * TILE + TILE / 2 };
 }
 
-// ─── Is it Friday? (Brasília timezone) ──────────────────────────────────────
+// Friday meeting checker
 function isFridayBrasilia() {
   const now = new Date();
   const brt = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
   return brt.getDay() === 5;
 }
 
-// ─── Room labels ────────────────────────────────────────────────────────────
-const ROOM_LABELS = [
-  { text: 'CEO', x: 5, y: 1, color: '#a78bfa' },
-  { text: 'Reunião', x: 25, y: 1, color: '#60a5fa' },
-  { text: 'Dev', x: 5, y: 10, color: '#60a5fa' },
-  { text: 'Lounge', x: 15, y: 10, color: '#6aaa64' },
+// Dialogue Sequence
+const MEETING_STEPS = [
+  { speaker: 'ceo', text: "Olá! Vamos iniciar nosso alinhamento semanal?" },
+  { speaker: 'dev', text: "Opa! Vamos lá. O que temos planejado?" },
+  { speaker: 'ceo', text: "Nosso foco principal continua sendo o roadmap estratégico." },
+  { speaker: 'dev', text: "Perfeito. Estou de olho nos cards ativos do Kanban." },
+  { speaker: 'ceo', text: "Isso. Todo avanço nos aproxima da nossa meta de rentabilidade!" },
+  { speaker: 'dev', text: "Com certeza, vou continuar implementando e escrevendo testes." },
+  { speaker: 'ceo', text: "Excelente progresso. Reunião encerrada, bom trabalho!" },
 ];
 
-// ─── Component ──────────────────────────────────────────────────────────────
+const ROOM_LABELS = [
+  { text: 'CEO', x: 4.5, y: 2.5, color: '#a78bfa' },
+  { text: 'Reunião', x: 22, y: 2.5, color: '#60a5fa' },
+  { text: 'Dev', x: 4.5, y: 9.5, color: '#60a5fa' },
+  { text: 'Lounge', x: 14, y: 9.5, color: '#6aaa64' },
+];
+
 const PixelAgents = () => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
-  const [activities, setActivities] = useState({ dev: null, ceo: null });
 
+  // States
+  const [loading, setLoading] = useState(true);
+  const [kanbanCards, setKanbanCards] = useState([]);
+
+  // Mutable refs for rendering loop
+  const cardsRef = useRef([]);
+  const charsRef = useRef(null);
+
+  // Load kanban cards on mount
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase) {
+      setKanbanCards([]);
+      return;
+    }
     supabase
-      .from('activity_logs')
-      .select('agent, action, details, created_at')
-      .order('created_at', { ascending: false })
-      .limit(10)
+      .from('kanban_cards')
+      .select('title, status')
       .then(({ data }) => {
-        if (!data) return;
-        setActivities({
-          dev: data.find(d => d.agent === 'dev_agent') || null,
-          ceo: data.find(d => d.agent === 'ceo_agent') || null,
-        });
+        if (data) {
+          setKanbanCards(data);
+          cardsRef.current = data;
+        }
       });
   }, []);
 
@@ -411,26 +540,40 @@ const PixelAgents = () => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
+
     let rafId = null;
     let destroyed = false;
     let debugMode = false;
-    let hoverTile = null; // { col, row }
+    let hoverTile = null;
+
+    const TILE_MAP = buildTileMap(LOUNGE_FLOOR);
+
+    const SEATS = {
+      ceo:  { col: 4, row: 6, dir: DIR_UP, room: 'ceo' },
+      dev:  { col: 4, row: 13, dir: DIR_UP, room: 'dev' },
+      meetCeo: { col: 24, row: 4, dir: DIR_LEFT, room: 'meeting' },
+      meetDev: { col: 20, row: 4, dir: DIR_RIGHT, room: 'meeting' },
+    };
+
+    const isFriday = isFridayBrasilia();
 
     (async () => {
-      // Load characters (Dev=char_0, CEO=char_1)
+      setLoading(true);
+
+      // Load characters
       const [charDevImg, charCeoImg] = await Promise.all([
         loadImg('characters/char_0.png'),
         loadImg('characters/char_1.png'),
       ]);
 
-      // Load all floors (0-8)
+      // Load floor sprites (0-8)
       const floorPromises = [];
       for (let i = 0; i <= 8; i++) floorPromises.push(loadImg(`floors/floor_${i}.png`));
       const floorArr = await Promise.all(floorPromises);
       const floorImgs = {};
       floorArr.forEach((img, i) => { floorImgs[i] = img; });
 
-      // Load furniture PNGs
+      // Load furniture sprites
       const furnitureImgs = {};
       const toLoad = [
         ['DESK_FRONT', 'furniture/DESK/DESK_FRONT.png'],
@@ -468,23 +611,11 @@ const PixelAgents = () => {
       toLoad.forEach(([k], i) => { furnitureImgs[k] = loaded[i]; });
 
       if (destroyed) return;
+      setLoading(false);
 
-      // Extract character frames
       const devFrames = extractCharFrames(charDevImg);
       const ceoFrames = extractCharFrames(charCeoImg);
 
-      // ── Seats ──────────────────────────────────
-      const SEATS = {
-        ceo:  { col: 4, row: 5, dir: DIR_UP, room: 'ceo' },
-        dev:  { col: 4, row: 14, dir: DIR_UP, room: 'dev' },
-        // Meeting seats
-        meetCeo: { col: 26, row: 7, dir: DIR_LEFT, room: 'meeting' },
-        meetDev: { col: 22, row: 7, dir: DIR_RIGHT, room: 'meeting' },
-      };
-
-      const isFriday = isFridayBrasilia();
-
-      // Create characters
       function makeChar(frames, seat) {
         const c = tileCenter(seat.col, seat.row);
         return {
@@ -495,52 +626,175 @@ const PixelAgents = () => {
           seat, homeSeat: seat,
           path: [], moveProgress: 0,
           frame: 0, frameTimer: 0,
-          wanderTimer: 4 + Math.random() * 6,
-          wanderCount: 0,
-          seatTimer: 5 + Math.random() * 8,
-          bubbleText: '', bubbleTime: '', bubbleTimer: 0,
+          currentGoal: GOAL_WORK,
+          goalTarget: seat,
+          goalActionTimer: 18 + Math.random() * 15,
+          bubbleText: '', bubbleTimer: 0,
           meetingMode: false,
         };
       }
 
-      const chars = [
-        { key: 'ceo', ch: makeChar(ceoFrames, SEATS.ceo) },
-        { key: 'dev', ch: makeChar(devFrames, SEATS.dev) },
-      ];
-
-      // Set initial bubbles
-      const devAct = activities.dev;
-      const ceoAct = activities.ceo;
-      if (ceoAct) {
-        chars[0].ch.bubbleText = ACTION_SHORT[ceoAct.action] || 'Analisando…';
-        chars[0].ch.bubbleTime = timeAgo(ceoAct.created_at);
-        chars[0].ch.bubbleTimer = 5;
-      }
-      if (devAct) {
-        chars[1].ch.bubbleText = ACTION_SHORT[devAct.action] || 'Trabalhando…';
-        chars[1].ch.bubbleTime = timeAgo(devAct.created_at);
-        chars[1].ch.bubbleTimer = 5;
+      // Initialize character list if not present
+      if (!charsRef.current) {
+        charsRef.current = [
+          { key: 'ceo', ch: makeChar(ceoFrames, SEATS.ceo) },
+          { key: 'dev', ch: makeChar(devFrames, SEATS.dev) },
+        ];
+      } else {
+        charsRef.current[0].ch.frames = ceoFrames;
+        charsRef.current[1].ch.frames = devFrames;
       }
 
-      // Friday meeting schedule
+      const chars = charsRef.current;
+
+      // ─── Friday meeting schedule ───────────────────────────────────────────
       let meetingTriggered = false;
-      let meetingTimer = isFriday ? 8 : -1; // Start meeting after 8s on Fridays
+      let meetingTimer = isFriday ? 12 : -1;
 
-      // ── Get sprite ─────────────────────────────
-      function getSprite(ch) {
-        if (!ch.frames) return null;
-        const dirName = ['down', 'up', 'right', 'left'][ch.dir];
-        const frames = ch.frames[dirName];
-        if (!frames) return null;
-        if (ch.state === ST_TYPE) return frames[3 + (ch.frame % 2)];
-        if (ch.state === ST_WALK) {
-          const cycle = [0, 1, 2, 1];
-          return frames[cycle[ch.frame % 4]];
+      // ─── Goal Decider for NPC Simulator ────────────────────────────────────
+      function chooseNewGoal(charObj) {
+        const ch = charObj.ch;
+        const key = charObj.key;
+        if (ch.meetingMode) return;
+
+        const rand = Math.random();
+        let nextGoal = GOAL_WORK;
+        let target = ch.homeSeat;
+
+        if (key === 'dev') {
+          if (rand < 0.40) {
+            nextGoal = GOAL_WORK;
+            target = SEATS.dev;
+          } else if (rand < 0.60) {
+            nextGoal = GOAL_COFFEE;
+            // Target is a tile in front of the coffee table (row 3), not on it (row 2)
+            target = { col: 15 + Math.floor(Math.random() * 3), row: 3 };
+          } else if (rand < 0.80) {
+            nextGoal = GOAL_REST;
+            const sofas = [{ col: 11, row: 2 }, { col: 11, row: 6 }, { col: 11, row: 10 }, { col: 19, row: 10 }];
+            target = sofas[Math.floor(Math.random() * sofas.length)];
+          } else if (rand < 0.90) {
+            nextGoal = GOAL_PLANT;
+            const plantTargets = [
+              { col: 2, row: 2, dir: DIR_LEFT },    // CEO room plant
+              { col: 11, row: 14, dir: DIR_LEFT },  // Lounge bottom-left plant
+              { col: 24, row: 11, dir: DIR_RIGHT }  // Lounge bottom-right large plant (row 11)
+            ];
+            const choice = plantTargets[Math.floor(Math.random() * plantTargets.length)];
+            target = { col: choice.col, row: choice.row, faceDir: choice.dir };
+          } else {
+            nextGoal = GOAL_WHITEBOARD;
+            target = { col: 22, row: 2 };
+          }
+        } else { // ceo
+          if (rand < 0.35) {
+            nextGoal = GOAL_WORK;
+            target = SEATS.ceo;
+          } else if (rand < 0.55) {
+            nextGoal = GOAL_WHITEBOARD;
+            target = { col: 22, row: 2 };
+          } else if (rand < 0.70) {
+            nextGoal = GOAL_COFFEE;
+            target = { col: 15 + Math.floor(Math.random() * 3), row: 3 };
+          } else if (rand < 0.85) {
+            nextGoal = GOAL_REST;
+            const sofas = [{ col: 11, row: 2 }, { col: 19, row: 10 }];
+            target = sofas[Math.floor(Math.random() * sofas.length)];
+          } else {
+            nextGoal = GOAL_PLANT;
+            const plantTargets = [
+              { col: 2, row: 2, dir: DIR_LEFT },    // CEO Room plant
+              { col: 20, row: 2, dir: DIR_LEFT },   // Meeting Room plant
+              { col: 24, row: 11, dir: DIR_RIGHT }  // Lounge bottom-right large plant (row 11)
+            ];
+            const choice = plantTargets[Math.floor(Math.random() * plantTargets.length)];
+            target = { col: choice.col, row: choice.row, faceDir: choice.dir };
+          }
         }
-        return frames[1]; // idle
+
+        ch.currentGoal = nextGoal;
+        ch.goalTarget = target;
+
+        const unblock = new Set();
+        unblock.add(`${target.col},${target.row}`);
+        const path = findPath(ch.tileCol, ch.tileRow, target.col, target.row, TILE_MAP, unblock);
+        if (path.length > 0) {
+          ch.path = path;
+          ch.moveProgress = 0;
+          ch.state = ST_WALK;
+        } else {
+          ch.state = ST_IDLE;
+          ch.goalActionTimer = 3;
+        }
       }
 
-      // ── Update character ───────────────────────
+      function onArriveAtTarget(charObj) {
+        const ch = charObj.ch;
+        const key = charObj.key;
+        ch.moveProgress = 0;
+        ch.path = [];
+
+        if (ch.currentGoal === GOAL_WORK) {
+          ch.state = ST_TYPE;
+          ch.dir = ch.seat.dir;
+          ch.goalActionTimer = 18 + Math.random() * 15;
+        } else {
+          ch.state = ST_IDLE;
+          if (ch.currentGoal === GOAL_REST) {
+            ch.dir = DIR_DOWN;
+            ch.goalActionTimer = 15 + Math.random() * 15;
+          } else if (ch.currentGoal === GOAL_COFFEE) {
+            ch.dir = DIR_UP; // face the coffee counter
+            ch.goalActionTimer = 10 + Math.random() * 10;
+          } else if (ch.currentGoal === GOAL_PLANT) {
+            ch.dir = ch.goalTarget.faceDir !== undefined ? ch.goalTarget.faceDir : DIR_UP;
+            ch.goalActionTimer = 8 + Math.random() * 10;
+          } else if (ch.currentGoal === GOAL_WHITEBOARD) {
+            ch.dir = DIR_UP;
+            ch.goalActionTimer = 12 + Math.random() * 12;
+          } else if (ch.currentGoal === GOAL_MEETING) {
+            ch.dir = ch.seat.dir;
+            ch.goalActionTimer = 999;
+          }
+        }
+
+        const msg = getNPCBubbleText(key, ch.currentGoal, cardsRef.current);
+        if (msg) {
+          ch.bubbleText = msg;
+          ch.bubbleTimer = 6.5;
+        }
+      }
+
+      function triggerMeeting() {
+        if (meetingActive) return;
+        meetingActive = true;
+        meetingStep = 0;
+        meetingStepTimer = 3.0;
+
+        chars.forEach((charObj, i) => {
+          const ch = charObj.ch;
+          ch.meetingMode = true;
+          ch.currentGoal = GOAL_MEETING;
+          ch.seat = i === 0 ? SEATS.meetCeo : SEATS.meetDev;
+          ch.goalTarget = ch.seat;
+
+          const unblock = new Set();
+          unblock.add(`${ch.seat.col},${ch.seat.row}`);
+          const path = findPath(ch.tileCol, ch.tileRow, ch.seat.col, ch.seat.row, TILE_MAP, unblock);
+          if (path.length > 0) {
+            ch.path = path;
+            ch.moveProgress = 0;
+            ch.state = ST_WALK;
+          } else {
+            ch.state = ST_IDLE;
+            ch.dir = ch.seat.dir;
+          }
+          ch.bubbleText = "Indo alinhar no quadro...";
+          ch.bubbleTimer = 4.5;
+        });
+      }
+
+      // ─── Character state machine updater ───────────────────────────────────
       function updateChar(charObj, dt) {
         const ch = charObj.ch;
         ch.frameTimer += dt;
@@ -551,40 +805,26 @@ const PixelAgents = () => {
             ch.frameTimer -= TYPE_FRAME_DUR;
             ch.frame = (ch.frame + 1) % 2;
           }
-          ch.seatTimer -= dt;
-          if (ch.seatTimer <= 0) {
+          ch.goalActionTimer -= dt;
+          if (ch.goalActionTimer <= 0) {
             ch.state = ST_IDLE;
-            ch.frame = 0; ch.frameTimer = 0;
-            ch.wanderTimer = 2 + Math.random() * 3;
-            ch.wanderCount = 0;
-            ch.dir = DIR_DOWN;
+            ch.goalActionTimer = 3 + Math.random() * 4;
+            ch.currentGoal = 'thinking';
           }
         } else if (ch.state === ST_IDLE) {
           ch.frame = 0;
-          ch.wanderTimer -= dt;
-          if (ch.wanderTimer <= 0) {
-            const wanderLimit = 2 + Math.floor(Math.random() * 2);
-            if (ch.wanderCount >= wanderLimit) {
-              // Return to seat
-              const unblock = new Set();
-              unblock.add(`${ch.seat.col},${ch.seat.row}`);
-              const path = findPath(ch.tileCol, ch.tileRow, ch.seat.col, ch.seat.row, unblock);
-              if (path.length > 0) {
-                ch.path = path; ch.moveProgress = 0;
-                ch.state = ST_WALK; ch.frame = 0; ch.frameTimer = 0;
-                return;
-              }
+          if (ch.currentGoal === GOAL_MEETING) {
+            return;
+          }
+          ch.goalActionTimer -= dt;
+          if (ch.goalActionTimer <= 0) {
+            if (ch.currentGoal === 'thinking') {
+              chooseNewGoal(charObj);
+            } else {
+              ch.state = ST_IDLE;
+              ch.goalActionTimer = 3 + Math.random() * 4;
+              ch.currentGoal = 'thinking';
             }
-            // Wander in current room area or across rooms
-            const allWalkable = getWalkable('all');
-            const target = allWalkable[Math.floor(Math.random() * allWalkable.length)];
-            const path = findPath(ch.tileCol, ch.tileRow, target.col, target.row);
-            if (path.length > 0 && path.length < 25) {
-              ch.path = path; ch.moveProgress = 0;
-              ch.state = ST_WALK; ch.frame = 0; ch.frameTimer = 0;
-              ch.wanderCount++;
-            }
-            ch.wanderTimer = 2 + Math.random() * 4;
           }
         } else if (ch.state === ST_WALK) {
           if (ch.frameTimer >= WALK_FRAME_DUR) {
@@ -594,30 +834,7 @@ const PixelAgents = () => {
           if (ch.path.length === 0) {
             const center = tileCenter(ch.tileCol, ch.tileRow);
             ch.x = center.x; ch.y = center.y;
-            if (ch.tileCol === ch.seat.col && ch.tileRow === ch.seat.row) {
-              ch.state = ST_TYPE;
-              ch.dir = ch.seat.dir;
-              ch.frame = 0; ch.frameTimer = 0;
-              ch.seatTimer = 5 + Math.random() * 10;
-              ch.wanderCount = 0;
-              // Bubble on sit
-              if (ch.meetingMode) {
-                ch.bubbleText = 'Reunião semanal';
-                ch.bubbleTime = '';
-                ch.bubbleTimer = 4;
-              } else {
-                const act = charObj.key === 'ceo' ? ceoAct : devAct;
-                if (act) {
-                  ch.bubbleText = ACTION_SHORT[act.action] || 'Trabalhando…';
-                  ch.bubbleTime = timeAgo(act.created_at);
-                  ch.bubbleTimer = 3;
-                }
-              }
-            } else {
-              ch.state = ST_IDLE;
-              ch.wanderTimer = 2 + Math.random() * 3;
-            }
-            ch.frame = 0; ch.frameTimer = 0;
+            onArriveAtTarget(charObj);
             return;
           }
           const next = ch.path[0];
@@ -636,32 +853,79 @@ const PixelAgents = () => {
         }
       }
 
-      // ── Trigger meeting ────────────────────────
-      function triggerMeeting() {
-        const meetSeats = [SEATS.meetCeo, SEATS.meetDev];
-        chars.forEach((charObj, i) => {
-          const ch = charObj.ch;
-          ch.meetingMode = true;
-          ch.seat = meetSeats[i];
-          const unblock = new Set();
-          unblock.add(`${ch.seat.col},${ch.seat.row}`);
-          const path = findPath(ch.tileCol, ch.tileRow, ch.seat.col, ch.seat.row, unblock);
-          if (path.length > 0) {
-            ch.path = path; ch.moveProgress = 0;
-            ch.state = ST_WALK; ch.frame = 0; ch.frameTimer = 0;
+      // ─── Meeting controller ────────────────────────────────────────────────
+      let meetingActive = false;
+      let meetingStep = 0;
+      let meetingStepTimer = 0;
+
+      function updateMeeting(dt) {
+        if (!meetingActive) return;
+
+        const devArrived = chars[1].ch.tileCol === SEATS.meetDev.col && chars[1].ch.tileRow === SEATS.meetDev.row && chars[1].ch.state !== ST_WALK;
+        const ceoArrived = chars[0].ch.tileCol === SEATS.meetCeo.col && chars[0].ch.tileRow === SEATS.meetCeo.row && chars[0].ch.state !== ST_WALK;
+
+        if (!devArrived || !ceoArrived) {
+          return;
+        }
+
+        meetingStepTimer -= dt;
+        if (meetingStepTimer <= 0) {
+          if (meetingStep < MEETING_STEPS.length) {
+            const step = MEETING_STEPS[meetingStep];
+            const char = chars.find(c => c.key === step.speaker).ch;
+
+            let text = step.text;
+            if (meetingStep === 3 && cardsRef.current.length > 0) {
+              const inProgress = cardsRef.current.filter(c => c.status === 'in_progress');
+              if (inProgress.length > 0) {
+                text = `Estou focado em terminar o card: "${inProgress[0].title}".`;
+              }
+            }
+
+            char.bubbleText = text;
+            char.bubbleTimer = 4.5;
+
+            meetingStep++;
+            meetingStepTimer = 4.8;
+          } else {
+            meetingActive = false;
+            chars.forEach(c => {
+              c.ch.meetingMode = false;
+              c.ch.bubbleText = "Reunião finalizada! Bom trabalho.";
+              c.ch.bubbleTimer = 4.5;
+              c.ch.state = ST_IDLE;
+              c.ch.goalActionTimer = 4 + Math.random() * 3;
+              c.ch.currentGoal = 'thinking';
+            });
           }
-          ch.bubbleText = 'Indo pra reunião…';
-          ch.bubbleTime = '';
-          ch.bubbleTimer = 3;
-        });
+        }
       }
 
-      // ── Pre-render floor ───────────────────────
+      // ─── Pre-render floor ──────────────────────────────────────────────────
       const floorCanvas = document.createElement('canvas');
       floorCanvas.width = W; floorCanvas.height = H;
       const floorCtx = floorCanvas.getContext('2d');
       const wallColor = '#1e2230';
       const wallTrim = '#2a2e42';
+
+      // Temporary canvas for tinting floor tiles
+      const tileTempCanvas = document.createElement('canvas');
+      tileTempCanvas.width = TILE;
+      tileTempCanvas.height = TILE;
+      const tileTempCtx = tileTempCanvas.getContext('2d');
+
+      function drawTintedTile(img, x, y, tintColor) {
+        if (!img) return;
+        tileTempCtx.clearRect(0, 0, TILE, TILE);
+        tileTempCtx.drawImage(img, 0, 0, TILE, TILE);
+        if (tintColor) {
+          tileTempCtx.globalCompositeOperation = 'multiply';
+          tileTempCtx.fillStyle = tintColor;
+          tileTempCtx.fillRect(0, 0, TILE, TILE);
+          tileTempCtx.globalCompositeOperation = 'source-over';
+        }
+        floorCtx.drawImage(tileTempCanvas, x, y);
+      }
 
       for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
@@ -669,24 +933,28 @@ const PixelAgents = () => {
           if (tile < 0) {
             floorCtx.fillStyle = wallColor;
             floorCtx.fillRect(c * TILE, r * TILE, TILE, TILE);
-            // Trim on bottom wall edges
             if (r + 1 < ROWS && TILE_MAP[r + 1]?.[c] >= 0) {
               floorCtx.fillStyle = wallTrim;
               floorCtx.fillRect(c * TILE, r * TILE + TILE - 2, TILE, 2);
             }
           } else {
             const fImg = floorImgs[tile];
-            if (fImg) {
-              floorCtx.drawImage(fImg, c * TILE, r * TILE, TILE, TILE);
-            } else {
-              floorCtx.fillStyle = '#4a4030';
-              floorCtx.fillRect(c * TILE, r * TILE, TILE, TILE);
+            let tint = null;
+            if (tile === 5) {
+              tint = '#b06e5b'; // CEO Room: Terracotta Brick
+            } else if (tile === 3) {
+              tint = '#5e7c91'; // Dev Room: Tech Slate Blue
+            } else if (tile === 8) {
+              tint = '#4e5668'; // Meeting Room: Classic Slate Checkers
+            } else if (tile === LOUNGE_FLOOR) {
+              tint = '#e0984a'; // Lounge Room: Warm Golden-Orange Oakwood
             }
+            drawTintedTile(fImg, c * TILE, r * TILE, tint);
           }
         }
       }
 
-      // ── Resize ─────────────────────────────────
+      // ─── Canvas Resize ─────────────────────────────────────────────────────
       const resize = () => {
         const rect = container.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
@@ -704,7 +972,7 @@ const PixelAgents = () => {
       let lastTime = 0;
       let pcAnimTimer = 0;
 
-      // ── Draw loop ──────────────────────────────
+      // ─── Draw & Update loop ────────────────────────────────────────────────
       const draw = (timestamp) => {
         if (destroyed) return;
         const dt = lastTime ? Math.min((timestamp - lastTime) / 1000, 0.05) : 0.016;
@@ -720,11 +988,15 @@ const PixelAgents = () => {
           }
         }
 
+        updateMeeting(dt);
+        for (const charObj of chars) {
+          updateChar(charObj, dt);
+        }
+
         const dpr = window.devicePixelRatio || 1;
         ctx.setTransform(ZOOM * dpr, 0, 0, ZOOM * dpr, 0, 0);
         ctx.imageSmoothingEnabled = false;
 
-        // Floor
         ctx.drawImage(floorCanvas, 0, 0);
 
         // Room labels
@@ -737,7 +1009,7 @@ const PixelAgents = () => {
         }
         ctx.globalAlpha = 1;
 
-        // ── Build z-sorted drawables ─────────────
+        // Build Z-Sorted Drawables
         const drawables = [];
 
         // Furniture
@@ -777,7 +1049,6 @@ const PixelAgents = () => {
         // Characters
         for (const charObj of chars) {
           const ch = charObj.ch;
-          updateChar(charObj, dt);
           const sprite = getSprite(ch);
           if (!sprite) continue;
           const sittingOff = ch.state === ST_TYPE ? 4 : 0;
@@ -790,58 +1061,117 @@ const PixelAgents = () => {
           });
         }
 
-        // Z-sort and draw
         drawables.sort((a, b) => a.zY - b.zY);
         for (const d of drawables) d.draw();
 
-        // ── Speech bubbles ───────────────────────
+        // Speech bubbles & status labels (rendered in high resolution screen space)
+        ctx.save();
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+
         for (const charObj of chars) {
           const ch = charObj.ch;
           if (ch.bubbleTimer <= 0 || !ch.bubbleText) continue;
+          
           const alpha = Math.min(1, ch.bubbleTimer / 0.5);
           ctx.globalAlpha = alpha;
-          const bx = Math.round(ch.x);
+
+          // Convert coordinates to screen space (multiplied by ZOOM)
+          const bx = ch.x * ZOOM;
           const sOff = ch.state === ST_TYPE ? 4 : 0;
-          const by = Math.round(ch.y + sOff - CHAR_H - 4);
-          ctx.font = '4px monospace';
-          const tw = Math.min(ctx.measureText(ch.bubbleText).width + 6, 70);
-          const bh = ch.bubbleTime ? 12 : 8;
-          const bLeft = bx - tw / 2;
-          ctx.fillStyle = '#22252fee';
-          ctx.fillRect(bLeft, by - bh, tw, bh);
-          ctx.strokeStyle = '#3a3e50';
-          ctx.lineWidth = 0.5;
-          ctx.strokeRect(bLeft, by - bh, tw, bh);
-          ctx.fillStyle = '#22252fee';
-          ctx.fillRect(bx - 1, by, 3, 2);
-          ctx.fillStyle = '#e8e8e8';
-          ctx.font = '4px monospace';
-          ctx.fillText(ch.bubbleText, bLeft + 3, by - bh + 5, tw - 6);
-          if (ch.bubbleTime) {
-            ctx.fillStyle = '#777';
-            ctx.font = '3px monospace';
-            ctx.fillText(ch.bubbleTime, bLeft + 3, by - bh + 10);
+          const by = (ch.y + sOff - CHAR_H - 1) * ZOOM; // Y position right above head
+
+          ctx.font = '500 16.5px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+          const maxBubbleWidth = 260; // maximum width in CSS pixels
+          const lines = wrapText(ctx, ch.bubbleText, maxBubbleWidth);
+
+          let maxLineWidth = 0;
+          for (const line of lines) {
+            const w = ctx.measureText(line).width;
+            if (w > maxLineWidth) maxLineWidth = w;
           }
-          ctx.globalAlpha = 1;
+
+          const paddingX = 16;
+          const paddingY = 12;
+          const tw = maxLineWidth + paddingX * 2;
+          const lineHeight = 22;
+          const bh = lines.length * lineHeight + paddingY * 2 - 4;
+          
+          let bLeft = bx - tw / 2;
+          // Clamp to screen boundaries (with 10px margin)
+          const minLeft = 10;
+          const maxLeft = W * ZOOM - tw - 10;
+          if (bLeft < minLeft) bLeft = minLeft;
+          if (bLeft > maxLeft) bLeft = maxLeft;
+
+          // Clamping bTop to screen boundaries
+          let bTop = by - bh - 8; // 8px for pointer height
+          if (bTop < 10) bTop = 10;
+
+          // Draw the bubble background with shadow
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+          ctx.shadowBlur = 6;
+          ctx.shadowOffsetY = 3;
+
+          ctx.fillStyle = '#1e2230'; // Dark elegant background matching office theme
+          drawBubblePath(ctx, bLeft, bTop, tw, bh, 6, bx, by);
+          ctx.fill();
+
+          // Reset shadow for stroke and text
+          ctx.shadowColor = 'transparent';
+
+          ctx.strokeStyle = '#4a4e60';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          // Draw text
+          ctx.fillStyle = '#f1f5f9';
+          ctx.textBaseline = 'top';
+          lines.forEach((line, index) => {
+            ctx.fillText(line, bLeft + paddingX, bTop + paddingY + lineHeight * index);
+          });
         }
 
-        // ── Character labels ─────────────────────
+        ctx.globalAlpha = 1;
+
+        // Character status labels
         const labels = ['CEO', 'Dev'];
-        const labelColors = ['#a78bfa', '#60a5fa'];
+        const labelColors = ['#c0a2ff', '#7cb6ff']; // Soft nice pastel colors
         chars.forEach((charObj, i) => {
           const ch = charObj.ch;
           const label = labels[i];
-          const lx = Math.round(ch.x);
-          const ly = Math.round(ch.y + (ch.state === ST_TYPE ? 4 : 0) + 4);
-          ctx.font = 'bold 4px monospace';
+          
+          // Position relative to characters feet (bottom of character sprite)
+          const lx = ch.x * ZOOM;
+          const ly = (ch.y + (ch.state === ST_TYPE ? 4 : 0) + 3) * ZOOM;
+          
+          ctx.font = 'bold 13.5px system-ui, -apple-system, sans-serif';
           const tw = ctx.measureText(label).width;
-          ctx.fillStyle = 'rgba(0,0,0,0.5)';
-          ctx.fillRect(lx - tw / 2 - 2, ly - 3, tw + 4, 7);
+          
+          const rw = tw + 10;
+          const rh = 18;
+          const rx = lx - rw / 2;
+          const ry = ly;
+
+          // Capsule background
+          ctx.fillStyle = 'rgba(28, 30, 36, 0.85)';
+          drawRoundedRect(ctx, rx, ry, rw, rh, 5);
+          ctx.fill();
+          
+          // Capsule border
+          ctx.strokeStyle = 'rgba(74, 78, 96, 0.4)';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+
+          // Capsule text
           ctx.fillStyle = labelColors[i];
-          ctx.fillText(label, lx - tw / 2, ly + 1);
+          ctx.textBaseline = 'middle';
+          ctx.fillText(label, lx - tw / 2, ry + rh / 2);
         });
 
-        // ── Music notes in lounge ────────────────
+        ctx.restore();
+
+        // Lounge background music notes effect
         const notePhase = (pcAnimTimer * 0.5) % 1;
         ctx.globalAlpha = 0.3;
         ctx.fillStyle = '#6aaa64';
@@ -852,7 +1182,7 @@ const PixelAgents = () => {
         ctx.fillText('♫', noteX + 10, noteY - 4 + Math.sin(pcAnimTimer * 2) * 2);
         ctx.globalAlpha = 1;
 
-        // ── Debug grid overlay ──────────────────
+        // Debug mode overlays
         if (debugMode) {
           ctx.globalAlpha = 0.15;
           ctx.strokeStyle = '#fff';
@@ -866,13 +1196,11 @@ const PixelAgents = () => {
           ctx.globalAlpha = 0.3;
           ctx.font = '3px monospace';
           ctx.fillStyle = '#fff';
-          // Show coordinates every 2 tiles
           for (let r = 0; r < ROWS; r += 2) {
             for (let c = 0; c < COLS; c += 2) {
               ctx.fillText(`${c},${r}`, c * TILE + 1, r * TILE + 4);
             }
           }
-          // Blocked tiles
           ctx.globalAlpha = 0.2;
           ctx.fillStyle = '#f44';
           for (let r = 0; r < ROWS; r++) {
@@ -882,7 +1210,6 @@ const PixelAgents = () => {
               }
             }
           }
-          // Hovered tile highlight
           if (hoverTile) {
             ctx.globalAlpha = 0.4;
             ctx.fillStyle = '#0ff';
@@ -901,9 +1228,22 @@ const PixelAgents = () => {
         rafId = requestAnimationFrame(draw);
       };
 
+      function getSprite(ch) {
+        if (!ch.frames) return null;
+        const dirName = ['down', 'up', 'right', 'left'][ch.dir];
+        const frames = ch.frames[dirName];
+        if (!frames) return null;
+        if (ch.state === ST_TYPE) return frames[3 + (ch.frame % 2)];
+        if (ch.state === ST_WALK) {
+          const cycle = [0, 1, 2, 1];
+          return frames[cycle[ch.frame % 4]];
+        }
+        return frames[1];
+      }
+
       rafId = requestAnimationFrame(draw);
 
-      // ── Debug mode: double-click toggle ─────
+      // Event Listeners for Debug Tooltips
       const onDblClick = () => { debugMode = !debugMode; };
       const onMouseMove = (e) => {
         if (!debugMode) { hoverTile = null; return; }
@@ -915,6 +1255,7 @@ const PixelAgents = () => {
         hoverTile = { col: Math.floor(mx / TILE), row: Math.floor(my / TILE) };
       };
       const onMouseLeave = () => { hoverTile = null; };
+
       canvas.addEventListener('dblclick', onDblClick);
       canvas.addEventListener('mousemove', onMouseMove);
       canvas.addEventListener('mouseleave', onMouseLeave);
@@ -930,13 +1271,18 @@ const PixelAgents = () => {
     })();
 
     return () => { if (canvas._cleanup) canvas._cleanup(); };
-  }, [activities]);
+  }, []);
 
   return (
-    <div ref={containerRef} className="w-full mb-5 rounded-lg overflow-hidden border"
+    <div ref={containerRef} className="w-full mb-5 rounded-lg overflow-hidden border relative"
       style={{ borderColor: '#2c2f3a' }}>
-      <canvas ref={canvasRef} className="w-full block"
-        style={{ imageRendering: 'pixelated' }} />
+      {loading && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/90 z-20 gap-3">
+          <div className="w-8 h-8 border-2 border-zinc-600 border-t-white rounded-full animate-spin" />
+          <p className="text-zinc-500 text-xs font-mono">Carregando escritório...</p>
+        </div>
+      )}
+      <canvas ref={canvasRef} className="w-full block" style={{ imageRendering: 'pixelated' }} />
     </div>
   );
 };
