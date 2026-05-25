@@ -167,16 +167,6 @@ const App = ({ initialMode, allModes }) => {
 
       <GameFooter />
 
-      {/* Botão flutuante cafezinho */}
-      <a
-        href="/apoie"
-        className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-30 animate-float inline-flex items-center gap-1.5 bg-amber-900/30 hover:bg-amber-900/50 border border-amber-700/30 text-amber-400 text-xs font-semibold px-3 py-2 rounded-full shadow-lg backdrop-blur-sm transition-colors"
-        aria-label="Apoiar o Kinto"
-      >
-        <span>☕</span>
-        <span className="hidden sm:inline">Apoiar</span>
-      </a>
-
       {isGameOver && (
         <GameStatus
           isGameWon={isGameWon}

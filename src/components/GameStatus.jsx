@@ -213,6 +213,16 @@ const GameStatus = ({
           onClick={onClose}
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm"
         >
+          {/* Botão flutuante cafezinho */}
+          <a
+            href="/apoie"
+            className="absolute animate-wander z-10 inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm px-4 py-2.5 rounded-full shadow-xl transition-colors"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="text-lg">☕</span>
+            <span>Me pague um café!</span>
+          </a>
+
           <motion.div
             key="panel"
             initial={{ opacity: 0, y: 40 }}

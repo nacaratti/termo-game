@@ -207,16 +207,27 @@
 }
 
 /* ─── Animações extras ─────────────────────────────────────────────────────── */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
-}
 @keyframes marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
-.animate-float { animation: float 3s ease-in-out infinite; }
+@keyframes floatX {
+  0% { left: 5%; }
+  25% { left: 60%; }
+  50% { left: 30%; }
+  75% { left: 70%; }
+  100% { left: 5%; }
+}
+@keyframes floatY {
+  0% { top: 10%; }
+  33% { top: 65%; }
+  66% { top: 30%; }
+  100% { top: 10%; }
+}
 .animate-marquee { animation: marquee 30s linear infinite; }
+.animate-wander {
+  animation: floatX 8s ease-in-out infinite, floatY 6s ease-in-out infinite;
+}
 
 /* ─── Utilitários temáticos ──────────────────────────────────────────────────── */
 .theme-text-present  { color: var(--color-present); }
