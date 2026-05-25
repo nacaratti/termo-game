@@ -18,6 +18,7 @@ import { getWordOfDay, setWordOfDay, getTodayDateStr } from '@/lib/wordOfDay';
 import { getWordOfDay6, setWordOfDay6 } from '@/lib/wordOfDay6';
 import { supabase } from '@/lib/supabase';
 import { getComments, moderateComment } from '@/lib/comments';
+import { getAllSupporters, moderateSupporter, updateSupporterBadge } from '@/lib/supporters';
 import KanbanBoard from '@/components/admin/KanbanBoard';
 import ActivityLog from '@/components/admin/ActivityLog';
 import UsagePanel from '@/components/admin/UsagePanel';
@@ -867,6 +868,133 @@ const CommentsPanel = () => {
   );
 };
 
+// ─── Apoiadores ───────────────────────────────────────────────────────────────
+const BADGE_OPTIONS = [
+  { id: 'coffee', emoji: '☕', label: 'Café' },
+  { id: 'star',   emoji: '⭐', label: 'Estrela' },
+  { id: 'heart',  emoji: '💜', label: 'Coração' },
+  { id: 'trophy', emoji: '🏆', label: 'Troféu' },
+];
+
+const SupportersPanel = () => {
+  const [supporters, setSupporters] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getAllSupporters(200).then(data => {
+      setSupporters(data);
+      setLoading(false);
+    });
+  }, []);
+
+  const pending = supporters.filter(s => !s.approved);
+  const approved = supporters.filter(s => s.approved);
+
+  return (
+    <div className="space-y-6">
+      <SectionTitle>Apoiadores</SectionTitle>
+
+      {loading ? (
+        <p className="text-zinc-500 text-sm text-center py-8">Carregando…</p>
+      ) : (
+        <>
+          {/* Pendentes */}
+          {pending.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-yellow-500">
+                Pendentes · {pending.length}
+              </p>
+              {pending.map(s => (
+                <Card key={s.id} className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-zinc-300">{s.name}</span>
+                    <span className="text-xs text-zinc-600">
+                      {new Date(s.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                    </span>
+                  </div>
+                  {s.message && <p className="text-sm text-zinc-400 italic">"{s.message}"</p>}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={async () => {
+                        await moderateSupporter(s.id, true);
+                        setSupporters(prev => prev.map(x => x.id === s.id ? { ...x, approved: true } : x));
+                      }}
+                      className="text-xs px-2 py-1 rounded bg-green-900/40 text-green-400 hover:bg-green-900/60 transition-colors"
+                    >
+                      ✓ Aprovar
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await moderateSupporter(s.id, false);
+                        setSupporters(prev => prev.filter(x => x.id !== s.id));
+                      }}
+                      className="text-xs px-2 py-1 rounded bg-red-900/40 text-red-400 hover:bg-red-900/60 transition-colors"
+                    >
+                      ✗ Rejeitar
+                    </button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Aprovados */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-green-600">
+              Aprovados · {approved.length}
+            </p>
+            {approved.length === 0 ? (
+              <p className="text-zinc-600 text-sm text-center py-4">Nenhum apoiador aprovado ainda.</p>
+            ) : (
+              approved.map(s => (
+                <Card key={s.id} className="space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm">{BADGE_OPTIONS.find(b => b.id === s.badge)?.emoji || '☕'}</span>
+                    <span className="text-sm font-semibold text-zinc-300">{s.name}</span>
+                    <span className="text-xs text-zinc-600">
+                      {new Date(s.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                    </span>
+                  </div>
+                  {s.message && <p className="text-sm text-zinc-400 italic">"{s.message}"</p>}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {BADGE_OPTIONS.map(b => (
+                      <button
+                        key={b.id}
+                        onClick={async () => {
+                          await updateSupporterBadge(s.id, b.id);
+                          setSupporters(prev => prev.map(x => x.id === s.id ? { ...x, badge: b.id } : x));
+                        }}
+                        className={`text-xs px-2 py-1 rounded transition-colors ${
+                          s.badge === b.id
+                            ? 'bg-amber-900/40 text-amber-400'
+                            : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'
+                        }`}
+                        title={b.label}
+                      >
+                        {b.emoji}
+                      </button>
+                    ))}
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`Excluir apoiador "${s.name}"?`)) return;
+                        await moderateSupporter(s.id, false);
+                        setSupporters(prev => prev.filter(x => x.id !== s.id));
+                      }}
+                      className="text-xs px-2 py-1 rounded bg-red-900/40 text-red-400 hover:bg-red-900/60 transition-colors ml-auto"
+                    >
+                      ✗ Excluir
+                    </button>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 const tabs = [
   { id: 'wod',     label: 'Palavra · 5',  short: '5 Letras'  },
@@ -878,6 +1006,7 @@ const tabs = [
   { id: 'logs',      label: 'Atividade',    short: 'Atividade' },
   { id: 'comments',  label: 'Comentários',  short: 'Coment.'   },
   { id: 'usage',     label: 'Uso',          short: 'Uso'       },
+  { id: 'supporters', label: 'Apoiadores', short: 'Apoio'     },
 ];
 
 const Dashboard = ({ onLogout }) => {
@@ -948,6 +1077,7 @@ const Dashboard = ({ onLogout }) => {
         {activeTab === 'logs'      && <ActivityLog />}
         {activeTab === 'comments'  && <CommentsPanel />}
         {activeTab === 'usage'     && <UsagePanel />}
+        {activeTab === 'supporters' && <SupportersPanel />}
       </main>
 
       {/* Navegação inferior — apenas mobile */}

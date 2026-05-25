@@ -286,9 +286,9 @@ const GameStatus = ({
             {/* Donation CTA */}
             <a
               href="/apoie"
-              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors text-center block"
+              className="text-xs text-amber-500/70 hover:text-amber-400 transition-colors text-center block"
             >
-              Gostou? Apoie o projeto ♥
+              Gostou? Me pague um cafezinho ☕
             </a>
 
             {/* Other modes */}

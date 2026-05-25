@@ -7,9 +7,10 @@ const GameFooter = () => (
     </p>
     <a
       href="/apoie"
-      className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+      className="inline-flex items-center gap-1 text-xs text-amber-500/70 hover:text-amber-400 border border-amber-900/30 bg-amber-900/10 hover:bg-amber-900/20 rounded-full px-2.5 py-0.5 transition-colors"
     >
-      Apoiar ♥
+      <span>☕</span>
+      <span>Me pague um cafezinho</span>
     </a>
     <a
       href="/changelog"
