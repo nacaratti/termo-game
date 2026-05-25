@@ -2,8 +2,21 @@ import React from 'react';
 import { keyboardRows } from '@/config/constants';
 import { getKeyboardKeyColor } from '@/lib/gameLogic';
 
+const KEY_STATUS_SUFFIX = {
+  correct: ', correta',
+  present: ', presente na palavra',
+  absent: ', não está na palavra',
+};
+
+const getKeyAriaLabel = (key, usedLetters) => {
+  if (key === 'BACKSPACE') return 'Apagar última letra';
+  if (key === 'ENTER') return 'Enviar tentativa';
+  const status = usedLetters[key];
+  return `Letra ${key}${KEY_STATUS_SUFFIX[status] ?? ''}`;
+};
+
 const Keyboard = ({ onKeyPress, usedLetters, isGameOver }) => (
-  <div className="w-full px-1 mt-4" aria-label="Teclado virtual">
+  <div className="w-full px-1 mt-4" role="group" aria-label="Teclado virtual">
     {keyboardRows.map((row, rowIndex) => (
       <div key={rowIndex} className="flex justify-center gap-1 mb-1.5">
         {row.map((key) => {
@@ -16,7 +29,7 @@ const Keyboard = ({ onKeyPress, usedLetters, isGameOver }) => (
               key={key}
               onClick={() => onKeyPress(key)}
               disabled={isGameOver}
-              aria-label={key === 'BACKSPACE' ? 'Apagar' : key === 'ENTER' ? 'Enviar' : `Tecla ${key}`}
+              aria-label={getKeyAriaLabel(key, usedLetters)}
               className={`keyboard-key ${colorClass} ${
                 isSpecial
                   ? 'flex-[1.6] text-xs font-bold'
