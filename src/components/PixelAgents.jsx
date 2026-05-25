@@ -111,23 +111,23 @@ function buildTileMap() {
       if (r === 0 || r === ROWS - 1 || c === 0 || c === COLS - 1) {
         row.push(-1); continue;
       }
-      // CEO room: cols 1-8, rows 1-8, floor 1 (light)
+      // CEO room: cols 1-8, rows 1-8, floor 5 (brick)
       if (r >= 1 && r <= 8 && c >= 1 && c <= 8) {
-        row.push(1); continue;
+        row.push(5); continue;
       }
-      // Dev room: cols 1-8, rows 10-18, floor 4 (tile)
+      // Dev room: cols 1-8, rows 10-18, floor 3 (tile grid)
       if (r >= 10 && r <= 18 && c >= 1 && c <= 8) {
-        row.push(4); continue;
+        row.push(3); continue;
       }
-      // Meeting room: cols 21-28, rows 1-8, floor 4 (tile)
+      // Meeting room: cols 21-28, rows 1-8, floor 8 (dark checker)
       if (r >= 1 && r <= 8 && c >= 21 && c <= 28) {
-        row.push(4); continue;
+        row.push(8); continue;
       }
       // Vertical wall col 9: separates CEO/Dev from Lounge
       if (c === 9) {
         // Doors: CEO→Lounge (rows 4-5), Dev→Lounge (rows 13-14)
         if ((r >= 4 && r <= 5) || (r >= 13 && r <= 14)) {
-          row.push(7); continue; // door = lounge floor
+          row.push(6); continue; // door = lounge floor
         }
         row.push(-1); continue;
       }
@@ -138,7 +138,7 @@ function buildTileMap() {
       // Meeting left wall: col 20, rows 1-8
       if (c === 20 && r >= 1 && r <= 8) {
         // Door at rows 4-5
-        if (r >= 4 && r <= 5) { row.push(7); continue; }
+        if (r >= 4 && r <= 5) { row.push(6); continue; }
         row.push(-1); continue;
       }
       // Meeting bottom wall: row 9, cols 20-28
@@ -148,7 +148,7 @@ function buildTileMap() {
       // Lounge L-shape: cols 10-19 rows 1-18 + cols 20-28 rows 10-18
       if ((c >= 10 && c <= 19 && r >= 1 && r <= 18) ||
           (c >= 20 && c <= 28 && r >= 10 && r <= 18)) {
-        row.push(7); continue; // wood floor
+        row.push(6); continue; // lounge floor (brick variant)
       }
       // Everything else is wall
       row.push(-1);
@@ -188,60 +188,92 @@ const DIMS = {
   POT:             { w: 16, h: 16, fpW: 1, fpH: 1, bgTiles: 0 },
   WOODEN_CHAIR_SIDE: { w: 16, h: 32, fpW: 1, fpH: 2, bgTiles: 0 },
   CUSHIONED_BENCH: { w: 16, h: 16, fpW: 1, fpH: 1, bgTiles: 0 },
+  SMALL_TABLE_FRONT: { w: 32, h: 32, fpW: 2, fpH: 2, bgTiles: 1 },
+  BIN:             { w: 16, h: 16, fpW: 1, fpH: 1, bgTiles: 0 },
+  SOFA_BACK:       { w: 32, h: 16, fpW: 2, fpH: 1, bgTiles: 0 },
 };
 
 const FURNITURE = [
   // ── CEO Office (cols 1-8, rows 1-8) ──
-  { key: 'DESK_FRONT',  col: 3, row: 3 },
-  { key: 'PC_FRONT',    col: 4, row: 3 },
-  { key: 'CHAIR_BACK',  col: 4, row: 5 },
-  { key: 'LARGE_PAINTING', col: 2, row: 0 },
-  { key: 'BOOKSHELF',   col: 6, row: 0 },
-  { key: 'PLANT',       col: 1, row: 1 },
-  { key: 'COFFEE',      col: 8, row: 7 },
+  { key: 'DESK_FRONT',  col: 3, row: 3 },   // desk cols 3-5, rows 3-4
+  { key: 'PC_FRONT',    col: 4, row: 3 },    // PC on desk
+  { key: 'CHAIR_BACK',  col: 4, row: 5 },    // chair behind desk
+  { key: 'LARGE_PAINTING', col: 2, row: 0 }, // painting on top wall
+  { key: 'BOOKSHELF',   col: 6, row: 0 },    // bookshelf on top wall
+  { key: 'PLANT',       col: 1, row: 1 },    // plant in top-left corner
+  { key: 'SMALL_TABLE_FRONT', col: 7, row: 7 }, // side table in corner
+  { key: 'COFFEE',      col: 7, row: 7 },    // coffee ON the table
+  { key: 'BIN',         col: 1, row: 7 },    // bin in bottom-left corner
 
   // ── Meeting Room (cols 21-28, rows 1-8) ──
+  // TABLE_FRONT is 3×4 tiles → cols 23-25, rows 5-8 (bgTiles=1 so visual from row 4)
   { key: 'TABLE_FRONT', col: 23, row: 5 },
-  { key: 'WHITEBOARD',  col: 23, row: 0 },
+  { key: 'WHITEBOARD',  col: 24, row: 0 },   // whiteboard on top wall
+  // Left chairs beside table (col 22, aligned with table rows 6 and 8)
   { key: 'WOODEN_CHAIR_SIDE', col: 22, row: 6 },
   { key: 'WOODEN_CHAIR_SIDE', col: 22, row: 8 },
+  // Right chairs beside table (col 26, aligned with table rows 6 and 8)
   { key: 'CHAIR_SIDE',  col: 26, row: 6, mirror: true },
   { key: 'CHAIR_SIDE',  col: 26, row: 8, mirror: true },
-  { key: 'CLOCK',       col: 28, row: 0 },
-  { key: 'PLANT',       col: 21, row: 1 },
+  { key: 'CLOCK',       col: 28, row: 0 },   // clock on top wall, right corner
+  { key: 'PLANT',       col: 21, row: 1 },   // plant in top-left corner of room
 
   // ── Dev Room (cols 1-8, rows 10-18) ──
-  { key: 'DESK_FRONT',  col: 3, row: 12 },
-  { key: 'PC_FRONT',    col: 4, row: 12 },
-  { key: 'CHAIR_BACK',  col: 4, row: 14 },
-  { key: 'DOUBLE_BOOKSHELF', col: 1, row: 9 },
-  { key: 'DOUBLE_BOOKSHELF', col: 4, row: 9 },
-  { key: 'CACTUS',      col: 7, row: 10 },
-  { key: 'SMALL_PAINTING_2', col: 6, row: 9 },
+  { key: 'DESK_FRONT',  col: 3, row: 12 },   // desk cols 3-5, rows 12-13
+  { key: 'PC_FRONT',    col: 4, row: 12 },    // PC on desk
+  { key: 'CHAIR_BACK',  col: 4, row: 14 },    // chair behind desk
+  { key: 'DOUBLE_BOOKSHELF', col: 1, row: 9 }, // bookshelf on top wall
+  { key: 'DOUBLE_BOOKSHELF', col: 4, row: 9 }, // bookshelf on top wall
+  { key: 'CACTUS',      col: 8, row: 10 },    // cactus in corner, against right wall
+  { key: 'SMALL_PAINTING_2', col: 7, row: 9 }, // painting on top wall
+  { key: 'BIN',         col: 1, row: 17 },    // bin in bottom-left corner
 
-  // ── Lounge L-shape (cols 10-28, rows 1-18 minus meeting) ──
-  // Sofa area (left strip, against top wall)
-  { key: 'SOFA_FRONT',  col: 11, row: 2 },
-  { key: 'COFFEE_TABLE', col: 13, row: 2 },
-  { key: 'SOFA_FRONT',  col: 11, row: 6 },
-  // Coffee station (wide area, top-right corner near meeting)
-  { key: 'COFFEE',      col: 17, row: 1 },
-  { key: 'COFFEE',      col: 18, row: 1 },
-  { key: 'POT',         col: 16, row: 1 },
-  // Seating area (wide bottom section)
-  { key: 'CUSHIONED_BENCH', col: 22, row: 14 },
-  { key: 'CUSHIONED_BENCH', col: 23, row: 14 },
-  { key: 'SOFA_FRONT',  col: 22, row: 17 },
-  { key: 'COFFEE_TABLE', col: 24, row: 15 },
-  // Plants and decor
-  { key: 'LARGE_PLANT', col: 27, row: 13 },
-  { key: 'PLANT_2',     col: 10, row: 1 },
-  { key: 'PLANT_2',     col: 19, row: 17 },
-  { key: 'PLANT',       col: 10, row: 8 },
-  { key: 'HANGING_PLANT', col: 15, row: 9 },
-  { key: 'HANGING_PLANT', col: 10, row: 9 },
-  { key: 'LARGE_PAINTING', col: 13, row: 9 },
-  { key: 'SMALL_PAINTING', col: 12, row: 0 },
+  // ══════════════════════════════════════════════════════════════
+  // Lounge L-shape (cols 10-19 rows 1-18 + cols 20-28 rows 10-18)
+  // ══════════════════════════════════════════════════════════════
+
+  // ── Upper lounge strip (cols 10-19, rows 1-8) ──
+  // Sofa seating area 1: against left wall (col 10)
+  { key: 'SOFA_FRONT',  col: 11, row: 1 },   // sofa against top wall
+  { key: 'COFFEE_TABLE', col: 11, row: 3 },   // table in front of sofa
+  { key: 'SOFA_FRONT',  col: 11, row: 5 },   // second sofa facing table
+
+  // Coffee station against top wall (row 1)
+  { key: 'SMALL_TABLE_FRONT', col: 16, row: 1 }, // support table on top wall
+  { key: 'COFFEE',      col: 16, row: 1 },    // coffee ON table
+  { key: 'COFFEE',      col: 17, row: 1 },    // second coffee ON table
+  { key: 'POT',         col: 18, row: 1 },    // pot next to coffee
+
+  // Decor on walls (upper strip)
+  { key: 'SMALL_PAINTING', col: 14, row: 0 }, // painting on top wall
+  { key: 'PLANT_2',     col: 10, row: 1 },    // plant in corner against left wall
+
+  // ── Middle transition strip (cols 10-19, rows 9-10) ──
+  { key: 'HANGING_PLANT', col: 10, row: 9 },  // on horizontal wall
+  { key: 'HANGING_PLANT', col: 14, row: 9 },  // on horizontal wall
+  { key: 'LARGE_PAINTING', col: 17, row: 9 }, // painting on horizontal wall
+
+  // ── Lower lounge strip (cols 10-19, rows 11-18) ──
+  { key: 'SOFA_FRONT',  col: 11, row: 11 },   // sofa against wall area
+  { key: 'SMALL_TABLE_FRONT', col: 13, row: 11 }, // side table
+  { key: 'PLANT',       col: 10, row: 17 },    // plant in bottom-left corner
+
+  // ── Wide lounge area (cols 20-28, rows 10-18) ──
+  // Seating cluster: sofas facing each other with coffee table
+  { key: 'SOFA_FRONT',  col: 21, row: 12 },   // sofa top
+  { key: 'COFFEE_TABLE', col: 21, row: 14 },   // coffee table between sofas
+  { key: 'SOFA_FRONT',  col: 21, row: 16 },   // sofa bottom
+
+  // Second seating area along right wall
+  { key: 'CUSHIONED_BENCH', col: 27, row: 13 }, // bench against right wall
+  { key: 'CUSHIONED_BENCH', col: 28, row: 13 }, // bench against right wall
+  { key: 'SMALL_TABLE_FRONT', col: 27, row: 15 }, // table near benches
+  { key: 'COFFEE',      col: 27, row: 15 },    // coffee ON table
+
+  // Plants in corners (not middle!)
+  { key: 'LARGE_PLANT', col: 27, row: 16 },   // plant in bottom-right corner
+  { key: 'PLANT_2',     col: 20, row: 17 },   // plant in bottom-left of wide area
+  { key: 'SMALL_PAINTING', col: 24, row: 9 }, // painting on top wall of wide area
 ];
 
 // ─── Blocked tiles ──────────────────────────────────────────────────────────
@@ -251,21 +283,24 @@ function blockRect(c, r, w, h) {
     for (let dc = 0; dc < w; dc++)
       BLOCKED.add(`${c + dc},${r + dr}`);
 }
-// CEO desk+chair area
-blockRect(3, 3, 3, 2); blockRect(4, 5, 1, 1);
-// Meeting table + chairs
-blockRect(23, 5, 3, 4); blockRect(22, 6, 1, 2); blockRect(22, 8, 1, 1); blockRect(26, 6, 1, 2); blockRect(26, 8, 1, 1);
+// CEO desk+chair+table
+blockRect(3, 3, 3, 2); blockRect(4, 5, 1, 1); blockRect(7, 7, 2, 1);
+// Meeting table + chairs (table cols 23-25 rows 5-8, chairs at 22 & 26)
+blockRect(23, 5, 3, 4); blockRect(22, 5, 1, 1); blockRect(22, 7, 1, 1); blockRect(26, 5, 1, 1); blockRect(26, 7, 1, 1);
 // Dev desk+chair
 blockRect(3, 12, 3, 2); blockRect(4, 14, 1, 1);
-// Bookshelves (wall row between CEO/Dev)
+// Bookshelves (on wall row 9)
 blockRect(1, 9, 2, 2); blockRect(4, 9, 2, 2);
-// Lounge sofas + tables
-blockRect(11, 2, 2, 1); blockRect(13, 2, 2, 2); blockRect(11, 6, 2, 1);
-blockRect(22, 14, 2, 1); blockRect(22, 17, 2, 1); blockRect(24, 15, 2, 2);
-// Large plant
-blockRect(27, 14, 2, 2);
-// Coffee station
+// Upper lounge: sofas + coffee table + coffee station
+blockRect(11, 1, 2, 1); blockRect(11, 3, 2, 2); blockRect(11, 5, 2, 1);
 blockRect(16, 1, 3, 1);
+// Lower lounge strip: sofa + table
+blockRect(11, 11, 2, 1); blockRect(13, 11, 2, 1);
+// Wide lounge: sofa cluster + benches + table
+blockRect(21, 12, 2, 1); blockRect(21, 14, 2, 2); blockRect(21, 16, 2, 1);
+blockRect(27, 13, 2, 1); blockRect(27, 15, 2, 1);
+// Large plant (corner)
+blockRect(27, 17, 2, 2);
 
 // Walkable tiles
 const WALKABLE = {};
@@ -388,13 +423,12 @@ const PixelAgents = () => {
         loadImg('characters/char_1.png'),
       ]);
 
-      // Load floors
-      const [floor7, floor1, floor4] = await Promise.all([
-        loadImg('floors/floor_7.png'),
-        loadImg('floors/floor_1.png'),
-        loadImg('floors/floor_4.png'),
-      ]);
-      const floorImgs = { 7: floor7, 1: floor1, 4: floor4 };
+      // Load all floors (0-8)
+      const floorPromises = [];
+      for (let i = 0; i <= 8; i++) floorPromises.push(loadImg(`floors/floor_${i}.png`));
+      const floorArr = await Promise.all(floorPromises);
+      const floorImgs = {};
+      floorArr.forEach((img, i) => { floorImgs[i] = img; });
 
       // Load furniture PNGs
       const furnitureImgs = {};
@@ -426,6 +460,9 @@ const PixelAgents = () => {
         ['POT', 'furniture/POT/POT.png'],
         ['WOODEN_CHAIR_SIDE', 'furniture/WOODEN_CHAIR/WOODEN_CHAIR_SIDE.png'],
         ['CUSHIONED_BENCH', 'furniture/CUSHIONED_BENCH/CUSHIONED_BENCH.png'],
+        ['SMALL_TABLE_FRONT', 'furniture/SMALL_TABLE/SMALL_TABLE_FRONT.png'],
+        ['BIN', 'furniture/BIN/BIN.png'],
+        ['SOFA_BACK', 'furniture/SOFA/SOFA_BACK.png'],
       ];
       const loaded = await Promise.all(toLoad.map(([,p]) => loadImg(p)));
       toLoad.forEach(([k], i) => { furnitureImgs[k] = loaded[i]; });
