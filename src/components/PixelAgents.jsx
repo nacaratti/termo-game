@@ -92,6 +92,19 @@ function drawBubblePath(ctx, x, y, w, h, radius, px, py) {
   ctx.closePath();
 }
 
+// ─── Check if today is Friday in Brasília Timezone ────────────────────────────
+function isFridayBrasilia() {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Sao_Paulo',
+      weekday: 'long'
+    });
+    return formatter.format(new Date()) === 'Friday';
+  } catch (e) {
+    return new Date().getDay() === 5;
+  }
+}
+
 // ─── Dialog Generation from Kanban Cards ─────────────────────────────────────
 function getNPCBubbleText(agentKey, goal, cards) {
   const inProgress = cards.filter(c => c.status === 'in_progress');
@@ -482,23 +495,107 @@ function tileCenter(c, r) {
   return { x: c * TILE + TILE / 2, y: r * TILE + TILE / 2 };
 }
 
-// Friday meeting checker
-function isFridayBrasilia() {
-  const now = new Date();
-  const brt = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
-  return brt.getDay() === 5;
-}
+// Dynamic dialogue generator from Kanban cards
+function generateDynamicMeetingDialog(cards) {
+  const todo = (cards || []).filter(c => c.status === 'todo' || c.status === 'backlog');
+  const inProgress = (cards || []).filter(c => c.status === 'in_progress');
+  
+  const randEl = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const steps = [];
 
-// Dialogue Sequence
-const MEETING_STEPS = [
-  { speaker: 'ceo', text: "Olá! Vamos iniciar nosso alinhamento semanal?" },
-  { speaker: 'dev', text: "Opa! Vamos lá. O que temos planejado?" },
-  { speaker: 'ceo', text: "Nosso foco principal continua sendo o roadmap estratégico." },
-  { speaker: 'dev', text: "Perfeito. Estou de olho nos cards ativos do Kanban." },
-  { speaker: 'ceo', text: "Isso. Todo avanço nos aproxima da nossa meta de rentabilidade!" },
-  { speaker: 'dev', text: "Com certeza, vou continuar implementando e escrevendo testes." },
-  { speaker: 'ceo', text: "Excelente progresso. Reunião encerrada, bom trabalho!" },
-];
+  // Step 1: Greeting
+  steps.push({
+    speaker: 'ceo',
+    text: randEl([
+      "Olá! Vamos fazer um alinhamento rápido sobre as tarefas?",
+      "Oi! Tem um tempinho para passar os cards do Kanban?",
+      "Olá! Vamos alinhar o progresso das demandas?"
+    ])
+  });
+
+  steps.push({
+    speaker: 'dev',
+    text: randEl([
+      "Opa! Vamos sim. O que temos pendente?",
+      "Claro! Vamos dar uma olhada no quadro.",
+      "Com certeza! Vamos repassar o andamento."
+    ])
+  });
+
+  // Step 2: Discuss In Progress card (if any)
+  if (inProgress.length > 0) {
+    const c = randEl(inProgress);
+    steps.push({
+      speaker: 'ceo',
+      text: randEl([
+        `Como está o andamento de "${c.title}"?`,
+        `Estou acompanhando o card "${c.title}". Algum impedimento?`,
+        `Consegue finalizar "${c.title}" hoje?`
+      ])
+    });
+
+    steps.push({
+      speaker: 'dev',
+      text: randEl([
+        `Estou focado em terminar o card: "${c.title}". Quase lá!`,
+        `Sem impedimentos em "${c.title}", logo mais entra em code review.`,
+        `Tive alguns desafios em "${c.title}", mas já estou resolvendo.`
+      ])
+    });
+  } else {
+    steps.push({
+      speaker: 'ceo',
+      text: "Notei que não temos nenhum card marcado como 'Em Andamento' no momento."
+    });
+    steps.push({
+      speaker: 'dev',
+      text: "Verdade, vou puxar a próxima tarefa do backlog agora mesmo."
+    });
+  }
+
+  // Step 3: Discuss Todo/Backlog card (if any)
+  if (todo.length > 0) {
+    const c = randEl(todo);
+    steps.push({
+      speaker: 'ceo',
+      text: randEl([
+        `E sobre "${c.title}"? É uma prioridade alta para o projeto.`,
+        `Temos também "${c.title}" no backlog. Podemos focar nele a seguir?`,
+        `Não se esqueça de "${c.title}", é bem importante para a entrega.`
+      ])
+    });
+
+    steps.push({
+      speaker: 'dev',
+      text: randEl([
+        `Certo! Assim que liberar o card atual, vou pegar "${c.title}".`,
+        `Entendido, vou iniciar "${c.title}" na sequência.`,
+        `Vou analisar os requisitos de "${c.title}" hoje à tarde.`
+      ])
+    });
+  }
+
+  // Step 4: Closing
+  steps.push({
+    speaker: 'ceo',
+    text: randEl([
+      "Excelente! Bom trabalho. Vamos manter o foco.",
+      "Perfeito, qualquer dúvida me avisa no chat.",
+      "Ótimo alinhamento! Reunião encerrada."
+    ])
+  });
+
+  steps.push({
+    speaker: 'dev',
+    text: randEl([
+      "Valeu! Vou voltar para o código.",
+      "Show! Qualquer novidade eu aviso.",
+      "Beleza, bom trabalho para nós!"
+    ])
+  });
+
+  return steps;
+}
 
 const ROOM_LABELS = [
   { text: 'CEO', x: 4.5, y: 2.5, color: '#a78bfa' },
@@ -554,8 +651,6 @@ const PixelAgents = () => {
       meetCeo: { col: 24, row: 4, dir: DIR_LEFT, room: 'meeting' },
       meetDev: { col: 20, row: 4, dir: DIR_RIGHT, room: 'meeting' },
     };
-
-    const isFriday = isFridayBrasilia();
 
     (async () => {
       setLoading(true);
@@ -647,9 +742,13 @@ const PixelAgents = () => {
 
       const chars = charsRef.current;
 
-      // ─── Friday meeting schedule ───────────────────────────────────────────
-      let meetingTriggered = false;
-      let meetingTimer = isFriday ? 12 : -1;
+      const isFriday = isFridayBrasilia();
+
+      // ─── Meeting schedule ──────────────────────────────────────────────────
+      let activeMeetingSteps = [];
+      let meetingTimer = isFriday
+        ? 25 + Math.random() * 20        // Friday: 25-45s
+        : 240 + Math.random() * 120;     // Other days: 4-6 minutes
 
       // ─── Goal Decider for NPC Simulator ────────────────────────────────────
       function chooseNewGoal(charObj) {
@@ -662,18 +761,18 @@ const PixelAgents = () => {
         let target = ch.homeSeat;
 
         if (key === 'dev') {
-          if (rand < 0.40) {
+          if (rand < 0.45) {
             nextGoal = GOAL_WORK;
             target = SEATS.dev;
-          } else if (rand < 0.60) {
+          } else if (rand < 0.65) {
             nextGoal = GOAL_COFFEE;
             // Target is a tile in front of the coffee table (row 3), not on it (row 2)
             target = { col: 15 + Math.floor(Math.random() * 3), row: 3 };
-          } else if (rand < 0.80) {
+          } else if (rand < 0.85) {
             nextGoal = GOAL_REST;
             const sofas = [{ col: 11, row: 2 }, { col: 11, row: 6 }, { col: 11, row: 10 }, { col: 19, row: 10 }];
             target = sofas[Math.floor(Math.random() * sofas.length)];
-          } else if (rand < 0.90) {
+          } else {
             nextGoal = GOAL_PLANT;
             const plantTargets = [
               { col: 2, row: 2, dir: DIR_LEFT },    // CEO room plant
@@ -682,18 +781,12 @@ const PixelAgents = () => {
             ];
             const choice = plantTargets[Math.floor(Math.random() * plantTargets.length)];
             target = { col: choice.col, row: choice.row, faceDir: choice.dir };
-          } else {
-            nextGoal = GOAL_WHITEBOARD;
-            target = { col: 22, row: 2 };
           }
         } else { // ceo
-          if (rand < 0.35) {
+          if (rand < 0.50) {
             nextGoal = GOAL_WORK;
             target = SEATS.ceo;
-          } else if (rand < 0.55) {
-            nextGoal = GOAL_WHITEBOARD;
-            target = { col: 22, row: 2 };
-          } else if (rand < 0.70) {
+          } else if (rand < 0.65) {
             nextGoal = GOAL_COFFEE;
             target = { col: 15 + Math.floor(Math.random() * 3), row: 3 };
           } else if (rand < 0.85) {
@@ -704,7 +797,6 @@ const PixelAgents = () => {
             nextGoal = GOAL_PLANT;
             const plantTargets = [
               { col: 2, row: 2, dir: DIR_LEFT },    // CEO Room plant
-              { col: 20, row: 2, dir: DIR_LEFT },   // Meeting Room plant
               { col: 24, row: 11, dir: DIR_RIGHT }  // Lounge bottom-right large plant (row 11)
             ];
             const choice = plantTargets[Math.floor(Math.random() * plantTargets.length)];
@@ -770,6 +862,8 @@ const PixelAgents = () => {
         meetingActive = true;
         meetingStep = 0;
         meetingStepTimer = 3.0;
+
+        activeMeetingSteps = generateDynamicMeetingDialog(cardsRef.current);
 
         chars.forEach((charObj, i) => {
           const ch = charObj.ch;
@@ -870,23 +964,15 @@ const PixelAgents = () => {
 
         meetingStepTimer -= dt;
         if (meetingStepTimer <= 0) {
-          if (meetingStep < MEETING_STEPS.length) {
-            const step = MEETING_STEPS[meetingStep];
+          if (meetingStep < activeMeetingSteps.length) {
+            const step = activeMeetingSteps[meetingStep];
             const char = chars.find(c => c.key === step.speaker).ch;
 
-            let text = step.text;
-            if (meetingStep === 3 && cardsRef.current.length > 0) {
-              const inProgress = cardsRef.current.filter(c => c.status === 'in_progress');
-              if (inProgress.length > 0) {
-                text = `Estou focado em terminar o card: "${inProgress[0].title}".`;
-              }
-            }
-
-            char.bubbleText = text;
-            char.bubbleTimer = 4.5;
+            char.bubbleText = step.text;
+            char.bubbleTimer = 6.0;
 
             meetingStep++;
-            meetingStepTimer = 4.8;
+            meetingStepTimer = 6.3;
           } else {
             meetingActive = false;
             chars.forEach(c => {
@@ -895,6 +981,126 @@ const PixelAgents = () => {
               c.ch.bubbleTimer = 4.5;
               c.ch.state = ST_IDLE;
               c.ch.goalActionTimer = 4 + Math.random() * 3;
+              c.ch.currentGoal = 'thinking';
+            });
+            // Reset meeting timer for the next sync meeting
+            meetingTimer = isFriday
+              ? 90 + Math.random() * 60         // Friday: 1.5 to 2.5 minutes
+              : 600 + Math.random() * 240;      // Other days: 10 to 14 minutes
+          }
+        }
+      }
+
+      // ─── Lounge Spontaneous Chat Controller ────────────────────────────────
+      let loungeChatActive = false;
+      let loungeChatSteps = [];
+      let loungeChatStep = 0;
+      let loungeChatStepTimer = 0;
+      let loungeChatCooldown = 30; // initial cooldown of 30 seconds
+
+      function triggerLoungeChat(c1, c2) {
+        if (loungeChatActive || meetingActive) return;
+
+        const cards = cardsRef.current || [];
+        const inProgress = cards.filter(c => c.status === 'in_progress');
+        const done = cards.filter(c => c.status === 'done');
+        const randEl = (arr) => arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : null;
+
+        const dialogues = [];
+        const type = Math.random();
+
+        if (type < 0.35 && inProgress.length > 0) {
+          const c = randEl(inProgress);
+          dialogues.push({ speaker: 'ceo', text: `Oi! Vi que você está focado em "${c.title}". Como vai isso?` });
+          dialogues.push({ speaker: 'dev', text: `Oi! Está evoluindo bem. Estou finalizando os últimos ajustes.` });
+          dialogues.push({ speaker: 'ceo', text: `Excelente, bom trabalho!` });
+        } else if (type < 0.60 && done.length > 0) {
+          const c = randEl(done);
+          dialogues.push({ speaker: 'ceo', text: `Valeu por entregar "${c.title}"! Ficou ótimo.` });
+          dialogues.push({ speaker: 'dev', text: `De nada! Foi bem gratificante resolver os desafios dele.` });
+          dialogues.push({ speaker: 'ceo', text: `Ficou show. Ajuda demais na nossa meta.` });
+        } else if (Math.random() < 0.5) {
+          dialogues.push({ speaker: 'dev', text: `Dando uma pausa rápida no Lounge para esticar as pernas.` });
+          dialogues.push({ speaker: 'ceo', text: `Isso aí, descansar um pouco limpa a mente para codar.` });
+          dialogues.push({ speaker: 'dev', text: `Com certeza. Mais um gole de café e volto pro terminal!` });
+        } else {
+          dialogues.push({ speaker: 'ceo', text: `Tudo certo por aqui na área de convivência?` });
+          dialogues.push({ speaker: 'dev', text: `Tudo ótimo! O café está no ponto e o ambiente bem tranquilo.` });
+          dialogues.push({ speaker: 'ceo', text: `Muito bom, aproveite a pausa!` });
+        }
+
+        loungeChatActive = true;
+        loungeChatSteps = dialogues;
+        loungeChatStep = 0;
+        loungeChatStepTimer = 0.1; // start immediately
+
+        // Snap to tile centers before facing each other
+        const snap1 = tileCenter(c1.tileCol, c1.tileRow);
+        c1.x = snap1.x; c1.y = snap1.y;
+        const snap2 = tileCenter(c2.tileCol, c2.tileRow);
+        c2.x = snap2.x; c2.y = snap2.y;
+
+        // Make characters face each other
+        const dx = c2.x - c1.x;
+        const dy = c2.y - c1.y;
+        if (Math.abs(dx) > Math.abs(dy)) {
+          c1.dir = dx > 0 ? DIR_RIGHT : DIR_LEFT;
+          c2.dir = dx > 0 ? DIR_LEFT : DIR_RIGHT;
+        } else {
+          c1.dir = dy > 0 ? DIR_DOWN : DIR_UP;
+          c2.dir = dy > 0 ? DIR_UP : DIR_DOWN;
+        }
+
+        // Put them in temporary idle mode during chat
+        c1.state = ST_IDLE;
+        c1.goalActionTimer = 18;
+        c1.path = [];
+        c1.moveProgress = 0;
+
+        c2.state = ST_IDLE;
+        c2.goalActionTimer = 18;
+        c2.path = [];
+        c2.moveProgress = 0;
+      }
+
+      function updateLoungeChat(dt) {
+        if (!loungeChatActive) {
+          if (loungeChatCooldown > 0) {
+            loungeChatCooldown -= dt;
+          } else {
+            const c0 = chars[0].ch;
+            const c1 = chars[1].ch;
+
+            const tile0 = TILE_MAP[c0.tileRow]?.[c0.tileCol];
+            const tile1 = TILE_MAP[c1.tileRow]?.[c1.tileCol];
+            if (tile0 === LOUNGE_FLOOR && tile1 === LOUNGE_FLOOR) {
+              const dist = Math.abs(c0.tileCol - c1.tileCol) + Math.abs(c0.tileRow - c1.tileRow);
+              if (dist <= 3 && !c0.meetingMode && !c1.meetingMode) {
+                triggerLoungeChat(c0, c1);
+              }
+            }
+          }
+          return;
+        }
+
+        loungeChatStepTimer -= dt;
+        if (loungeChatStepTimer <= 0) {
+          if (loungeChatStep < loungeChatSteps.length) {
+            const step = loungeChatSteps[loungeChatStep];
+            const char = chars.find(c => c.key === step.speaker).ch;
+
+            char.bubbleText = step.text;
+            char.bubbleTimer = 5.0;
+
+            loungeChatStep++;
+            loungeChatStepTimer = 5.3;
+          } else {
+            loungeChatActive = false;
+            loungeChatCooldown = 50 + Math.random() * 40; // 50s to 90s cooldown
+
+            chars.forEach(c => {
+              c.ch.state = ST_IDLE;
+              c.ch.goalActionTimer = 2 + Math.random() * 2;
               c.ch.currentGoal = 'thinking';
             });
           }
@@ -979,16 +1185,16 @@ const PixelAgents = () => {
         lastTime = timestamp;
         pcAnimTimer += dt;
 
-        // Meeting trigger on Friday
-        if (meetingTimer > 0) {
+        // Meeting trigger (periodic sync alignment)
+        if (meetingTimer > 0 && !meetingActive) {
           meetingTimer -= dt;
-          if (meetingTimer <= 0 && !meetingTriggered) {
-            meetingTriggered = true;
+          if (meetingTimer <= 0) {
             triggerMeeting();
           }
         }
 
         updateMeeting(dt);
+        updateLoungeChat(dt);
         for (const charObj of chars) {
           updateChar(charObj, dt);
         }
@@ -1233,7 +1439,12 @@ const PixelAgents = () => {
         const dirName = ['down', 'up', 'right', 'left'][ch.dir];
         const frames = ch.frames[dirName];
         if (!frames) return null;
-        if (ch.state === ST_TYPE) return frames[3 + (ch.frame % 2)];
+        if (ch.state === ST_TYPE) {
+          if (ch.dir === DIR_UP) {
+            return frames[1]; // Face back (de costas) when sitting/typing at the desk
+          }
+          return frames[3 + (ch.frame % 2)];
+        }
         if (ch.state === ST_WALK) {
           const cycle = [0, 1, 2, 1];
           return frames[cycle[ch.frame % 4]];
