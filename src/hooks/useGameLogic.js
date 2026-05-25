@@ -33,8 +33,19 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES,
   const [submittedGuessesInfo, setSubmittedGuessesInfo] = useState(Array(maxGuesses).fill(null));
   const [isRestored, setIsRestored] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [shakingRow, setShakingRow] = useState(null);
+  const shakeTimerRef = useRef(null);
 
   const { toast } = useToast();
+
+  const triggerShake = useCallback((row) => {
+    if (shakeTimerRef.current) clearTimeout(shakeTimerRef.current);
+    setShakingRow(null); // reset before setting to allow re-triggering the same row
+    requestAnimationFrame(() => {
+      setShakingRow(row);
+      shakeTimerRef.current = setTimeout(() => setShakingRow(null), 600);
+    });
+  }, []);
 
   const applyNewSolution = useCallback((newSolution) => {
     setSolution(newSolution);
@@ -131,6 +142,7 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES,
   const processGuess = () => {
     const finalCurrentGuess = currentGuess.join('');
     if (finalCurrentGuess.length !== wordLength) {
+      triggerShake(currentAttempt);
       toast({
         title: "Palavra incompleta",
         description: `A palavra deve ter ${wordLength} letras.`,
@@ -141,6 +153,7 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES,
     }
 
     if (validateRef.current && !validateRef.current(finalCurrentGuess)) {
+      triggerShake(currentAttempt);
       toast({
         title: "Palavra inválida",
         description: "Esta palavra não está no dicionário.",
@@ -153,6 +166,7 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES,
     if (hardMode && currentAttempt > 0) {
       const hm = validateHardModeGuess(finalCurrentGuess, submittedGuessesInfo);
       if (!hm.valid) {
+        triggerShake(currentAttempt);
         toast({
           title: "Modo difícil",
           description: hm.message,
@@ -293,6 +307,7 @@ export const useGameLogic = (wordLength = WORD_LENGTH, maxGuesses = MAX_GUESSES,
     isLoading,
     usedLetters,
     submittedGuessesInfo,
+    shakingRow,
     initializeGame,
     handleTileFocus,
     processGuess,

@@ -30,13 +30,14 @@ const GameBoardRow = ({
   onTileFocus,
   isSubmittedRow,
   wordLength,
+  isShaking,
 }) => {
   const isCurrentActiveRow = rowIndex === currentAttempt;
   const COL_CLASSES = { 5: 'grid-cols-5', 6: 'grid-cols-6', 7: 'grid-cols-7' };
   const colClass = COL_CLASSES[wordLength] || 'grid-cols-5';
 
   return (
-    <div className={`grid ${colClass} gap-1.5`} role="row">
+    <div className={`grid ${colClass} gap-1.5${isShaking ? ' row-shake' : ''}`} role="row">
       {Array(wordLength)
         .fill(0)
         .map((_, colIndex) => {
@@ -80,6 +81,7 @@ const GameBoard = ({
   isGameOver,
   wordLength = WORD_LENGTH,
   maxGuesses = MAX_GUESSES,
+  shakingRow = null,
 }) => {
   return (
     <div
@@ -99,6 +101,7 @@ const GameBoard = ({
           onTileFocus={onTileFocus}
           isSubmittedRow={rowIndex < currentAttempt || (rowIndex === currentAttempt && isGameOver)}
           wordLength={wordLength}
+          isShaking={shakingRow === rowIndex}
         />
       ))}
     </div>

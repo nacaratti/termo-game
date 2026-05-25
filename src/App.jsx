@@ -50,6 +50,7 @@ const App = ({ initialMode, allModes }) => {
     processGuess,
     handleKeyboardPress,
     setActiveInputCol,
+    shakingRow,
   } = useGameLogic(wordLength, maxGuesses, hardMode);
 
   const mainRef = useRef(null);
@@ -138,6 +139,7 @@ const App = ({ initialMode, allModes }) => {
           isGameOver={isGameOver}
           wordLength={wordLength}
           maxGuesses={maxGuesses}
+          shakingRow={shakingRow}
         />
 
         <div className="w-full">

@@ -213,6 +213,16 @@
 }
 .animate-marquee { animation: marquee 30s linear infinite; }
 
+/* ─── Shake row (palavra inválida) ──────────────────────────────────────────── */
+@keyframes rowShake {
+  0%, 100% { transform: translateX(0); }
+  15%       { transform: translateX(-6px); }
+  35%       { transform: translateX(6px); }
+  55%       { transform: translateX(-4px); }
+  75%       { transform: translateX(4px); }
+}
+.row-shake { animation: rowShake 0.5s ease-in-out; }
+
 /* ─── Utilitários temáticos ──────────────────────────────────────────────────── */
 .theme-text-present  { color: var(--color-present); }
 .theme-text-correct  { color: var(--color-correct); }
