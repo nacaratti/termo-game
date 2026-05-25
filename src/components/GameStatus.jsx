@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Clock, X, ChevronRight, MessageSquare, Flame } from 'lucide-react';
 import { getDailyResults } from '@/lib/stats';
@@ -8,6 +8,62 @@ import { getStreak, getBestStreak } from '@/lib/streak';
 import { GAME_MODES } from '@/config/gameModes';
 import { MAX_GUESSES } from '@/config/constants';
 import { submitComment, hasSubmittedComment } from '@/lib/comments';
+
+const BouncingCoffee = () => {
+  const ref = useRef(null);
+  const state = useRef({
+    x: Math.random() * 80 + 10,
+    y: Math.random() * 80 + 10,
+    vx: (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random()),
+    vy: (Math.random() > 0.5 ? 1 : -1) * (1.5 + Math.random()),
+  });
+  const raf = useRef(null);
+
+  const animate = useCallback(() => {
+    const s = state.current;
+    const el = ref.current;
+    if (!el) return;
+    const parent = el.parentElement;
+    if (!parent) return;
+
+    const pw = parent.clientWidth;
+    const ph = parent.clientHeight;
+    const size = 48;
+
+    s.x += s.vx;
+    s.y += s.vy;
+
+    if (s.x <= 0 || s.x >= pw - size) {
+      s.vx *= -1;
+      s.x = Math.max(0, Math.min(s.x, pw - size));
+    }
+    if (s.y <= 0 || s.y >= ph - size) {
+      s.vy *= -1;
+      s.y = Math.max(0, Math.min(s.y, ph - size));
+    }
+
+    el.style.transform = `translate(${s.x}px, ${s.y}px)`;
+    raf.current = requestAnimationFrame(animate);
+  }, []);
+
+  useEffect(() => {
+    raf.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf.current);
+  }, [animate]);
+
+  return (
+    <a
+      ref={ref}
+      href="/apoie"
+      onClick={(e) => e.stopPropagation()}
+      className="absolute top-0 left-0 z-10 w-12 h-12 flex items-center justify-center bg-amber-500 hover:bg-amber-400 rounded-full shadow-xl transition-colors text-2xl"
+      aria-label="Apoiar o Kinto"
+      style={{ willChange: 'transform' }}
+    >
+      ☕
+    </a>
+  );
+};
 
 const useCountdown = () => {
   const getSecondsLeft = () => {
@@ -213,15 +269,8 @@ const GameStatus = ({
           onClick={onClose}
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm"
         >
-          {/* Botão flutuante cafezinho */}
-          <a
-            href="/apoie"
-            className="absolute animate-wander z-10 inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm px-4 py-2.5 rounded-full shadow-xl transition-colors"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span className="text-lg">☕</span>
-            <span>Me pague um café!</span>
-          </a>
+          {/* Botão flutuante cafezinho — DVD bounce */}
+          <BouncingCoffee />
 
           <motion.div
             key="panel"
