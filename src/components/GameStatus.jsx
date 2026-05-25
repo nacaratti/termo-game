@@ -283,14 +283,6 @@ const GameStatus = ({
               {copied ? 'Copiado!' : 'Compartilhar resultado'}
             </button>
 
-            {/* Donation CTA */}
-            <a
-              href="/apoie"
-              className="text-xs text-amber-500/70 hover:text-amber-400 transition-colors text-center block"
-            >
-              Gostou? Me pague um cafezinho ☕
-            </a>
-
             {/* Other modes */}
             {otherModes.map((mode) => (
               <a

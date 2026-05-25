@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Target, TrendingUp, MessageSquare, Gamepad2, CheckCircle2, DollarSign, Compass, CalendarDays } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { getTodayDateStr } from '@/lib/wordOfDay';
+import { getApprovedSupporters } from '@/lib/supporters';
 
 const CARD_BG = '#1e2028';
 const SURF = '#22252f';
@@ -49,6 +50,7 @@ const GoalSection = () => {
   const [stats, setStats] = useState({ games: 0, comments: 0, completed: 0, revenue: 0 });
   const [weekly, setWeekly] = useState(null);
   const [focus, setFocus] = useState(null);
+  const [supporters, setSupporters] = useState([]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -81,6 +83,7 @@ const GoalSection = () => {
       });
       if (wf?.data) setFocus(wf.data);
     }).catch(() => {});
+    getApprovedSupporters(50).then(setSupporters);
   }, []);
 
   const today = getTodayDateStr();
@@ -226,6 +229,24 @@ const GoalSection = () => {
                   </span>
                 </p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Marquee de apoiadores */}
+        {supporters.length > 0 && (
+          <div className="mt-4 pt-3 border-t overflow-hidden" style={{ borderColor: BDR }}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-500/50 mb-2 text-center">
+              ☕ Apoiadores
+            </p>
+            <div className="overflow-hidden whitespace-nowrap">
+              <div className="inline-block animate-marquee">
+                {supporters.concat(supporters).map((s, i) => (
+                  <span key={i} className="text-xs text-amber-500/60 mx-3">
+                    ☕ {s.name}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         )}

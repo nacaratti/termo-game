@@ -206,6 +206,18 @@
   100% { transform: translateY(110vh)    translateX(var(--drift)) rotate(calc(var(--rotate) * 2)) scaleX(1); opacity: 0; }
 }
 
+/* ─── Animações extras ─────────────────────────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-marquee { animation: marquee 30s linear infinite; }
+
 /* ─── Utilitários temáticos ──────────────────────────────────────────────────── */
 .theme-text-present  { color: var(--color-present); }
 .theme-text-correct  { color: var(--color-correct); }
