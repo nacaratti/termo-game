@@ -55,7 +55,7 @@ describe('submitComment (com supabase disponível)', () => {
       dateStr: '2026-05-11', word: 'carro', mode: '5',
       comment: 'Ótima palavra!', won: true, attempts: 3,
     });
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, needsApproval: true });
     expect(hasSubmittedComment('2026-05-11', '5')).toBe(true);
   });
 

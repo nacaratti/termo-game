@@ -17,7 +17,7 @@ import {
 import { getWordOfDay, setWordOfDay, getTodayDateStr } from '@/lib/wordOfDay';
 import { getWordOfDay6, setWordOfDay6 } from '@/lib/wordOfDay6';
 import { supabase } from '@/lib/supabase';
-import { getComments } from '@/lib/comments';
+import { getComments, moderateComment } from '@/lib/comments';
 import KanbanBoard from '@/components/admin/KanbanBoard';
 import ActivityLog from '@/components/admin/ActivityLog';
 import UsagePanel from '@/components/admin/UsagePanel';
@@ -819,9 +819,40 @@ const CommentsPanel = () => {
                 )}
               </div>
               <p className="text-sm text-zinc-300 leading-relaxed">{c._text}</p>
-              <p className="text-xs text-zinc-600">
-                {new Date(c.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-zinc-600">
+                  {new Date(c.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                  {c._source === 'game' && c.author_name && (
+                    <span className="ml-2 text-zinc-500">— {c.author_name}</span>
+                  )}
+                </p>
+                {c._source === 'game' && c.approved === false && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-yellow-500">Pendente</span>
+                    <button
+                      onClick={async () => {
+                        await moderateComment(c.id, true);
+                        setComments(prev => prev.map(x => x.id === c.id && x._source === 'game' ? { ...x, approved: true } : x));
+                      }}
+                      className="text-xs px-2 py-1 rounded bg-green-900/40 text-green-400 hover:bg-green-900/60 transition-colors"
+                    >
+                      ✓ Aprovar
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await moderateComment(c.id, false);
+                        setComments(prev => prev.filter(x => !(x.id === c.id && x._source === 'game')));
+                      }}
+                      className="text-xs px-2 py-1 rounded bg-red-900/40 text-red-400 hover:bg-red-900/60 transition-colors"
+                    >
+                      ✗ Rejeitar
+                    </button>
+                  </div>
+                )}
+                {c._source === 'game' && c.approved === true && (
+                  <span className="text-xs text-green-600">Aprovado</span>
+                )}
+              </div>
             </Card>
           ))}
         </div>

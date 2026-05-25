@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { LogIn, LogOut, Send, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { getApprovedComments } from '@/lib/comments';
 
 const CARD_BG = '#1e2028';
 const SURF = '#22252f';
@@ -53,13 +54,32 @@ const CommentsSection = () => {
   const fetchComments = useCallback(async () => {
     if (!supabase) { setLoading(false); return; }
     try {
-      const { data, error: err } = await supabase
+      // Busca comentários com login Google (user_comments)
+      const { data: googleComments, error: err1 } = await supabase
         .from('user_comments')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
-      if (err) { setFetchError(true); }
-      else { setComments(data || []); }
+      if (err1) { setFetchError(true); setLoading(false); return; }
+
+      // Busca comentários anônimos aprovados (player_comments)
+      const approvedAnon = await getApprovedComments(100);
+
+      // Combina e ordena por data
+      const merged = [
+        ...(googleComments || []).map(c => ({ ...c, _source: 'google' })),
+        ...(approvedAnon || []).map(c => ({
+          id: c.id,
+          user_id: null,
+          user_name: c.author_name || 'Anônimo',
+          user_avatar: null,
+          content: c.comment,
+          created_at: c.created_at,
+          _source: 'anonymous',
+        })),
+      ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      setComments(merged);
     } catch {
       setFetchError(true);
     } finally {
@@ -115,11 +135,12 @@ const CommentsSection = () => {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, source) => {
     if (!confirm('Excluir este comentário?')) return;
     setComments(prev => prev.filter(c => c.id !== id));
     if (supabase) {
-      await supabase.from('user_comments').delete().eq('id', id);
+      const table = source === 'anonymous' ? 'player_comments' : 'user_comments';
+      await supabase.from(table).delete().eq('id', id);
     }
   };
 
@@ -215,9 +236,9 @@ const CommentsSection = () => {
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-white text-sm font-semibold">{c.user_name}</p>
                     <span className="text-zinc-600 text-xs">{timeAgo(c.created_at)}</span>
-                    {user && user.id === c.user_id && (
+                    {user && (c._source === 'google' ? user.id === c.user_id : false) && (
                       <button
-                        onClick={() => handleDelete(c.id)}
+                        onClick={() => handleDelete(c.id, c._source)}
                         className="ml-auto opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-400 transition-all"
                         title="Excluir"
                       >

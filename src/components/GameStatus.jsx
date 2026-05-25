@@ -37,6 +37,7 @@ const CommentBox = ({ dateStr, solution, mode, isGameWon, currentAttempt, maxGue
   const alreadySubmitted = hasSubmittedComment(dateStr, modeId);
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
+  const [authorName, setAuthorName] = useState('');
   const [status, setStatus] = useState(alreadySubmitted ? 'done' : 'idle');
 
   const handleSubmit = async (e) => {
@@ -50,14 +51,25 @@ const CommentBox = ({ dateStr, solution, mode, isGameWon, currentAttempt, maxGue
       comment: text,
       won: isGameWon,
       attempts: isGameWon ? currentAttempt + 1 : maxGuesses,
+      authorName: authorName.trim() || null,
+      isAuthenticated: false,
     });
-    setStatus(result.ok ? 'done' : 'error');
+    setStatus(result.ok ? (result.needsApproval ? 'pending' : 'done') : 'error');
   };
 
   if (status === 'done') {
     return (
       <div className="rounded-xl border border-zinc-800 bg-zinc-800/40 px-4 py-3 text-center">
         <p className="text-sm text-zinc-400">Obrigado pelo comentário!</p>
+      </div>
+    );
+  }
+
+  if (status === 'pending') {
+    return (
+      <div className="rounded-xl border border-zinc-800 bg-zinc-800/40 px-4 py-3 text-center">
+        <p className="text-sm text-zinc-400">Obrigado pelo comentário!</p>
+        <p className="text-xs text-zinc-600 mt-1">Seu comentário será exibido após aprovação do admin.</p>
       </div>
     );
   }
@@ -74,6 +86,12 @@ const CommentBox = ({ dateStr, solution, mode, isGameWon, currentAttempt, maxGue
       </button>
       {open && (
         <form onSubmit={handleSubmit} className="border-t border-zinc-800 px-4 pb-4 pt-3 flex flex-col gap-2">
+          <input
+            value={authorName}
+            onChange={e => setAuthorName(e.target.value.slice(0, 50))}
+            placeholder="Seu nome (opcional — deixe vazio para anônimo)"
+            className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-600 bg-zinc-900 border border-zinc-700 outline-none focus:border-zinc-500 transition-colors"
+          />
           <textarea
             value={text}
             onChange={e => setText(e.target.value.slice(0, 300))}

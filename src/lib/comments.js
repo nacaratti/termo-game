@@ -27,7 +27,7 @@ const _markSubmitted = (dateStr, mode) => {
  * Envia um comentário do jogador para o Supabase.
  * Retorna { ok: true } em caso de sucesso ou { ok: false, error } em caso de falha.
  */
-export const submitComment = async ({ dateStr, word, mode, comment, won, attempts }) => {
+export const submitComment = async ({ dateStr, word, mode, comment, won, attempts, authorName, isAuthenticated }) => {
   if (!supabase) return { ok: false, error: 'offline' };
   if (!comment?.trim()) return { ok: false, error: 'empty' };
 
@@ -39,10 +39,12 @@ export const submitComment = async ({ dateStr, word, mode, comment, won, attempt
       comment: comment.trim().slice(0, 300),
       won: won ?? null,
       attempts: attempts ?? null,
+      author_name: authorName?.trim() || null,
+      approved: isAuthenticated ? true : false,
     });
     if (error) return { ok: false, error: error.message };
     _markSubmitted(dateStr, mode);
-    return { ok: true };
+    return { ok: true, needsApproval: !isAuthenticated };
   } catch (e) {
     return { ok: false, error: e.message };
   }
@@ -64,6 +66,67 @@ export const getComments = async (limit = 100) => {
     return data || [];
   } catch {
     return [];
+  }
+};
+
+/**
+ * Busca comentários aprovados (para exibição pública).
+ */
+export const getApprovedComments = async (limit = 100) => {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('player_comments')
+      .select('*')
+      .eq('approved', true)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) return [];
+    return data || [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Busca comentários pendentes de aprovação (para o admin).
+ */
+export const getPendingComments = async () => {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('player_comments')
+      .select('*')
+      .eq('approved', false)
+      .order('created_at', { ascending: false });
+    if (error) return [];
+    return data || [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Aprova ou rejeita um comentário (admin).
+ */
+export const moderateComment = async (id, approve) => {
+  if (!supabase) return false;
+  try {
+    if (approve) {
+      const { error } = await supabase
+        .from('player_comments')
+        .update({ approved: true })
+        .eq('id', id);
+      return !error;
+    } else {
+      const { error } = await supabase
+        .from('player_comments')
+        .delete()
+        .eq('id', id);
+      return !error;
+    }
+  } catch {
+    return false;
   }
 };
 
