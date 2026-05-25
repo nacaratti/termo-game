@@ -263,7 +263,13 @@ node scripts/plan-week.mjs '[
 ]'
 ```
 
-Distribua os cards pelos próximos 6 dias úteis do Dev (sábado a quinta). Agende **pelo menos 1 card por dia, preferencialmente 2 se forem pequenos**. Não acumule tudo na segunda — espalhe a carga. Se sobrar cards sem data, deixe-os como backlog sem `scheduled_for` — o Dev os pega quando terminar os agendados do dia.
+**O Dev trabalha de sábado a quinta (6 dias). Sexta é dia do CEO.**
+
+Distribua os cards pelos 6 dias úteis do Dev (sábado a quinta). **O Dev só executa cards da data agendada — ele NÃO adianta cards de dias futuros.** Por isso:
+- Agende **exatamente 2 cards por dia** (tamanho médio cada), garantindo trabalho para a sessão inteira de 30min
+- Se um card for grande, agende sozinho no dia (1 card grande = sessão completa)
+- Se forem cards pequenos (~15min), agende 3 no dia
+- **Crie 3-5 cards extras SEM `scheduled_for`** — eles servem como backlog de reserva. Quando o Dev termina os cards do dia antes do tempo, ele pega um desses. Isso evita ociosidade sem adiantar o cronograma.
 
 Labels recomendados: `feature`, `bug`, `optimization`, `test`, `refactor`, `docs`, `security`, `performance`, `ux`
 

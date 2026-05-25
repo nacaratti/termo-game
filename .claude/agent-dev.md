@@ -62,9 +62,16 @@ Não saia do escopo do card atual para fazer isso — apenas registre o card par
 - Em mesma prioridade: **bugs e segurança antes de features**
 - Em mesma prioridade dentro do mesmo tipo: o mais antigo primeiro (FIFO)
 
+**REGRA CRÍTICA — Respeitar o cronograma do CEO Agent:**
+- **NUNCA pegue cards agendados para dias futuros.** Se o `scheduled_for` é amanhã ou depois, NÃO toque nele — ele será seu trabalho no dia marcado.
+- Após terminar os cards de hoje, pegue **apenas cards de backlog** (sem `scheduled_for`) — esses são a reserva criada pelo CEO exatamente para dias em que você termina cedo.
+- O script `get-today-card.mjs` já implementa essa lógica. Use-o para pegar o próximo card.
+- Se não houver nenhum card (nem backlog), **encerre a sessão**. Não invente trabalho.
+
 ### 5. Fim da Sessão
 - Logue o fim: `node scripts/supabase-agent.mjs log dev_agent session_ended '{"cards_completed": <N>}'`
-- Se o tempo permite mais um card pequeno, pegue. Se não, encerre
+- Se o tempo permite mais um card pequeno **de hoje ou backlog**, pegue. Se não, encerre
+- **NUNCA avance para cards de dias futuros** para "adiantar trabalho"
 
 ## Regras
 

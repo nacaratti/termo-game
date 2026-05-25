@@ -1,9 +1,13 @@
 // ============================================================
-// Dev Agent: busca o próximo card a fazer.
+// Dev Agent: busca o próximo card a fazer HOJE.
 // Prioridade:
-//   1) Cards com scheduled_for <= hoje e status='todo' (priority DESC),
+//   1) Cards com scheduled_for = hoje e status='todo' (priority DESC),
 //      EXCLUINDO cards com label 'needs-human' (ver AUTONOMY_POLICY.md)
-//   2) Se nenhum, qualquer card status='todo' executável (priority DESC)
+//   2) Cards atrasados (scheduled_for < hoje) que não foram feitos
+//   3) Backlog: cards SEM scheduled_for (reserva do CEO)
+//
+// NUNCA retorna cards agendados para dias futuros — o Dev respeita
+// o cronograma definido pelo CEO Agent.
 // ============================================================
 import { createClient } from '@supabase/supabase-js';
 
@@ -20,28 +24,40 @@ const today = new Date().toISOString().slice(0, 10);
 
 const isExecutable = (card) => !(card?.labels || []).includes('needs-human');
 
-// 1) Cards agendados para hoje ou antes
-const { data: scheduled, error } = await supabase
+// 1) Cards agendados para HOJE (exatamente)
+const { data: todayCards, error } = await supabase
   .from('kanban_cards')
   .select('*')
   .eq('status', 'todo')
-  .lte('scheduled_for', today)
-  .order('priority', { ascending: false })
-  .order('scheduled_for', { ascending: true });
+  .eq('scheduled_for', today)
+  .order('priority', { ascending: false });
 
 if (error) { console.error(error.message); process.exit(1); }
 
-let pick = (scheduled || []).find(isExecutable);
+let pick = (todayCards || []).find(isExecutable);
 
-// 2) Fallback: qualquer card todo executável
+// 2) Cards atrasados (scheduled_for < hoje, não feitos)
 if (!pick) {
-  const { data: any } = await supabase
+  const { data: overdue } = await supabase
     .from('kanban_cards')
     .select('*')
     .eq('status', 'todo')
+    .lt('scheduled_for', today)
+    .order('priority', { ascending: false })
+    .order('scheduled_for', { ascending: true });
+  pick = (overdue || []).find(isExecutable);
+}
+
+// 3) Backlog: cards SEM data agendada (reserva criada pelo CEO)
+if (!pick) {
+  const { data: backlog } = await supabase
+    .from('kanban_cards')
+    .select('*')
+    .eq('status', 'todo')
+    .is('scheduled_for', null)
     .order('priority', { ascending: false })
     .order('created_at', { ascending: true });
-  pick = (any || []).find(isExecutable);
+  pick = (backlog || []).find(isExecutable);
 }
 
 if (!pick) {
