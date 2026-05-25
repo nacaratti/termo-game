@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
 const GoalSection = lazy(() => import('@/components/GoalSection'));
+const PixelAgents = lazy(() => import('@/components/PixelAgents'));
 
 const BG = '#16181d';
 const CARD_BG = '#1e2028';
@@ -158,6 +159,10 @@ const ChangelogApp = () => {
           <p className="text-zinc-500 text-sm leading-relaxed mb-6">
             Os agentes leem as tarefas no quadro abaixo, implementam mudanças no código, escrevem testes e fazem deploy automaticamente. Você acompanha cada passo desta página.
           </p>
+
+          <Suspense fallback={null}>
+            <PixelAgents />
+          </Suspense>
 
           <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <div
