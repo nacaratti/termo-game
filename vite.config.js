@@ -105,6 +105,11 @@ window.fetch = function(...args) {
 		return originalFetch.apply(this, args);
 	}
 
+	// Skip analytics/tracking URLs (often blocked by ad blockers or fail in dev)
+	if (url && (url.includes('google-analytics.com') || url.includes('googletagmanager.com') || url.includes('/g/collect'))) {
+		return originalFetch.apply(this, args);
+	}
+
 	return originalFetch.apply(this, args)
 		.then(async response => {
 			const contentType = response.headers.get('Content-Type') || '';
@@ -118,13 +123,15 @@ window.fetch = function(...args) {
 					const responseClone = response.clone();
 					const errorFromRes = await responseClone.text();
 					const requestUrl = response.url;
-					console.error(\`Fetch error from \${requestUrl}: \${errorFromRes}\`);
+					if (requestUrl) {
+						console.error(\`Fetch error from \${requestUrl}: \${errorFromRes}\`);
+					}
 			}
 
 			return response;
 		})
 		.catch(error => {
-			if (!url.match(/\.html?$/i)) {
+			if (!url.match(/\.html?$/i) && !(url && (url.includes('google-analytics') || url.includes('googletagmanager')))) {
 				console.error(error);
 			}
 

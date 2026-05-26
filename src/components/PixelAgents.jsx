@@ -35,7 +35,7 @@ const TYPE_FRAME_DUR = 0.4;
 const WALK_FRAME_DUR = 0.20; // Slower walking animation frames
 
 const BASE = '/assets/pixel-agents/';
-const LOUNGE_FLOOR = 6; // Offset wood planks pattern (floor_6.png) to avoid checkers pattern
+const LOUNGE_FLOOR = 4; // Grid tile pattern with warm orange tint
 
 // ─── Word Wrap for Canvas Speech Bubbles ─────────────────────────────────────
 function wrapText(ctx, text, maxWidth) {
