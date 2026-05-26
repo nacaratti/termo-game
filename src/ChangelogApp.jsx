@@ -1,5 +1,45 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { ArrowLeft, Loader2, Check, Bot, Brain } from 'lucide-react';
+
+const SkeletonBlock = ({ className = '' }) => (
+  <div className={`animate-pulse bg-[#22252f] rounded ${className}`} />
+);
+
+const SkeletonBoardColumn = () => (
+  <div>
+    <div className="flex items-center gap-2 mb-3 px-1">
+      <SkeletonBlock className="w-2 h-2 rounded-full" />
+      <SkeletonBlock className="h-3 w-20" />
+    </div>
+    <div className="rounded-xl p-3 min-h-[100px] space-y-2 border" style={{ backgroundColor: CARD_BG, borderColor: BDR }}>
+      {[1, 2].map(i => (
+        <div key={i} className="rounded-lg p-3 border space-y-2" style={{ backgroundColor: SURF, borderColor: BDR }}>
+          <div className="flex items-center gap-2">
+            <SkeletonBlock className="w-1.5 h-1.5 rounded-full" />
+            <SkeletonBlock className="h-3 w-12 rounded-full" />
+          </div>
+          <SkeletonBlock className="h-4 w-full" />
+          <SkeletonBlock className="h-3 w-3/4" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const SkeletonDoneItem = () => (
+  <div className="flex items-start gap-3 py-3.5 border-b last:border-b-0" style={{ borderColor: BDR }}>
+    <SkeletonBlock className="w-5 h-5 rounded-full shrink-0 mt-0.5" />
+    <div className="flex-1 min-w-0 space-y-1.5">
+      <div className="flex items-center gap-2">
+        <SkeletonBlock className="h-4 w-36" />
+        <SkeletonBlock className="h-3 w-12 rounded-full" />
+      </div>
+      <SkeletonBlock className="h-3 w-full" />
+      <SkeletonBlock className="h-3 w-2/3" />
+    </div>
+    <SkeletonBlock className="h-3 w-16 shrink-0 mt-0.5" />
+  </div>
+);
 import { supabase } from '@/lib/supabase';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
@@ -210,9 +250,28 @@ const ChangelogApp = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="w-6 h-6 text-zinc-500 animate-spin" />
-          </div>
+          <>
+            <div className="mb-10">
+              <SkeletonBlock className="h-3 w-16 mb-4" />
+              <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-3'}`}>
+                <SkeletonBoardColumn />
+                <SkeletonBoardColumn />
+                <SkeletonBoardColumn />
+              </div>
+            </div>
+            <div className="mb-10">
+              <div className="flex items-center gap-2 mb-4">
+                <SkeletonBlock className="w-2 h-2 rounded-full" />
+                <SkeletonBlock className="h-3 w-44" />
+              </div>
+              <div className="rounded-xl px-4 border" style={{ backgroundColor: CARD_BG, borderColor: BDR }}>
+                <SkeletonDoneItem />
+                <SkeletonDoneItem />
+                <SkeletonDoneItem />
+                <SkeletonDoneItem />
+              </div>
+            </div>
+          </>
         ) : error ? (
           <div className="text-center py-16">
             <p className="text-red-400 text-sm">Não foi possível carregar as atualizações.</p>
