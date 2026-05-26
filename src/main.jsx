@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from '@/App';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { getModeByPath, GAME_MODES } from '@/config/gameModes';
 import { initErrorReporter } from '@/lib/errorReporter';
 import '@/index.css';
@@ -31,14 +32,16 @@ const AdminFallback = () => (
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    {isAdmin
-      ? <Suspense fallback={<AdminFallback />}><AdminApp /></Suspense>
-      : isChangelog
-      ? <Suspense fallback={<AdminFallback />}><ChangelogApp /></Suspense>
-      : isComments
-      ? <Suspense fallback={<AdminFallback />}><CommentsApp /></Suspense>
-      : isDonation
-      ? <Suspense fallback={<AdminFallback />}><DonationApp /></Suspense>
-      : <App initialMode={initialMode} allModes={GAME_MODES} />}
+    <ErrorBoundary>
+      {isAdmin
+        ? <Suspense fallback={<AdminFallback />}><AdminApp /></Suspense>
+        : isChangelog
+        ? <Suspense fallback={<AdminFallback />}><ChangelogApp /></Suspense>
+        : isComments
+        ? <Suspense fallback={<AdminFallback />}><CommentsApp /></Suspense>
+        : isDonation
+        ? <Suspense fallback={<AdminFallback />}><DonationApp /></Suspense>
+        : <App initialMode={initialMode} allModes={GAME_MODES} />}
+    </ErrorBoundary>
   </React.StrictMode>
 );
