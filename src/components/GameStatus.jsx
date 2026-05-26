@@ -221,9 +221,21 @@ const GameStatus = ({
     return `Kinto${modeLabel}${hardSuffix} ${today} ${result}${streakSuffix}\n\n${rows}\n\nhttps://kinto.fun`;
   };
 
-  const handleShareWhatsApp = () => {
+  const handleShareWhatsApp = async () => {
     const text = buildShareText();
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    // Prefere navigator.share (preserva emojis corretamente)
+    if (navigator.share) {
+      try {
+        await navigator.share({ text });
+        setSharedWhatsApp(true);
+        setTimeout(() => setSharedWhatsApp(false), 3000);
+        return;
+      } catch {
+        // user cancelled ou não suportado — tenta via URL
+      }
+    }
+    // Fallback: abre WhatsApp via URL
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
     setSharedWhatsApp(true);
     setTimeout(() => setSharedWhatsApp(false), 3000);
