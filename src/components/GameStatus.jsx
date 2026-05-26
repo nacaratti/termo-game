@@ -212,7 +212,7 @@ const GameStatus = ({
     const rows = (submittedGuessesInfo || [])
       .filter(Boolean)
       .map(row => row.map(({ status }) =>
-        status === 'correct' ? '🟩' : status === 'present' ? '🟨' : '⬛'
+        status === 'correct' ? '🟢' : status === 'present' ? '🟡' : '⚫'
       ).join(''))
       .join('\n');
     const modeLabel = currentMode.id === 'classic' ? '' : ` (${currentMode.label})`;
