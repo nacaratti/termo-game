@@ -32,6 +32,9 @@ initErrorReporter();
   canonical.href = url;
   document.head.appendChild(canonical);
 
+  const ogUrl = document.querySelector('meta[property="og:url"]');
+  if (ogUrl) ogUrl.setAttribute('content', url);
+
   const altPt = document.createElement('link');
   altPt.rel = 'alternate';
   altPt.setAttribute('hreflang', 'pt-BR');
