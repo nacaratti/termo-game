@@ -11,6 +11,41 @@ import '@/index.css';
 // cards de bug sem depender de comentário de usuário.
 initErrorReporter();
 
+// Injeta canonical URL e hreflang corretos para cada rota, evitando
+// que o Google indexe versões duplicadas (trailing slash, www vs non-www).
+(function applyCanonicalMeta() {
+  const BASE = (import.meta.env.VITE_PUBLIC_URL || 'https://kinto.fun').replace(/\/$/, '');
+  const cleanPath = window.location.pathname.replace(/\/$/, '') || '/';
+
+  if (cleanPath.endsWith('/admin')) {
+    const m = document.createElement('meta');
+    m.name = 'robots';
+    m.content = 'noindex,nofollow';
+    document.head.appendChild(m);
+    return;
+  }
+
+  const url = BASE + (cleanPath === '/' ? '/' : cleanPath);
+
+  const canonical = document.createElement('link');
+  canonical.rel = 'canonical';
+  canonical.href = url;
+  document.head.appendChild(canonical);
+
+  const altPt = document.createElement('link');
+  altPt.rel = 'alternate';
+  altPt.setAttribute('hreflang', 'pt-BR');
+  altPt.href = url;
+  document.head.appendChild(altPt);
+
+  // x-default aponta para a página principal do jogo
+  const altDefault = document.createElement('link');
+  altDefault.rel = 'alternate';
+  altDefault.setAttribute('hreflang', 'x-default');
+  altDefault.href = BASE + '/';
+  document.head.appendChild(altDefault);
+})();
+
 const AdminApp = lazy(() => import('@/AdminApp'));
 const ChangelogApp = lazy(() => import('@/ChangelogApp'));
 const CommentsApp = lazy(() => import('@/CommentsApp'));
