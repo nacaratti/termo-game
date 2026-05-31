@@ -1,21 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://example.com/</loc>
-    <lastmod>2026-05-25</lastmod>
+    <loc>https://kinto.fun/</loc>
+    <lastmod>2026-05-31</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://example.com/6</loc>
-    <lastmod>2026-05-25</lastmod>
+    <loc>https://kinto.fun/6</loc>
+    <lastmod>2026-05-31</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://example.com/changelog</loc>
-    <lastmod>2026-05-25</lastmod>
+    <loc>https://kinto.fun/changelog</loc>
+    <lastmod>2026-05-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://kinto.fun/comments</loc>
+    <lastmod>2026-05-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://kinto.fun/apoie</loc>
+    <lastmod>2026-05-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
 </urlset>
