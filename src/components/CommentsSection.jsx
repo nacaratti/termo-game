@@ -158,6 +158,15 @@ const CommentsSection = () => {
   const [text, setText] = useState('');
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState('');
+  // Timestamp (ms) quando o cooldown expira; 0 = sem cooldown
+  const [postCooldown, setPostCooldown] = useState(0);
+  const isCoolingDown = Date.now() < postCooldown;
+
+  useEffect(() => {
+    if (postCooldown <= Date.now()) return;
+    const timer = setTimeout(() => setPostCooldown(0), postCooldown - Date.now());
+    return () => clearTimeout(timer);
+  }, [postCooldown]);
 
   const fetchComments = useCallback(async () => {
     if (!supabase) { setLoading(false); return; }
@@ -224,7 +233,7 @@ const CommentsSection = () => {
 
   const handlePost = async (e) => {
     e.preventDefault();
-    if (!user || !text.trim() || !supabase) return;
+    if (!user || !text.trim() || !supabase || Date.now() < postCooldown) return;
     setPosting(true);
     setError('');
     const meta = user.user_metadata || {};
@@ -239,6 +248,7 @@ const CommentsSection = () => {
       setError('Erro ao enviar comentário.');
     } else {
       setText('');
+      setPostCooldown(Date.now() + 5000);
       fetchComments();
     }
   };
@@ -292,15 +302,17 @@ const CommentsSection = () => {
                     </button>
                     <button
                       type="submit"
-                      disabled={!text.trim() || posting}
+                      disabled={!text.trim() || posting || isCoolingDown}
                       className="flex items-center gap-1.5 text-sm font-semibold text-black bg-white hover:bg-zinc-100 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-30"
                     >
                       {posting ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : isCoolingDown ? (
+                        <Loader2 className="w-3.5 h-3.5" />
                       ) : (
                         <Send className="w-3.5 h-3.5" />
                       )}
-                      Enviar
+                      {isCoolingDown ? 'Aguarde…' : 'Enviar'}
                     </button>
                   </div>
                 </div>
