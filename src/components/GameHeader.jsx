@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HelpCircle, Settings2, X, Check, ScrollText, MessageCircle, Palette, Flame } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { getStats } from '@/lib/stats';
+import { getBestStreak } from '@/lib/streak';
 
 const ExampleTile = ({ letter, status }) => {
   const cls = {
@@ -91,10 +93,87 @@ const InstructionsModal = ({ onClose, currentMode }) => (
   </motion.div>
 );
 
+const StatsModal = ({ onClose, streak }) => {
+  const stats = getStats();
+  const bestStreak = getBestStreak();
+  const winRate = stats.totalGames > 0 ? Math.round((stats.wins / stats.totalGames) * 100) : 0;
+  const maxDist = Math.max(...Object.values(stats.distribution), 1);
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/80" />
+      <motion.div
+        className="relative w-full max-w-sm bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl p-6 text-zinc-200"
+        initial={{ scale: 0.94, opacity: 0, y: 8 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.94, opacity: 0, y: 8 }}
+        transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base font-bold tracking-widest text-white uppercase">Estatísticas</h2>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors" aria-label="Fechar">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <div className="text-center rounded-lg p-3 bg-zinc-800">
+            <p className="text-3xl font-black text-orange-400">{streak} 🔥</p>
+            <p className="text-xs text-zinc-500 mt-1">Sequência atual</p>
+          </div>
+          <div className="text-center rounded-lg p-3 bg-zinc-800">
+            <p className="text-3xl font-black text-white">{bestStreak}</p>
+            <p className="text-xs text-zinc-500 mt-1">Melhor sequência</p>
+          </div>
+          <div className="text-center rounded-lg p-3 bg-zinc-800">
+            <p className="text-3xl font-black text-white">{stats.totalGames}</p>
+            <p className="text-xs text-zinc-500 mt-1">Jogos</p>
+          </div>
+          <div className="text-center rounded-lg p-3 bg-zinc-800">
+            <p className="text-3xl font-black text-white">{winRate}%</p>
+            <p className="text-xs text-zinc-500 mt-1">Vitórias</p>
+          </div>
+        </div>
+
+        {stats.totalGames > 0 && (
+          <div className="border-t border-zinc-800 pt-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-3">Tentativas</p>
+            <div className="space-y-1.5">
+              {[1, 2, 3, 4, 5, 6].map(n => (
+                <div key={n} className="flex items-center gap-2">
+                  <span className="text-xs text-zinc-500 w-3 shrink-0">{n}</span>
+                  <div className="flex-1 bg-zinc-800 rounded-full h-5 overflow-hidden">
+                    <div
+                      className="h-full bg-[#6aaa64] rounded-full flex items-center justify-end pr-2 min-w-[20px] transition-all"
+                      style={{ width: `${Math.max(8, (stats.distribution[n] / maxDist) * 100)}%` }}
+                    >
+                      {stats.distribution[n] > 0 && (
+                        <span className="text-[10px] font-bold text-white leading-none">{stats.distribution[n]}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+};
+
 const _TUTORIAL_KEY = '_kw';
 
-const GameHeader = ({ allModes, currentMode, onModeChange, theme, setTheme, themes, hardMode, setHardMode }) => {
+const GameHeader = ({ allModes, currentMode, onModeChange, theme, setTheme, themes, hardMode, setHardMode, streak = 0 }) => {
   const [showInfo, setShowInfo] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
   useEffect(() => {
     try {
@@ -137,7 +216,7 @@ const GameHeader = ({ allModes, currentMode, onModeChange, theme, setTheme, them
       <header className="w-full border-b border-zinc-800/60" style={{ background: 'linear-gradient(to bottom, var(--color-header-bg-start), var(--color-bg))' }}>
         <div className="flex items-center justify-between max-w-lg mx-auto w-full px-3 py-3">
 
-          {/* Esquerda: ajuda + changelog */}
+          {/* Esquerda: ajuda + changelog + badge de streak */}
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowInfo(true)}
@@ -154,6 +233,17 @@ const GameHeader = ({ allModes, currentMode, onModeChange, theme, setTheme, them
             >
               <ScrollText className="w-5 h-5" />
             </a>
+            {streak >= 2 && (
+              <button
+                onClick={() => setShowStats(true)}
+                className="flex items-center gap-0.5 h-9 px-2 text-sm font-bold text-orange-400 hover:text-orange-300 transition-colors rounded-lg"
+                aria-label={`Sequência de ${streak} dias`}
+                title={`Sequência de ${streak} dias`}
+              >
+                <span>🔥</span>
+                <span>{streak}</span>
+              </button>
+            )}
           </div>
 
           {/* Centro: título */}
@@ -407,6 +497,13 @@ const GameHeader = ({ allModes, currentMode, onModeChange, theme, setTheme, them
           currentMode={currentMode}
         />
       )}
+      </AnimatePresence>
+
+      {/* Modal de estatísticas */}
+      <AnimatePresence>
+        {showStats && (
+          <StatsModal onClose={() => setShowStats(false)} streak={streak} />
+        )}
       </AnimatePresence>
     </>
   );

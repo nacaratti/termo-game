@@ -115,19 +115,8 @@ const App = ({ initialMode, allModes }) => {
         themes={themes}
         hardMode={hardMode}
         setHardMode={setHardMode}
+        streak={streak}
       />
-
-      {/* Banner de streak — visível apenas se streak >= 2 e jogo não concluído */}
-      {streak >= 2 && !isGameOver && (
-        <div className="w-full max-w-lg mx-auto px-3 pt-2">
-          <div className="flex items-center justify-center gap-2 rounded-lg py-1.5 px-3 text-xs theme-badge-present border">
-            <span>🔥</span>
-            <span className="theme-text-present font-semibold">
-              Você está em uma sequência de {streak} {streak === 1 ? 'dia' : 'dias'}! Jogue para manter.
-            </span>
-          </div>
-        </div>
-      )}
 
       <main className="flex flex-col items-center justify-between flex-1 w-full max-w-lg mx-auto px-3 pt-3 pb-2">
         <GameBoard
