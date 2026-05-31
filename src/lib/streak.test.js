@@ -94,4 +94,72 @@ describe('getStreak', () => {
     localStorage.setItem('_s2z', encode(data));
     expect(getStreak()).toBe(18);
   });
+
+  it('nao dobra o streak quando 5 e 6 letras sao jogados no mesmo dia', () => {
+    localStorage.setItem('_s2z', encode({
+      '2026-05-18|TESTE': [{ won: true, attempts: 3 }],
+    }));
+    localStorage.setItem('_s2z6', encode({
+      '2026-05-18|ABCDEF': [{ won: true, attempts: 4 }],
+    }));
+    expect(getStreak()).toBe(1);
+  });
+});
+
+describe('getStreak — virada de ano', () => {
+  let getStreakYear;
+  beforeEach(async () => {
+    localStorage.clear();
+    vi.resetModules();
+    vi.doMock('@/lib/wordOfDay', () => ({ getTodayDateStr: () => '2026-01-01' }));
+    const mod = await import('./streak.js');
+    getStreakYear = mod.getStreak;
+  });
+
+  it('conta streak cruzando 31 Dez para 1 Jan', () => {
+    localStorage.setItem('_s2z', encode({
+      '2026-01-01|TESTE': [{ won: true, attempts: 3 }],
+      '2025-12-31|OUTRO': [{ won: true, attempts: 2 }],
+      '2025-12-30|MAIS':  [{ won: true, attempts: 1 }],
+    }));
+    expect(getStreakYear()).toBe(3);
+  });
+});
+
+describe('getStreak — fevereiro sem bissexto', () => {
+  let getStreakFev28;
+  beforeEach(async () => {
+    localStorage.clear();
+    vi.resetModules();
+    vi.doMock('@/lib/wordOfDay', () => ({ getTodayDateStr: () => '2026-03-01' }));
+    const mod = await import('./streak.js');
+    getStreakFev28 = mod.getStreak;
+  });
+
+  it('conta streak cruzando fim de fevereiro (28 dias, ano nao bissexto)', () => {
+    localStorage.setItem('_s2z', encode({
+      '2026-03-01|MARCO': [{ won: true, attempts: 3 }],
+      '2026-02-28|FEVRO': [{ won: true, attempts: 2 }],
+    }));
+    expect(getStreakFev28()).toBe(2);
+  });
+});
+
+describe('getStreak — fevereiro bissexto', () => {
+  let getStreakFev29;
+  beforeEach(async () => {
+    localStorage.clear();
+    vi.resetModules();
+    vi.doMock('@/lib/wordOfDay', () => ({ getTodayDateStr: () => '2024-03-01' }));
+    const mod = await import('./streak.js');
+    getStreakFev29 = mod.getStreak;
+  });
+
+  it('conta streak cruzando 29 de fevereiro (ano bissexto)', () => {
+    localStorage.setItem('_s2z', encode({
+      '2024-03-01|MARCO': [{ won: true, attempts: 3 }],
+      '2024-02-29|SALTO': [{ won: true, attempts: 2 }],
+    }));
+    expect(getStreakFev29()).toBe(2);
+  });
 });
