@@ -21,7 +21,7 @@ import { sendMessage } from './telegram.mjs';
 const SITE_URL = (process.env.SITE_URL || 'https://kinto.fun').replace(/\/$/, '');
 const PATHS = ['/', '/6', '/changelog', '/comments'];
 const LATENCY_LIMIT_MS = 8000; // limite final — acima disso, considera não-ok mesmo com 200
-const RETRY_THRESHOLD_MS = 3000; // se a 1ª req passar disso, faz retry para descartar cold start
+const RETRY_THRESHOLD_MS = 1500; // se a 1ª req passar disso, faz retry para descartar cold start
 const FETCH_TIMEOUT_MS = 12000;
 const RETRY_ON_SLOW = true; // se lento na 1ª req, tenta 1x mais (warm CDN)
 
@@ -67,9 +67,27 @@ async function checkUrl(path, runId) {
   return row;
 }
 
+// Faz uma requisição descartável para estabelecer a conexão TCP/TLS com o CDN.
+// Elimina o overhead de cold start que inflava a latência da primeira rota (/).
+async function warmUpConnection() {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    await fetch(`${SITE_URL}/`, { signal: controller.signal, redirect: 'follow' });
+    clearTimeout(timer);
+  } catch {
+    // Ignorado — apenas warm-up; falha aqui não impede as medições reais
+  }
+  await new Promise(r => setTimeout(r, 300));
+}
+
 async function main() {
   const runId = genRunId();
   console.log(`[smoke-test] Verificando ${SITE_URL} (run ${runId})`);
+
+  // Aquece conexão para que a primeira rota medida não pague o custo de
+  // TCP handshake + cold start de CDN (que inflava / para ~2-3s esporadicamente)
+  await warmUpConnection();
 
   const rows = [];
   for (const path of PATHS) {
